@@ -1,0 +1,17 @@
+<!doctype html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Secure Admin Setup | REVEX</title><link rel="stylesheet" href="css/style.css"><link rel="stylesheet" href="css/navbar.css"></head><body><header class="container"><nav class="nav"><a class="brand" href="index.html">REV<span>EX</span></a></nav></header><main class="container" style="max-width:560px;padding:70px 0"><section class="booking-panel"><span class="eyebrow">ONE-TIME ADMIN SETUP</span><h1 class="section-title">Create the first admin</h1><p>The setup key is verified securely. It is never stored on this page.</p><div id="setupMessage" class="notice"></div><form id="adminSetupForm">
+<div class="field"><label>Setup key</label><input name="setupKey" type="password" required autocomplete="off"></div>
+<div class="field"><label>Admin name</label><input name="name" required></div>
+<div class="field"><label>Email</label><input name="email" type="email" required></div>
+<div class="field"><label>Phone</label><input name="phone"></div>
+<div class="field"><label>Password</label><input name="password" type="password" minlength="8" required></div>
+<button class="btn btn-primary" style="width:100%;margin-top:18px">Create admin account</button>
+</form></section></main><script src="js/main.js"></script><script>
+document.getElementById('adminSetupForm').addEventListener('submit',async e=>{
+ e.preventDefault();const f=e.target,msg=document.getElementById('setupMessage');
+ try{
+  const data=await api('/auth/setup-admin',{method:'POST',body:JSON.stringify({setupKey:f.setupKey.value,name:f.name.value.trim(),email:f.email.value.trim(),phone:f.phone.value.trim(),password:f.password.value})});
+  setSession(data);msg.textContent='Admin account created successfully. Opening dashboard...';msg.style.display='block';
+  setTimeout(()=>location.href='admin.html',600);
+ }catch(err){msg.textContent=err.message;msg.style.display='block'}
+});
+</script></body></html>

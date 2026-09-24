@@ -1,0 +1,109 @@
+﻿<!doctype html>
+<html lang="en">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>REVEX Agreement</title>
+<link rel="stylesheet" href="css/style.css"><link rel="stylesheet" href="css/navbar.css"><link rel="stylesheet" href="css/cards.css"><link rel="stylesheet" href="css/responsive.css">
+<style>
+.agree-hero{background:linear-gradient(135deg,#0ea5e9,#14b8a6);border-radius:14px;padding:26px;color:#fff;margin-bottom:20px}
+.agree-hero h2{margin:0 0 6px 0;font-size:1.6rem}
+.agree-hero p{margin:4px 0;color:#e0f2fe}
+.agree-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.agree-card{padding:16px;border:1px solid var(--line);border-radius:12px;background:var(--surface-strong)}
+.agree-card h3{margin:0 0 10px 0;font-size:1.05rem;color:#7dd3fc}
+.agree-card p{margin:4px 0;font-size:.9rem}
+.rule{padding:14px;border:1px solid var(--line);border-radius:12px;margin-bottom:10px;background:var(--surface-strong)}
+.rule h3{margin:0 0 6px 0;font-size:1rem;color:#e0f2fe}
+.rule p{margin:0;font-size:.9rem}
+.sign-box{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:14px}
+@media(max-width:700px){.agree-grid{grid-template-columns:1fr}}
+</style>
+</head><body>
+<header class="container"><nav class="nav"><a class="brand" href="index.html">REV<span>EX</span></a><button class="menu-btn">Menu</button>
+<div class="nav-links"><a href="index.html">Home</a><a href="rental.html">Rent a Vehicle</a><a href="bookings.html">My Bookings</a></div>
+<div class="nav-actions"><a href="login.html">Log in</a></div></nav></header>
+<main class="container section">
+<span class="eyebrow">DIGITAL RENTAL AGREEMENT</span>
+<h1 class="section-title">REVEX Renter Rules &amp; Conditions</h1>
+<div id="agreementBox" class="detail-panel">Loading agreement...</div>
+</main>
+<footer class="footer"><div class="container"><div class="footer-grid">
+<div><div class="footer-brand">REVEX</div><p>Move Smart. Share More.</p></div>
+<div><h3>Contact</h3><p>Phone: +91 98765 43210</p><p>Email: info@revex.com</p></div>
+<div><h3>Quick Links</h3><a href="index.html">Home</a> <a href="rental.html">Rent a Vehicle</a> <a href="bookings.html">My Bookings</a></div>
+</div><p>2026 REVEX - Urban mobility, reimagined.</p></div></footer>
+<script src="js/main.js"></script>
+<script>
+function esc(v){return String(v??'-').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function dt(v){try{return new Date(v).toLocaleString('en-IN')}catch{return esc(v)}}
+document.addEventListener('DOMContentLoaded', async () => {
+  const box=document.getElementById('agreementBox');
+  if(!requireLogin()) return;
+  const id=new URLSearchParams(location.search).get('bookingId');
+  if(!id){box.innerHTML='<div class="empty">Booking ID is missing.</div>';return;}
+  try{
+   const a=await api('/bookings/'+encodeURIComponent(id)+'/agreement/details');
+   const b=a.booking||{}, r=a.renter||{}, o=a.owner||{}, v=a.vehicle||{};
+   const terms=[
+    ['1. Identity Verification','The renter must provide one valid government-issued ID proof before taking the vehicle. The information provided must be genuine and belong to the renter.'],
+    ['2. Vehicle Condition & Inspection','Before starting the trip, both the vehicle owner and renter must record a complete video of the vehicle. The video should clearly show the exterior and existing damages, and will be used to cross-check the condition after the trip. Any new damage found after the trip may be the renter\u2019s responsibility. A clear photo of the odometer will be taken before the trip as the official starting kilometre verification, and a final odometer photo may be taken on return to calculate the total kilometres travelled.'],
+    ['3. Fuel Level','The vehicle must be returned with the same fuel level as when it was taken. If it is returned with less fuel, the applicable fuel/recovery charge will be applied.'],
+    ['4. Extra Kilometres','The permitted kilometre limit will be specified in the booking. The pre-trip odometer photo is the starting record; the final reading is compared with it to determine total kilometres travelled. An additional charge applies for every kilometre exceeding the permitted limit, at the rate shown before confirmation.'],
+    ['5. Responsibility During the Trip','During the rental period the renter is responsible for the vehicle and its use, including applicable tolls, parking charges, traffic challans/fines, accident-related responsibilities, damage caused during the rental period and any other charges resulting from the renter\u2019s use or rule violations.'],
+    ['6. Safe & Legal Use','The renter must follow all applicable traffic laws and regulations. The vehicle must not be used for illegal activities, racing, reckless driving or any unauthorized purpose, and must not be handed to another unauthorized person.'],
+    ['7. Vehicle Return & Late Return','The vehicle must be returned at the agreed time and location in the same general condition, except normal wear and tear. A final inspection/video may be recorded for comparison. Late returns attract additional charges per the applicable REVEX rate.'],
+    ['8. Agreement','By confirming the booking, the renter confirms that they have read, understood and agreed to these REVEX Renter Rules & Conditions.']
+   ];
+   box.innerHTML=
+    '<div class="agree-hero"><h2>REVEX Rental Agreement</h2>'+
+    '<p>Agreement ID: <b>'+esc(a.agreementId)+'</b> | Booking ID: <b>'+esc(a.bookingId)+'</b></p>'+
+    '<p>Status: Renter <b>'+(a.acceptedByUser?'Accepted':'Pending')+'</b> | Owner <b>'+(a.acceptedByOwner?'Accepted':'Pending')+'</b>'+(a.fullySigned?' | <b>Fully signed</b>':'')+'</p></div>'+
+    '<div class="agree-grid">'+
+    '<div class="agree-card"><h3>Booking details</h3>'+
+      '<p><b>Booking date:</b> '+dt(b.bookingDate)+'</p>'+
+      '<p><b>Rental start:</b> '+dt(b.startDate)+'</p>'+
+      '<p><b>Return:</b> '+dt(b.endDate)+'</p>'+
+      '<p><b>Rental hours:</b> '+esc(b.hours)+'</p>'+
+      '<p><b>Pickup location:</b> '+esc(b.pickupLocation)+'</p>'+
+      '<p><b>Return location:</b> '+esc(b.returnLocation)+'</p></div>'+
+    '<div class="agree-card"><h3>Payment details</h3>'+
+      '<p><b>Base rental amount:</b> Rs.'+Number(b.totalAmount||a.rentalAmount||0).toLocaleString('en-IN')+'</p>'+
+      '<p><b>Total amount:</b> Rs.'+Number(b.totalAmount||a.rentalAmount||0).toLocaleString('en-IN')+'</p>'+
+      '<p><b>Payment status:</b> '+esc(b.paymentStatus||a.paymentStatus)+'</p>'+
+      '<p><b>Payment method:</b> '+esc(b.paymentMethod||'demo')+'</p></div>'+
+    '<div class="agree-card"><h3>Renter details</h3>'+
+      '<p><b>Name:</b> '+esc(r.name||a.renterName)+'</p>'+
+      '<p><b>Contact:</b> '+esc(r.email)+'</p>'+
+      (r.phone?'<p><b>Phone:</b> '+esc(r.phone)+'</p>':'')+'</div>'+
+    '<div class="agree-card"><h3>Owner details</h3>'+
+      '<p><b>Name:</b> '+esc(o.name||a.ownerName)+'</p>'+
+      '<p><b>Contact:</b> '+esc(o.email)+'</p>'+
+      (o.phone?'<p><b>Phone:</b> '+esc(o.phone)+'</p>':'')+'</div>'+
+    '<div class="agree-card"><h3>Vehicle details</h3>'+
+      '<p><b>Vehicle:</b> '+esc(v.name||a.vehicleName)+'</p>'+
+      '<p><b>Type:</b> '+esc(v.type||a.vehicleType||'-')+'</p>'+
+      '<p><b>Registration number:</b> '+esc(v.numberPlate||a.vehicleNumberPlate||'As listed')+'</p>'+
+      '<p><b>Location:</b> '+esc(v.location||a.vehicleLocation||'-')+'</p>'+
+      '<p><b>Allowed kilometres:</b> '+esc(b.estimatedKm||a.estimatedKm||'As shown before confirmation')+'</p></div>'+
+    '<div class="agree-card"><h3>Confirmation</h3>'+
+      '<p>Renter: <b>'+(a.acceptedByUser?'Accepted':'Pending')+'</b></p>'+
+      '<p>Owner: <b>'+(a.acceptedByOwner?'Accepted':'Pending')+'</b></p>'+
+      '<div class="sign-box">'+
+      (a.canUserSign?'<button class="btn btn-primary" id="userSign">I Accept Agreement</button>':'')+
+      (a.canOwnerAccept?'<button class="btn btn-primary" id="ownerAccept">Owner Accept Agreement</button>':'')+
+      '<button class="btn btn-outline" id="download">Download PDF</button></div></div>'+
+    '</div>'+
+    '<h2 class="section-title" style="font-size:1.6rem;margin:22px 0 12px">Renter rules &amp; conditions</h2>'+
+    terms.map(t=>'<div class="rule"><h3>'+t[0]+'</h3><p>'+t[1]+'</p></div>').join('');
+   document.getElementById('download').onclick=()=>downloadAgreement(id);
+   document.getElementById('ownerAccept')?.addEventListener('click',async()=>{
+     try{await api('/bookings/'+encodeURIComponent(id)+'/agreement/owner-accept',{method:'POST'});location.reload();}
+     catch(e){alert(e.message);}
+   });
+   document.getElementById('userSign')?.addEventListener('click',async()=>{
+     try{await api('/bookings/'+encodeURIComponent(id)+'/agreement/user-sign',{method:'POST'});location.reload();}
+     catch(e){alert(e.message);}
+   });
+  }catch(e){box.innerHTML='<div class="empty">'+esc(e.message)+'</div>'}
+});
+</script>
+</body></html>

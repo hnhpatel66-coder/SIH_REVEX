@@ -1,0 +1,40 @@
+﻿<!doctype html>
+<html lang="en">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Offer a Ride | REVEX</title>
+<link rel="stylesheet" href="css/style.css"><link rel="stylesheet" href="css/navbar.css"><link rel="stylesheet" href="css/cards.css"><link rel="stylesheet" href="css/responsive.css">
+</head>
+<body>
+<header class="container"><nav class="nav">
+<a class="brand" href="index.html">REV<span>EX</span></a>
+<button class="menu-btn">Menu</button>
+<div class="nav-links"><a href="index.html">Home</a><a href="find-ride.html">Find a Ride</a><a href="rental.html">Rent a Vehicle</a><a class="active" href="offer-ride.html">Offer a Ride</a><a href="bookings.html">My Bookings</a><a href="profile.html">Profile</a></div>
+<div class="nav-actions"><a href="login.html">Log in</a></div>
+</nav></header>
+<main class="container detail-layout">
+<section><span class="eyebrow">DRIVE TOGETHER</span>
+<h1 class="section-title">Turn your trip into a shared journey.</h1>
+<p>Heading somewhere? List your route and let fellow commuters ride along. Rides appear after admin verification of your vehicle details.</p>
+<div class="feature-card ride" style="margin-top:30px"><h3>Share the road. Split the cost.</h3><p>Include number plate, vehicle type and a photo so riders trust your listing.</p></div>
+</section>
+<aside class="booking-panel"><h3>Offer a ride</h3>
+<form id="offerRide">
+<div class="field"><label>From</label><input name="from" required placeholder="Surat"></div>
+<div class="field"><label>To</label><input name="to" required placeholder="Ahmedabad"></div>
+<div class="field"><label>Date</label><input name="date" required type="date"></div>
+<div class="field"><label>Departure time</label><input name="time" required type="time"></div>
+<div class="field"><label>Vehicle</label><input name="vehicle" required placeholder="e.g. Hyundai Creta"></div>
+<div class="field"><label>Vehicle type</label><select name="vehicleType" required><option value="Car">Car</option><option value="Bike">Bike</option><option value="Scooter">Scooter</option><option value="Other">Other</option></select></div>
+<div class="field"><label>Number plate</label><input name="numberPlate" required placeholder="e.g. GJ05AB1234"></div>
+<div class="field"><label>Driver phone</label><input name="driverPhone" placeholder="Your contact number"></div>
+<div class="field"><label>Vehicle photo</label><input type="file" name="vehicleImage" accept="image/*"></div>
+<div class="field"><label>Available seats</label><input name="seats" required min="1" max="6" type="number"></div>
+<div class="field"><label>Cost per passenger (Rs.)</label><input name="price" required min="1" type="number" placeholder="Rs."></div>
+<button class="btn btn-primary" style="width:100%;margin-top:17px">Publish ride</button>
+</form></aside>
+</main>
+<div class="modal" id="successModal"><div class="modal-box"><div class="modal-icon">OK</div><h2>Success</h2><p></p><a class="btn btn-primary" href="find-ride.html">See all rides</a></div></div>
+<footer class="footer"><div class="container"><div class="footer-grid"><div><div class="footer-brand">REVEX</div><p>Move Smart. Share More.</p></div><div><h3>Contact</h3><p>Phone: +91 98765 43210</p><p>Email: info@revex.com</p></div><div><h3>Quick Links</h3><a href="index.html">Home</a> <a href="rental.html">Rent a Vehicle</a> <a href="find-ride.html">Find a Ride</a></div></div><p>2026 REVEX - Urban mobility, reimagined.</p></div></footer>
+<script src="js/main.js"></script><script src="js/data.js"></script><script src="js/rides.js"></script>
+</body>
+</html>

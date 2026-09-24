@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Profile | REVEX</title>
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/navbar.css">
+<link rel="stylesheet" href="css/cards.css">
+<link rel="stylesheet" href="css/responsive.css">
+</head>
+<body>
+<header class="container"><nav class="nav">
+<a class="brand" href="index.html">REV<span>EX</span></a>
+<button class="menu-btn">Menu</button>
+<div class="nav-links"><a href="index.html">Home</a><a href="find-ride.html">Find a Ride</a><a href="rental.html">Rent a Vehicle</a><a href="offer-ride.html">Offer a Ride</a><a href="bookings.html">My Bookings</a><a class="active" href="profile.html">Profile</a></div>
+<div class="nav-actions"><a href="login.html">Log in</a></div>
+</nav></header>
+<main class="container section">
+<span class="eyebrow">ACCOUNT</span>
+<div class="profile-head" style="margin:15px 0 35px"><div class="avatar" id="avatar">V</div>
+<div><h1 class="section-title" id="profileName" style="margin:0">REVEX User</h1><p id="profileMeta" style="margin:5px 0">Loading profile...</p></div></div>
+<div class="feature-grid">
+<article class="detail-panel"><h3>Profile details</h3>
+<p><b>Email</b><br><span id="profileEmail">-</span></p>
+<p><b>Phone</b><br><span id="profilePhone">-</span></p>
+<p><b>Role</b><br><span class="pill" id="profileRole">-</span></p>
+<div id="ownerFields" style="display:none">
+<p><b>Car approval status</b><br><span class="pill" id="profileCarStatus">-</span></p>
+<p><b>Total cars on rent</b><br><span id="profileCarsOnRent">-</span></p>
+<p><b>Total earnings (90% share)</b><br><span id="profileEarnings">-</span></p>
+<p><b>Rides shared / rentals / cancelled</b><br><span id="profileRideStats">-</span></p>
+</div>
+</article>
+<article class="detail-panel"><h3>Account actions</h3>
+<p>Your account is securely stored.</p>
+<form id="editProfileForm">
+<div class="field"><label>Full name</label><input name="name" id="editName" required></div>
+<div class="field"><label>Phone</label><input name="phone" id="editPhone"></div>
+<button class="btn btn-primary" style="width:100%;margin-top:12px">Save profile</button>
+</form>
+<hr>
+<div id="roleSwitchBox"></div>
+<button class="btn btn-outline" id="logoutBtn" style="width:100%;margin-top:12px">Log out</button>
+</article>
+</div>
+</main>
+<footer class="footer"><div class="container"><div class="footer-grid">
+<div><div class="footer-brand">REVEX</div><p>Move Smart. Share More.</p></div>
+<div><h3>Contact</h3><p>Phone: +91 98765 43210</p><p>Email: info@revex.com</p></div>
+<div><h3>Quick Links</h3><a href="index.html">Home</a> <a href="rental.html">Rent a Vehicle</a></div>
+</div><p>2026 REVEX - Urban mobility, reimagined.</p></div></footer>
+<div class="modal" id="successModal"><div class="modal-box"><div class="modal-icon">OK</div><h2>Success</h2><p></p><button class="btn btn-primary" onclick="closeModal()">Done</button></div></div>
+<script src="js/main.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded",async()=>{
+  let u=getStoredUser();
+  if(!u){location.href="login.html";return;}
+  try{ const me=await api('/auth/me'); u=me.user; setSession({token:getToken(),user:u}); }catch(e){}
+  document.getElementById("profileName").textContent=u.name;
+  document.getElementById("profileEmail").textContent=u.email;
+  document.getElementById("profilePhone").textContent=u.phone||"-";
+  document.getElementById("profileRole").textContent=u.role;
+  document.getElementById("profileMeta").textContent=u.isVerified?"Verified account":"Account created";
+  document.getElementById("avatar").textContent=(u.name||"V").slice(0,2).toUpperCase();
+  document.getElementById("editName").value=u.name||"";
+  document.getElementById("editPhone").value=u.phone||"";
+  const box=document.getElementById("roleSwitchBox");
+  if(u.role==="admin"){ box.innerHTML="<p><a class='btn btn-outline' href='admin.html'>Open admin dashboard</a></p>"; }
+  else if(u.role==="user"){ box.innerHTML="<p>Want to list vehicles and earn?</p><button class='btn btn-primary' id='becomeOwner' style='width:100%'>Switch to owner account</button>"; }
+  else { box.innerHTML="<p>You are an owner. You can switch back to a renter account.</p><button class='btn btn-outline' id='becomeUser' style='width:100%'>Switch to user account</button>"; }
+  document.getElementById("becomeOwner")?.addEventListener("click",async()=>{
+    if(!confirm("Switch this account to owner?"))return;
+    try{ const d=await api('/auth/switch-role',{method:'POST',body:JSON.stringify({newRole:'owner'})}); setSession(d); location.reload(); }
+    catch(e){alert(e.message)}
+  });
+  document.getElementById("becomeUser")?.addEventListener("click",async()=>{
+    if(!confirm("Switch back to user account?"))return;
+    try{ const d=await api('/auth/switch-role',{method:'POST',body:JSON.stringify({newRole:'user'})}); setSession(d); location.reload(); }
+    catch(e){alert(e.message)}
+  });
+  if(u.role==="owner"){
+    document.getElementById("ownerFields").style.display="block";
+    try{
+      const s=await api('/bookings/owner/summary');
+      document.getElementById('profileCarStatus').textContent=s.carApprovalStatus||u.carApprovalStatus||'pending';
+      document.getElementById('profileCarsOnRent').textContent=s.totalCarsOnRent ?? 0;
+      document.getElementById('profileEarnings').textContent='Rs.'+Number(s.totalEarnings||0).toLocaleString('en-IN');
+      const my=await api('/bookings/my').catch(()=>[]);
+      const cancelled=my.filter(b=>b.status==='cancelled').length;
+      document.getElementById('profileRideStats').textContent=`Paid: ${s.paidBookings||0} - Active: ${s.activeBookings||0} - Cancelled rentals: ${cancelled}`;
+    }catch(e){
+      document.getElementById('profileCarStatus').textContent=u.carApprovalStatus||'pending';
+      document.getElementById('profileCarsOnRent').textContent=u.totalCarsOnRent||0;
+      document.getElementById('profileEarnings').textContent='Rs.'+Number(u.ownerEarnings||0).toLocaleString('en-IN');
+    }
+  }
+  document.getElementById("editProfileForm").addEventListener("submit",async(ev)=>{
+    ev.preventDefault();
+    try{
+      const d=await api('/auth/edit-profile',{method:'POST',body:JSON.stringify({name:document.getElementById("editName").value,phone:document.getElementById("editPhone").value})});
+      setSession(d); location.reload();
+    }catch(e){alert(e.message)}
+  });
+  document.getElementById("logoutBtn").onclick=()=>{clearSession();location.href="index.html"};
+});
+</script>
+</body>
+</html>

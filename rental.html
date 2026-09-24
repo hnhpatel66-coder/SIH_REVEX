@@ -1,0 +1,20 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Rent a Vehicle | REVEX</title>
+  <link rel="stylesheet" href="css/style.css"><link rel="stylesheet" href="css/navbar.css"><link rel="stylesheet" href="css/cards.css"><link rel="stylesheet" href="css/responsive.css">
+</head>
+<body>
+  <header class="container"><nav class="nav">
+    <a class="brand" href="index.html">REV<span>EX</span></a><button class="menu-btn" aria-label="Open navigation">Menu</button>
+    <div class="nav-links"><a href="index.html">Home</a><a href="find-ride.html">Find a Ride</a><a class="active" href="rental.html">Rent a Vehicle</a><a href="offer-ride.html">Offer a Ride</a><a href="bookings.html">My Bookings</a><a href="profile.html">Profile</a></div>
+    <div class="nav-actions" aria-label="Account actions"></div>
+  </nav></header>
+  <main><section class="page-hero"><div class="container"><span class="eyebrow">FLEXIBLE RENTALS</span><h1>Your ride, on your time.</h1><p>Choose a trusted vehicle nearby and pay only for the hours you need.</p>
+    <form class="form-grid" id="rentalSearch"><div class="field"><label>Pick-up location</label><input name="location" placeholder="e.g. Vesu, Surat"></div><div class="field"><label>Vehicle type</label><select name="type"><option value="">Any vehicle</option><option>Bike</option><option>Scooter</option><option>Car</option></select></div><div class="field"><label>Max hourly price</label><input name="maxPrice" type="number" placeholder="Price per hour"></div><button class="btn btn-primary" type="submit">Search vehicles</button></form>
+  </div></section><section class="section container" style="padding-top:55px"><span class="eyebrow">AVAILABLE NEAR YOU</span><h2 class="section-title">Find your perfect ride</h2><div class="vehicle-grid" id="vehicleResults"></div></section></main>
+  <script src="js/main.js"></script><script src="js/data.js"></script><script src="js/rental.js"></script>
+</body>
+</html>
+

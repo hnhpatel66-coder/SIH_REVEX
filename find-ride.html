@@ -1,0 +1,21 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Find a Ride | REVEX</title>
+  <link rel="stylesheet" href="css/style.css"><link rel="stylesheet" href="css/navbar.css"><link rel="stylesheet" href="css/cards.css"><link rel="stylesheet" href="css/responsive.css">
+</head>
+<body>
+  <header class="container"><nav class="nav">
+    <a class="brand" href="index.html">REV<span>EX</span></a><button class="menu-btn" aria-label="Open navigation">Menu</button>
+    <div class="nav-links"><a href="index.html">Home</a><a class="active" href="find-ride.html">Find a Ride</a><a href="rental.html">Rent a Vehicle</a><a href="offer-ride.html">Offer a Ride</a><a href="bookings.html">My Bookings</a><a href="profile.html">Profile</a></div>
+    <div class="nav-actions" aria-label="Account actions"></div>
+  </nav></header>
+  <main><section class="page-hero"><div class="container">
+    <span class="eyebrow">SHARED JOURNEYS</span><h1>There is a seat with your name on it.</h1><p>Travel together, save on every trip and make the city feel closer.</p>
+    <form class="form-grid" id="rideSearch"><div class="field"><label>From</label><input name="from" placeholder="Surat"></div><div class="field"><label>To</label><input name="to" placeholder="Ahmedabad"></div><div class="field"><label>Date</label><input name="date" type="date"></div><button class="btn btn-primary">Search rides</button></form>
+  </div></section><section class="section container" style="padding-top:55px"><span class="eyebrow">MATCHES FOR YOU</span><h2 class="section-title">Available shared rides</h2><div class="ride-grid" id="rideResults"></div></section></main>
+  <script src="js/main.js"></script><script src="js/data.js"></script><script src="js/rides.js"></script>
+</body>
+</html>
+
