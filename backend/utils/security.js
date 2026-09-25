@@ -108,14 +108,6 @@ function corsMiddleware() {
     const sameOrigin = self && normalizeOrigin(origin) === self;
 
     if (!sameOrigin && !originAllowed(origin, list)) {
-      if (req.method === 'OPTIONS') {
-        return res.status(403).json({
-          message: 'Origin not allowed by CORS policy.',
-          hint: 'Add this origin to CORS_ALLOWED_ORIGINS, or serve the pages and the API from the same host.',
-          rejectedOrigin: stripTrailingSlash(origin),
-          appOrigin: self || null
-        });
-      }
       return res.status(403).json({
         message: 'Origin not allowed by CORS policy.',
         hint: 'Add this origin to CORS_ALLOWED_ORIGINS, or serve the pages and the API from the same host.',

@@ -11,7 +11,7 @@
     "seed": "node backend/seed.js",
     "vercel-dev": "vercel dev",
     "check": "node scripts/check-syntax.js",
-    "test": "node tests/pricing.test.js && node tests/validation.test.js && node tests/registration-regression.test.js && node tests/theme.test.js && node tests/deployment.test.js",
+    "test": "node tests/pricing.test.js && node tests/validation.test.js && node tests/registration-regression.test.js && node tests/theme.test.js && node tests/cors.test.js && node tests/deployment.test.js",
     "test:cluster": "node tests/cluster.test.js",
     "test:hard-delete": "node tests/hard-delete.test.js",
     "purge:legacy": "node scripts/purge-legacy.js",
@@ -26,7 +26,6 @@
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
-    "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.21.2",
     "jsonwebtoken": "^9.0.2",

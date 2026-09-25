@@ -4,7 +4,6 @@ require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 
 const express = require('express');
 const mongoose = require('mongoose');
-const cors = require('cors');
 const bcrypt = require('bcryptjs');
 const User = require('../backend/models/User');
 const Vehicle = require('../backend/models/Vehicle');
@@ -17,11 +16,15 @@ const rideRoutes = require('../backend/routes/rides');
 const adminRoutes = require('../backend/routes/admin');
 const notificationRoutes = require('../backend/routes/notifications');
 
-const { corsOptions, blockPrivateStatic, jsonBodyFallback } = require('../backend/utils/security');
+const { corsMiddleware, blockPrivateStatic, jsonBodyFallback } = require('../backend/utils/security');
 const { connectMongo: connectMongoShared } = require('../backend/utils/db');
 
 const app = express();
-app.use(cors(corsOptions()));
+// Vercel/Render sit behind a TLS-terminating proxy. One hop is trusted so
+// req.protocol and req.ip reflect the real client without trusting a forged
+// X-Forwarded-For chain.
+app.set('trust proxy', 1);
+app.use(corsMiddleware());
 const keepRawBody = (req, res, buf) => { if (buf && buf.length) req.rawBody = buf; };
 app.use(express.json({ limit: '12mb', verify: keepRawBody }));
 app.use(express.urlencoded({ extended: true, limit: '12mb' }));

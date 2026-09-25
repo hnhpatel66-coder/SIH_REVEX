@@ -5,7 +5,6 @@ require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 
 const express = require('express');
 const mongoose = require('mongoose');
-const cors = require('cors');
 const bcrypt = require('bcryptjs');
 const User = require('./models/User');
 const Vehicle = require('./models/Vehicle');
@@ -26,7 +25,12 @@ const app = express();
 // app binds the port the platform routes traffic to. Local default is 5001 to
 // match backend/.env.
 const PORT = Number(process.env.PORT) || 5001;
-app.use(cors(corsOptions()));
+// Render/Railway/Fly terminate TLS on a proxy in front of this process, so
+// without this req.protocol reports "http" and req.ip is the proxy address.
+// Exactly one hop is trusted (that is what Render adds): trusting the whole
+// chain would let a client forge X-Forwarded-For and defeat the rate limiter.
+app.set('trust proxy', 1);
+app.use(corsMiddleware());
 const keepRawBody = (req, res, buf) => { if (buf && buf.length) req.rawBody = buf; };
 app.use(express.json({ limit: '12mb', verify: keepRawBody }));
 app.use(express.urlencoded({ extended: true, limit: '12mb' }));
