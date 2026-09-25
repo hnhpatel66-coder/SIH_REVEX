@@ -17,7 +17,7 @@ const bookingRoutes = require('./routes/bookings');
 const rideRoutes = require('./routes/rides');
 const adminRoutes = require('./routes/admin');
 const notificationRoutes = require('./routes/notifications');
-const { corsOptions, blockPrivateStatic, jsonBodyFallback } = require('./utils/security');
+const { corsMiddleware, blockPrivateStatic, jsonBodyFallback } = require('./utils/security');
 const { connectMongo: connectMongoShared } = require('./utils/db');
 
 try { dns.setServers(['1.1.1.1', '8.8.8.8']); } catch {}
