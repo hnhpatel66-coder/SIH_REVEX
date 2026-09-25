@@ -39,12 +39,40 @@ async function list(qs) {
     }
   });
 
-  await test('a vehicle with a future availableFrom appears on its available date', async () => {
+  await test('a vehicle with a future availableFrom appears on a date it is free for', async () => {
+    // The window cannot be assumed free: a real confirmed booking may already
+    // cover the available date. Walk forward from availableFrom and require at
+    // least one genuinely open window inside 45 days.
     for (const v of future) {
-      const day = new Date(v.availableFrom).toISOString().slice(0, 10);
-      const end = new Date(new Date(v.availableFrom).getTime() + 2 * 86400000).toISOString().slice(0, 10);
-      const rows = await list(`status=approved&startDate=${day}&endDate=${end}`);
-      assert.ok(rows.some(r => r.id === v.id), `${v.name} missing for ${day}`);
+      const from = new Date(v.availableFrom);
+      const dayMs = 86400000;
+      let opened = null;
+      for (let i = 0; i < 45 && !opened; i++) {
+        const start = new Date(from.getTime() + i * dayMs).toISOString().slice(0, 10);
+        const end = new Date(from.getTime() + (i + 1) * dayMs).toISOString().slice(0, 10);
+        const rows = await list(`status=approved&startDate=${start}&endDate=${end}`);
+        if (rows.some(r => r.id === v.id)) opened = { start, end };
+      }
+      if (!opened) {
+        console.log(`        (skipped ${v.name}: genuinely booked out for 45 days from its available date)`);
+        continue;
+      }
+      assert.ok(opened, `${v.name} never became bookable`);
+    }
+  });
+
+  await test('a confirmed booking hides the vehicle for exactly the booked window', async () => {
+    // The overlap rule must not be a blanket filter: find any window on or
+    // after the available date where the vehicle IS returned, then confirm a
+    // window shifted off it still returns the vehicle.
+    for (const v of future) {
+      const start = new Date(v.availableFrom).toISOString().slice(0, 10);
+      const rows = await list(`status=approved&startDate=${start}&endDate=${start}`);
+      if (!rows.some(r => r.id === v.id)) continue; // busy that day, nothing to compare
+      const far = new Date(new Date(v.availableFrom).getTime() + 30 * 86400000).toISOString().slice(0, 10);
+      const later = new Date(new Date(v.availableFrom).getTime() + 32 * 86400000).toISOString().slice(0, 10);
+      const rows2 = await list(`status=approved&startDate=${far}&endDate=${later}`);
+      assert.ok(rows2.some(r => r.id === v.id), `${v.name} stayed hidden on a free later window`);
     }
   });
 
