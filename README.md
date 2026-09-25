@@ -1,4 +1,4 @@
-# REVEX � Vehicle Rental & Shared Ride Platform
+# REVEX — Vehicle Rental & Shared Ride Platform
 
 REVEX is a full-stack vehicle rental and shared-ride application built with Node.js, Express, MongoDB and vanilla HTML/CSS/JavaScript. It has separate User, Owner and Admin portals with server-enforced role authorization.
 
@@ -22,18 +22,18 @@ REVEX is a full-stack vehicle rental and shared-ride application built with Node
 
 ```
 Revex_1_0/
-+-- api/index.js                 # Vercel/serverless Express entry
-+-- backend/
-�   +-- server.js                # Local Express server
-�   +-- models/                  # User, Vehicle, Booking, Agreement, Payment, Review, Notification, Ride
-�   +-- routes/                  # Auth, vehicles, bookings, rides, admin, notifications
-�   +-- middleware/auth.js
-�   +-- utils/                   # Pricing and notification helpers
-+-- css/                         # Shared responsive styles
-+-- js/                          # Frontend modules
-+-- *.html                       # Public, owner, user and admin pages
-+-- .env.example
-+-- vercel.json
+├── api/index.js                 # Vercel/serverless Express entry
+├── backend/
+│   ├── server.js                # Local Express server
+│   ├── models/                  # User, Vehicle, Booking, Agreement, Payment, Review, Notification, Ride
+│   ├── routes/                  # Auth, vehicles, bookings, rides, admin, notifications
+│   ├── middleware/auth.js
+│   └── utils/                   # Pricing and notification helpers
+├── css/                         # Shared responsive styles
+├── js/                          # Frontend modules
+├── *.html                       # Public, owner, user and admin pages
+├── .env.example
+└── vercel.json
 ```
 
 ## Local setup
@@ -334,16 +334,16 @@ reachable server at `http://localhost:5001` and create/remove their own
 The following are **not** exercised by the automated tests because they need
 real third-party credentials:
 
-- **Email delivery** � the reset flow generates and stores a 1-hour token
+- **Email delivery** — the reset flow generates and stores a 1-hour token
   correctly, but no SMTP account is configured. Set `SMTP_HOST`, `SMTP_PORT`,
   `SMTP_USER`, `SMTP_PASS` and `SMTP_FROM` to enable delivery. Without them the
   endpoint still returns the same generic message so it cannot be used to
   discover which emails are registered. For local testing set
   `ENABLE_DEMO_RESET=true` to receive the reset link in the response.
-- **Razorpay payments** � the code path exists but is inert until
+- **Razorpay payments** — the code path exists but is inert until
   `RAZORPAY_KEY_ID` and `RAZORPAY_KEY_SECRET` are set. The demo payment flow is
   the default and is fully tested.
-- **Cloud storage** � photos and documents are stored as base64 data URLs inside
+- **Cloud storage** — photos and documents are stored as base64 data URLs inside
   MongoDB. `uploads/` static serving is wired up for legacy path-based records.
 
 ## Deployment
