@@ -233,26 +233,71 @@ router.get('/', optionalAuth, async (req, res) => {
       return res.status(403).json({ message: 'Admin access is required to view non-public vehicle statuses.' });
     }
     const query = {};
+    // Availability is evaluated against the RENTER's chosen rental window, not
+    // against "now". Previously a vehicle whose owner set a future
+    // "availableFrom" date was hidden from every renter until that date
+    // arrived, even though it could be booked for a later start.
+    let windowStart = null;
+    if (req.query.startDate) {
+      const parsed = new Date(req.query.startDate);
+      if (!Number.isNaN(parsed.getTime())) windowStart = parsed;
+    }
+    let windowEnd = null;
+    if (req.query.endDate) {
+      const parsed = new Date(req.query.endDate);
+      if (!Number.isNaN(parsed.getTime())) windowEnd = parsed;
+    }
+    // "Show everything approved, including vehicles an owner scheduled for a
+    // later date." Lets the renter portal offer a one-click jump to the first
+    // available date instead of silently showing an empty grid.
+    const includeUpcoming = String(req.query.includeUpcoming || '') === 'true';
     if (requestedStatus === 'all') {
       if (!isAdmin) return res.status(403).json({ message: 'Admin access is required.' });
     } else if (requestedStatus === 'approved' || requestedStatus === 'available') {
       query.status = { $in: ['approved', 'available'] };
       query.verified = true;
       query.availability = { $ne: 'unavailable' };
-      query.$and = [{ $or: [{ availableFrom: { $exists: false } }, { availableFrom: null }, { availableFrom: { $lte: new Date() } }] }];
+      if (!includeUpcoming) query.$and = [{ $or: [{ availableFrom: { $exists: false } }, { availableFrom: null }, { availableFrom: { $lte: windowStart || new Date() } }] }];
     } else if (requestedStatus) {
       query.status = requestedStatus;
     } else {
       query.status = { $in: ['approved', 'available'] };
       query.verified = true;
       query.availability = { $ne: 'unavailable' };
-      query.$and = [{ $or: [{ availableFrom: { $exists: false } }, { availableFrom: null }, { availableFrom: { $lte: new Date() } }] }];
+      if (!includeUpcoming) query.$and = [{ $or: [{ availableFrom: { $exists: false } }, { availableFrom: null }, { availableFrom: { $lte: windowStart || new Date() } }] }];
     }
     if (req.query.location) query.location = { $regex: text(req.query.location, 100), $options: 'i' };
     if (req.query.category || req.query.type) query.$or = [{ category: normalizeCategory(req.query.category || req.query.type) }, { type: normalizeCategory(req.query.category || req.query.type) }];
     if (req.query.fuelType) query.fuelType = normalizeFuelType(req.query.fuelType);
     if (req.query.maxPrice && Number.isFinite(Number(req.query.maxPrice))) query.price = { $lte: Number(req.query.maxPrice) };
-    const docs = await Vehicle.find(query).populate('ownerId', 'name').sort({ createdAt: -1 }).lean();
+
+    // Hide vehicles already committed for the requested window, so a renter
+    // never sees a card that will fail at booking time.
+    if (windowStart && windowEnd && windowEnd > windowStart) {
+      const clash = await Booking.find({
+        status: { $in: ['pending', 'payment_pending', 'pending_owner', 'confirmed', 'approved'] },
+        startDate: { $lt: windowEnd },
+        endDate: { $gt: windowStart }
+      }).select('vehicleId').lean();
+      const busy = [...new Set(clash.map(row => String(row.vehicleId)))];
+      if (busy.length) {
+        query._id = { $nin: busy.map(id => { try { return new mongoose.Types.ObjectId(id); } catch { return id; } }) };
+      }
+    }
+
+    const sorts = {
+      price_asc: { price: 1 },
+      price_desc: { price: -1 },
+      rating: { rating: -1, createdAt: -1 },
+      km_asc: { currentKm: 1 },
+      name: { name: 1 },
+      // Date-aware ordering: soonest available first.
+      available_soon: { availableFrom: 1, createdAt: -1 },
+      newest: { createdAt: -1 }
+    };
+    const sort = sorts[String(req.query.sort || '')] || { createdAt: -1 };
+
+    const docs = await Vehicle.find(query).populate('ownerId', 'name').sort(sort).lean();
     res.json(docs.map(doc => serialize(doc)));
   } catch (error) {
     res.status(500).json({ message: 'Vehicles could not be loaded. Please try again.' });

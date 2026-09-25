@@ -2,7 +2,7 @@
 <html lang="en" data-theme="light">
 <head>
   <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-  <script>(function(){try{var k='revexTheme',s=localStorage.getItem(k);if(!s){s=window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}document.documentElement.setAttribute('data-theme',s);}catch(e){document.documentElement.setAttribute('data-theme','light');}})();</script>
+  <script>(function(){try{var s=localStorage.getItem('revexTheme');document.documentElement.setAttribute('data-theme',s==='dark'?'dark':'light');}catch(e){document.documentElement.setAttribute('data-theme','light');}})();</script>
   <title>Rent a Vehicle | REVEX</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -15,12 +15,16 @@
   <main>
     <section class="page-hero"><div class="container"><span class="eyebrow">FLEXIBLE RENTALS</span><h1>Your ride, on your time.</h1><p>Choose a trusted vehicle nearby and see the complete rental price before you book.</p>
       <form class="form-grid" id="rentalSearch">
+        <div class="field"><label for="rentalStart">Pick-up date</label><input id="rentalStart" name="startDate" type="date"></div>
+        <div class="field"><label for="rentalEnd">Return date</label><input id="rentalEnd" name="endDate" type="date"></div>
         <div class="field"><label for="rentalLocation">Pick-up location</label><input id="rentalLocation" name="location" placeholder="e.g. Vesu, Surat"></div>
         <div class="field"><label for="rentalCategory">Category</label><select id="rentalCategory" name="category"><option value="">Any category</option><option>Car</option><option>Bike</option><option>Scooter</option><option>Other</option></select></div>
         <div class="field"><label for="rentalFuel">Fuel type</label><select id="rentalFuel" name="fuelType"><option value="">Any fuel</option><option>Petrol</option><option>Diesel</option><option>Electric</option><option>CNG</option><option>Hybrid</option></select></div>
         <div class="field"><label for="rentalPrice">Max price</label><input id="rentalPrice" name="maxPrice" type="number" min="1" placeholder="Per hour"></div>
+        <div class="field"><label for="rentalSort">Sort by</label><select id="rentalSort" name="sort"><option value="">Newest first</option><option value="available_soon">Available soonest</option><option value="price_asc">Price: low to high</option><option value="price_desc">Price: high to low</option><option value="rating">Top rated</option><option value="km_asc">Lowest kilometres</option><option value="name">Name (A–Z)</option></select></div>
         <button class="btn btn-primary" type="submit">Search vehicles</button>
       </form>
+      <p class="form-note" id="rentalAvailabilityNote"></p>
     </div></section>
     <section class="section container"><span class="eyebrow">AVAILABLE NEAR YOU</span><h2 class="section-title">Find your perfect ride</h2><div class="vehicle-grid" id="vehicleResults"></div></section>
   </main>
