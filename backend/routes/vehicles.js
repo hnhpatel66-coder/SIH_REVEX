@@ -13,6 +13,7 @@ const {
   normalizePriceUnit,
   suggestRentalPrice
 } = require('../utils/pricing');
+<<<<<<< HEAD
 const { normalizeMediaUrl } = require('../utils/media');
 const { deleteVehicleCascade, summarise } = require('../utils/hardDelete');
 const Booking = require('../models/Booking');
@@ -28,6 +29,10 @@ const UPLOAD_LIMITS = {
   photoBytes: 2 * 1024 * 1024,
   documentBytes: 0.8 * 1024 * 1024
 };
+=======
+
+const router = express.Router();
+>>>>>>> 509eae71e1063d5f8e8f372ee9e73ca177e5dcc1
 const demoImages = [
   'https://images.unsplash.com/photo-1558981806-ec527fa84c39?auto=format&fit=crop&w=900&q=80',
   'https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?auto=format&fit=crop&w=900&q=80'
@@ -46,7 +51,11 @@ function normalizedStatus(vehicle) {
 }
 
 function statusLabel(status) {
+<<<<<<< HEAD
   return ({ pending: 'Pending Approval', approved: 'Approved', rejected: 'Rejected', removed: 'Removed (legacy)' })[status] || 'Pending Approval';
+=======
+  return ({ pending: 'Pending Approval', approved: 'Approved', rejected: 'Rejected', removed: 'Removed / Deregistered' })[status] || 'Pending Approval';
+>>>>>>> 509eae71e1063d5f8e8f372ee9e73ca177e5dcc1
 }
 
 function serialize(vehicle, { admin = false } = {}) {
@@ -63,8 +72,13 @@ function serialize(vehicle, { admin = false } = {}) {
     status,
     statusLabel: statusLabel(status),
     availability: value.availability || (status === 'approved' ? 'available' : 'unavailable'),
+<<<<<<< HEAD
     image: normalizeMediaUrl(value.image || value.vehiclePicture, demoImages[0]),
     vehiclePicture: normalizeMediaUrl(value.vehiclePicture || value.image, demoImages[0]),
+=======
+    image: value.image || value.vehiclePicture || demoImages[0],
+    vehiclePicture: value.vehiclePicture || value.image || demoImages[0],
+>>>>>>> 509eae71e1063d5f8e8f372ee9e73ca177e5dcc1
     owner: owner ? { id: idOf(owner), name: owner.name || 'Vehicle owner' } : undefined
   };
   if (admin) {
@@ -76,10 +90,13 @@ function serialize(vehicle, { admin = false } = {}) {
     delete result.insurance;
     delete result.puc;
     delete result.numberPlateNormalized;
+<<<<<<< HEAD
     delete result.totalEarnings;
     delete result.totalRentals;
     delete result.reviewedBy;
     delete result.ownerId;
+=======
+>>>>>>> 509eae71e1063d5f8e8f372ee9e73ca177e5dcc1
   }
   delete result._id;
   delete result.__v;
@@ -97,7 +114,11 @@ function text(value, max = 200) {
 function validImage(value) {
   if (!value) return true;
   if (typeof value !== 'string') return false;
+<<<<<<< HEAD
   return /^data:image\/(png|jpeg|jpg|webp|gif);base64,/i.test(value) || /^https?:\/\//i.test(value) || /^\/?(uploads|images|assets)\//i.test(value);
+=======
+  return /^data:image\/(png|jpeg|jpg|webp|gif);base64,/i.test(value) || /^https?:\/\//i.test(value);
+>>>>>>> 509eae71e1063d5f8e8f372ee9e73ca177e5dcc1
 }
 
 function parseDocuments(body) {
@@ -106,8 +127,13 @@ function parseDocuments(body) {
   for (const item of incoming.slice(0, 6)) {
     const type = ['ownership', 'insurance', 'puc', 'id', 'other'].includes(item.type) ? item.type : 'other';
     const dataUrl = typeof item.dataUrl === 'string' ? item.dataUrl : '';
+<<<<<<< HEAD
     if (dataUrl && (!/^data:(image\/|application\/pdf)/i.test(dataUrl) || dataUrl.length > UPLOAD_LIMITS.documentBytes * 1.4)) {
       throw Object.assign(new Error(`${item.label || 'Vehicle document'} could not be uploaded. Use an image or PDF smaller than ${UPLOAD_LIMITS.documentMb} MB.`), { statusCode: 400 });
+=======
+    if (dataUrl && (!/^data:(image\/|application\/pdf)/i.test(dataUrl) || dataUrl.length > 1.5 * 1024 * 1024)) {
+      throw Object.assign(new Error(`${item.label || 'Vehicle document'} could not be uploaded. Use an image or PDF smaller than 1.5 MB.`), { statusCode: 400 });
+>>>>>>> 509eae71e1063d5f8e8f372ee9e73ca177e5dcc1
     }
     documents.push({
       type,
@@ -127,7 +153,11 @@ function parseDocuments(body) {
     ['puc', 'PUC certificate', body.puc]
   ]) {
     if (value && !documents.some(doc => doc.type === type)) {
+<<<<<<< HEAD
       const dataUrl = typeof value === 'string' && /^data:(image\/|application\/pdf)/i.test(value) && value.length <= UPLOAD_LIMITS.documentBytes * 1.4 ? value : '';
+=======
+      const dataUrl = typeof value === 'string' && value.startsWith('data:') ? value : '';
+>>>>>>> 509eae71e1063d5f8e8f372ee9e73ca177e5dcc1
       documents.push({ type, label, fileName: dataUrl ? '' : text(value, 160), mimeType: dataUrl ? value.split(';')[0] : '', dataUrl, size: dataUrl ? Math.round(dataUrl.length * 0.75) : 0, status: 'pending', uploadedAt: new Date() });
     }
   }
@@ -155,10 +185,16 @@ function parseVehiclePayload(body, existing = {}) {
   if (!Number.isFinite(currentKm) || currentKm < 0 || currentKm > 70000) throw Object.assign(new Error('Current kilometer must be between 0 and 70,000 km.'), { statusCode: 400 });
   const numeric = (value, fallback, label, min, max) => { const number = value === undefined || value === null || value === '' ? fallback : Number(value); if (!Number.isFinite(number) || number < min || number > max) throw Object.assign(new Error(`${label} must be a number between ${min} and ${max}.`), { statusCode: 400 }); return number; };
   const rawImage = body.vehiclePicture ?? body.image ?? existing.vehiclePicture ?? existing.image ?? '';
+<<<<<<< HEAD
   if (typeof rawImage === 'string' && rawImage.length > UPLOAD_LIMITS.photoBytes * 1.4) throw Object.assign(new Error(`Vehicle photo is too large. Please use an image smaller than ${UPLOAD_LIMITS.photoMb} MB.`), { statusCode: 400 });
   const image = String(rawImage || '').trim();
   if (!validImage(image)) throw Object.assign(new Error('Vehicle photo must be a valid image, upload path or HTTP(S) URL.'), { statusCode: 400 });
   const normalizedImage = normalizeMediaUrl(image, '');
+=======
+  if (typeof rawImage === 'string' && rawImage.length > 8 * 1024 * 1024) throw Object.assign(new Error('Vehicle photo is too large. Please use an image smaller than 5 MB.'), { statusCode: 400 });
+  const image = String(rawImage || '').trim();
+  if (!validImage(image)) throw Object.assign(new Error('Vehicle photo must be a valid image or HTTPS URL.'), { statusCode: 400 });
+>>>>>>> 509eae71e1063d5f8e8f372ee9e73ca177e5dcc1
   const availableFromRaw = body.availableFrom ?? body.available ?? existing.availableFrom;
   let availableFrom = existing.availableFrom;
   if (availableFromRaw) {
@@ -181,11 +217,18 @@ function parseVehiclePayload(body, existing = {}) {
     includedKm: numeric(body.includedKm, Number(existing.includedKm ?? 300), 'Included kilometres', 0, 100000),
     extraKmRate: numeric(body.extraKmRate, Number(existing.extraKmRate ?? 10), 'Extra kilometre charge', 0, 10000),
     additionalCharges: numeric(body.additionalCharges, Number(existing.additionalCharges ?? 0), 'Additional charges', 0, 1000000),
+<<<<<<< HEAD
     discountPercent: numeric(body.discountPercent, Number(existing.discountPercent ?? 0), 'Discount', 0, 100),
     taxPercent: numeric(body.taxPercent, Number(existing.taxPercent ?? 0), 'Tax / fees', 0, 100),
     availableFrom,
     image: normalizedImage || demoImages[0],
     vehiclePicture: normalizedImage || demoImages[0]
+=======
+    taxPercent: numeric(body.taxPercent, Number(existing.taxPercent ?? 0), 'Tax / fees', 0, 100),
+    availableFrom,
+    image: image || demoImages[0],
+    vehiclePicture: image || demoImages[0]
+>>>>>>> 509eae71e1063d5f8e8f372ee9e73ca177e5dcc1
   };
 }
 
@@ -289,7 +332,11 @@ router.get('/:id', optionalAuth, async (req, res) => {
     if (!vehicle) return res.status(404).json({ message: 'We could not find that vehicle. Please try again.' });
     const canViewPrivate = req.user && (req.user.role === 'admin' || String(vehicle.ownerId?._id || vehicle.ownerId) === String(req.user._id));
     if (!isPublicVehicle(vehicle) && !canViewPrivate) return res.status(404).json({ message: 'This vehicle is not currently available.' });
+<<<<<<< HEAD
     res.json(serialize(vehicle, { admin: canViewPrivate }));
+=======
+    res.json(serialize(vehicle, { admin: canViewPrivate && req.user.role === 'admin' }));
+>>>>>>> 509eae71e1063d5f8e8f372ee9e73ca177e5dcc1
   } catch (error) {
     res.status(500).json({ message: 'Vehicle details could not be loaded. Please try again.' });
   }
@@ -332,7 +379,11 @@ router.put('/:id', requireAuth, requireRole('owner', 'admin'), async (req, res) 
     const existing = await Vehicle.findById(req.params.id);
     if (!existing) return res.status(404).json({ message: 'We could not find that vehicle. Please try again.' });
     if (req.user.role !== 'admin' && String(existing.ownerId) !== String(req.user._id)) return res.status(403).json({ message: 'You can only edit your own vehicles.' });
+<<<<<<< HEAD
     if (req.user.role !== 'admin' && existing.status === 'removed') return res.status(403).json({ message: 'This vehicle has been removed. Contact an admin if you need it restored.' });
+=======
+    if (req.user.role !== 'admin' && existing.status === 'removed') return res.status(403).json({ message: 'This vehicle is deregistered. Contact an admin to reactivate it.' });
+>>>>>>> 509eae71e1063d5f8e8f372ee9e73ca177e5dcc1
     if (req.user.role !== 'admin' && Object.prototype.hasOwnProperty.call(req.body, 'numberPlate') && normalizePlate(req.body.numberPlate) !== normalizePlate(existing.numberPlate)) {
       return res.status(403).json({ message: 'Number plate changes require admin verification. Please contact support.' });
     }
@@ -388,6 +439,7 @@ router.put('/:id', requireAuth, requireRole('owner', 'admin'), async (req, res) 
 router.delete('/:id', requireAuth, requireRole('owner', 'admin'), async (req, res) => {
   if (!mongoose.isValidObjectId(req.params.id)) return res.status(400).json({ message: 'We could not find that vehicle. Please try again.' });
   try {
+<<<<<<< HEAD
     const vehicle = await Vehicle.findById(req.params.id).select('name ownerId').lean();
     if (!vehicle) return res.status(404).json({ message: 'We could not find that vehicle. Please try again.' });
     if (req.user.role !== 'admin' && String(vehicle.ownerId) !== String(req.user._id)) {
@@ -415,6 +467,23 @@ router.delete('/:id', requireAuth, requireRole('owner', 'admin'), async (req, re
   } catch (error) {
     console.error('[vehicles] delete failed:', error.message);
     res.status(500).json({ message: 'Vehicle could not be deleted. Please try again.' });
+=======
+    const vehicle = await Vehicle.findById(req.params.id);
+    if (!vehicle) return res.status(404).json({ message: 'We could not find that vehicle. Please try again.' });
+    if (req.user.role !== 'admin' && String(vehicle.ownerId) !== String(req.user._id)) return res.status(403).json({ message: 'You can only remove your own vehicles.' });
+    const reason = text(req.body?.reason || (req.user.role === 'admin' ? '' : 'Removed by owner'), 1000);
+    if (req.user.role === 'admin' && !reason) return res.status(400).json({ message: 'Enter a reason before deregistering this vehicle.' });
+    vehicle.status = 'removed';
+    vehicle.verified = false;
+    vehicle.availability = 'unavailable';
+    vehicle.removalReason = reason;
+    vehicle.removedAt = new Date();
+    await vehicle.save();
+    await syncOwnerCounters(vehicle.ownerId);
+    res.json({ message: 'Vehicle deregistered. Historical bookings were preserved.', vehicle: serialize(vehicle, { admin: true }) });
+  } catch (error) {
+    res.status(500).json({ message: 'Vehicle could not be deregistered. Please try again.' });
+>>>>>>> 509eae71e1063d5f8e8f372ee9e73ca177e5dcc1
   }
 });
 

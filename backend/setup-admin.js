@@ -16,7 +16,11 @@ const User = require('./models/User');
   if (!email) throw new Error('ADMIN_EMAIL is required.');
   let user = await User.findOne({ email });
   if (!user) user = await User.create({ name: process.env.ADMIN_NAME || 'REVEX Admin', email, passwordHash: await bcrypt.hash(password, 10), role: 'admin', isVerified: true });
+<<<<<<< HEAD
   else if (user.role !== 'admin') { user.role = 'admin'; user.isVerified = true; await user.save(); }
+=======
+  else { user.role = 'admin'; user.isVerified = true; await user.save(); }
+>>>>>>> 509eae71e1063d5f8e8f372ee9e73ca177e5dcc1
   console.log('Admin account is ready:', user.email);
   await mongoose.disconnect();
 })().catch(error => { console.error('Admin setup failed:', error.message); process.exit(1); });

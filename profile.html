@@ -1,4 +1,5 @@
 <!doctype html>
+<<<<<<< HEAD
 <html lang="en" data-theme="light">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
   <script>(function(){try{var k='revexTheme',s=localStorage.getItem(k);if(!s){s=window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}document.documentElement.setAttribute('data-theme',s);}catch(e){document.documentElement.setAttribute('data-theme','light');}})();</script><title>Profile | REVEX</title>  <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -12,6 +13,15 @@
   <div class="modal" id="successModal"><div class="modal-box"><div class="modal-icon">✓</div><h2>Success</h2><p></p><button class="btn btn-primary" onclick="closeModal()">Done</button></div></div>
   <footer class="footer"><div class="container"><p>© 2026 REVEX · Account</p></div></footer>
   <script src="js/theme.js"></script>
+=======
+<html lang="en">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Profile | REVEX</title><link rel="stylesheet" href="css/style.css"><link rel="stylesheet" href="css/navbar.css"><link rel="stylesheet" href="css/cards.css"><link rel="stylesheet" href="css/responsive.css"></head>
+<body>
+  <header class="container"><nav class="nav"><a class="brand" href="index.html">REV<span>EX</span></a><button class="menu-btn" aria-label="Open navigation">Menu</button><div class="nav-links"></div><div class="nav-actions"></div></nav></header>
+  <main class="container section"><span class="eyebrow">ACCOUNT</span><div class="profile-head" style="margin:15px 0 35px"><div class="avatar" id="avatar">R</div><div><h1 class="section-title" id="profileName" style="margin:0">REVEX User</h1><p id="profileMeta" style="margin:5px 0">Loading profile…</p></div></div><div id="profileNotice"></div><div class="feature-grid"><article class="detail-panel"><h3>Profile details</h3><p><b>Email</b><br><span id="profileEmail">-</span></p><p><b>Phone</b><br><span id="profilePhone">-</span></p><p><b>Role</b><br><span class="pill" id="profileRole">-</span></p><div id="ownerFields" style="display:none"><p><b>Vehicle approval status</b><br><span class="pill" id="profileCarStatus">-</span></p><p><b>Total vehicles</b><br><span id="profileCarsOnRent">-</span></p><p><b>Total earnings (90% share)</b><br><span id="profileEarnings">-</span></p><p><b>Rental activity</b><br><span id="profileRideStats">-</span></p></div></article><article class="detail-panel"><h3>Account actions</h3><p>Update your contact details or switch portal role.</p><form id="editProfileForm"><div class="field"><label for="editName">Full name</label><input id="editName" name="name" required></div><div class="field"><label for="editPhone">Phone</label><input id="editPhone" name="phone"></div><button class="btn btn-primary" style="width:100%;margin-top:12px">Save profile</button></form><hr><div id="roleSwitchBox"></div><button class="btn btn-outline" id="logoutBtn" style="width:100%;margin-top:12px">Log out</button></article></div><section class="detail-panel" id="notifications" style="margin-top:24px"><div class="panel-heading"><h3>Notifications</h3><button class="btn btn-outline btn-small" id="refreshNotifications" type="button">Refresh</button></div><div id="notificationList"><div class="empty">Loading notifications…</div></div></section></main>
+  <div class="modal" id="successModal"><div class="modal-box"><div class="modal-icon">✓</div><h2>Success</h2><p></p><button class="btn btn-primary" onclick="closeModal()">Done</button></div></div>
+  <footer class="footer"><div class="container"><p>© 2026 REVEX · Account</p></div></footer>
+>>>>>>> 509eae71e1063d5f8e8f372ee9e73ca177e5dcc1
   <script src="js/main.js"></script><script>
 document.addEventListener('DOMContentLoaded',async()=>{
   let user=getStoredUser(); if(!user){location.href='login.html';return;}
@@ -25,6 +35,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
   document.getElementById('refreshNotifications').onclick=loadNotifications; loadNotifications();
   document.getElementById('editProfileForm').addEventListener('submit',async event=>{event.preventDefault();try{const data=await api('/auth/edit-profile',{method:'POST',body:{name:document.getElementById('editName').value,phone:document.getElementById('editPhone').value}});setSession(data);showModal('Profile updated','Your contact details were saved.');document.getElementById('profileName').textContent=data.user.name;}catch(error){alert(error.message)}});
   document.getElementById('logoutBtn').onclick=()=>{clearSession();location.href='index.html'};
+<<<<<<< HEAD
   // ---- appearance (dark / light) ----
   const themeBox=document.getElementById('themeChoice');
   if(themeBox && window.RevaxTheme){
@@ -33,6 +44,8 @@ document.addEventListener('DOMContentLoaded',async()=>{
     window.RevaxTheme.onChange(paint);
     themeBox.addEventListener('click',event=>{const pick=event.target.closest('[data-theme-pick]');if(pick)window.RevaxTheme.set(pick.dataset.themePick);});
   }
+=======
+>>>>>>> 509eae71e1063d5f8e8f372ee9e73ca177e5dcc1
 });
 </script>
 </body></html>

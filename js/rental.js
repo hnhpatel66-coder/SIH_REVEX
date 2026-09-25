@@ -3,13 +3,22 @@ let currentQuote = null;
 let quoteRequest = 0;
 
 function vehicleImageMarkup(vehicle, className = '') {
+<<<<<<< HEAD
   const image = assetUrl(vehicle.image || vehicle.vehiclePicture || '');
   const fallback = `data:image/svg+xml;charset=UTF-8,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="800" height="480"><rect width="100%" height="100%" fill="#172c47"/><text x="50%" y="50%" text-anchor="middle" dominant-baseline="middle" font-family="Arial" font-size="28" fill="#cbd5e1">Vehicle Image Unavailable</text></svg>')}`;
+=======
+  const image = vehicle.image || vehicle.vehiclePicture || '';
+  const fallback = `data:image/svg+xml;charset=UTF-8,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="800" height="480"><rect width="100%" height="100%" fill="#172c47"/><text x="50%" y="50%" text-anchor="middle" dominant-baseline="middle" font-family="Arial" font-size="28" fill="#cbd5e1">REVEX Vehicle</text></svg>')}`;
+>>>>>>> 509eae71e1063d5f8e8f372ee9e73ca177e5dcc1
   return `<div class="vehicle-image ${className}"><img src="${escapeHtml(image)}" alt="${escapeHtml(vehicle.name || 'Vehicle')}" loading="lazy" onerror="this.onerror=null;this.src='${fallback}'"></div>`;
 }
 function vehicleCard(vehicle) {
   const category = vehicle.category || vehicle.type || 'Other'; const unit = vehicle.priceUnit || 'hour';
+<<<<<<< HEAD
   return `<article class="vehicle-card">${vehicleImageMarkup(vehicle)}<div class="card-body"><div class="card-top"><div><div class="badge-row"><span class="badge badge-category">${escapeHtml(category.toUpperCase())}</span><span class="badge badge-fuel">${escapeHtml(vehicle.fuelType || 'Petrol').toUpperCase()}</span></div><h3 class="card-title">${escapeHtml(vehicle.name || 'Vehicle')}</h3><p class="card-meta">${escapeHtml([vehicle.brand, vehicle.model].filter(Boolean).join(' ') || vehicle.name)} · ${escapeHtml(vehicle.location || '-')}</p></div><span class="star-rating" title="Rating">★ ${Number(vehicle.rating || 5).toFixed(1)}</span></div><div class="vehicle-facts"><span>${escapeHtml(vehicle.transmission || 'Manual')}</span><span>${Number(vehicle.currentKm || 0).toLocaleString('en-IN')} km</span><span>${vehicle.availability === 'unavailable' ? 'Unavailable' : 'Available'}</span></div><p class="card-price">${formatMoney(vehicle.price)} <small>/ ${escapeHtml(unit)}</small>${vehicle.discountPercent ? `<small> · ${vehicle.discountPercent}% off</small>` : ''}</p><div class="card-actions"><a class="btn btn-outline" href="vehicle-details.html?id=${encodeURIComponent(vehicle.id)}">View details</a><a class="btn btn-primary" href="vehicle-details.html?id=${encodeURIComponent(vehicle.id)}">Book now</a></div></div></article>`;
+=======
+  return `<article class="vehicle-card">${vehicleImageMarkup(vehicle)}<div class="card-body"><div class="card-top"><div><div class="badge-row"><span class="badge badge-category">${escapeHtml(category.toUpperCase())}</span><span class="badge badge-fuel">${escapeHtml(vehicle.fuelType || 'Petrol').toUpperCase()}</span></div><h3 class="card-title">${escapeHtml(vehicle.name || 'Vehicle')}</h3><p class="card-meta">${escapeHtml([vehicle.brand, vehicle.model].filter(Boolean).join(' ') || vehicle.name)} · ${escapeHtml(vehicle.location || '-')}</p></div><span class="star-rating" title="Rating">★ ${Number(vehicle.rating || 5).toFixed(1)}</span></div><div class="vehicle-facts"><span>${escapeHtml(vehicle.transmission || 'Manual')}</span><span>${Number(vehicle.currentKm || 0).toLocaleString('en-IN')} km</span><span>${vehicle.availability === 'unavailable' ? 'Unavailable' : 'Available'}</span></div><p class="card-price">${formatMoney(vehicle.price)} <small>/ ${escapeHtml(unit)}</small></p><div class="card-actions"><a class="btn btn-outline" href="vehicle-details.html?id=${encodeURIComponent(vehicle.id)}">View details</a><a class="btn btn-primary" href="vehicle-details.html?id=${encodeURIComponent(vehicle.id)}">Book now</a></div></div></article>`;
+>>>>>>> 509eae71e1063d5f8e8f372ee9e73ca177e5dcc1
 }
 async function renderVehicles(filters = {}) {
   const box = document.getElementById('vehicleResults'); if (!box) return;

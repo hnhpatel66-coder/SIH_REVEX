@@ -17,6 +17,7 @@ const bookingRoutes = require('./routes/bookings');
 const rideRoutes = require('./routes/rides');
 const adminRoutes = require('./routes/admin');
 const notificationRoutes = require('./routes/notifications');
+<<<<<<< HEAD
 const { corsOptions, blockPrivateStatic, jsonBodyFallback } = require('./utils/security');
 const { connectMongo: connectMongoShared } = require('./utils/db');
 
@@ -33,6 +34,19 @@ app.use(express.urlencoded({ extended: true, limit: '12mb' }));
 app.use(blockPrivateStatic);
 app.use(jsonBodyFallback());
 app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
+=======
+
+try { dns.setServers(['1.1.1.1', '8.8.8.8']); } catch {}
+const app = express();
+const PORT = Number(process.env.PORT || 5000);
+app.use(cors({ origin: process.env.FRONTEND_URL || true, credentials: true }));
+app.use(express.json({ limit: '12mb' }));
+app.use(express.urlencoded({ extended: true, limit: '12mb' }));
+app.use((req, res, next) => {
+  if (/^\/(backend|node_modules)(\/|$)|(^|\/)\.env/i.test(req.path)) return res.status(404).end();
+  next();
+});
+>>>>>>> 509eae71e1063d5f8e8f372ee9e73ca177e5dcc1
 app.use(express.static(path.join(__dirname, '..')));
 
 async function migrateLegacyData() {
@@ -70,6 +84,7 @@ async function migrateLegacyData() {
 }
 
 async function connectMongo() {
+<<<<<<< HEAD
   const result = await connectMongoShared();
   await migrateLegacyData();
   await reconcileEarningsCounters();
@@ -175,11 +190,61 @@ function reportConfig() {
   ];
   if (secret && secret.length < 32) lines.push('[config] WARNING: JWT_SECRET is shorter than 32 characters.');
   lines.forEach(line => console.log(line));
+=======
+  const atlas = process.env.MONGODB_URI;
+  const fallback = process.env.MONGODB_FALLBACK_URI || 'mongodb://127.0.0.1:27017/vroomy';
+  if (!atlas && !fallback) throw new Error('No MongoDB URI configured.');
+  const options = { serverSelectionTimeoutMS: 10000, connectTimeoutMS: 10000, socketTimeoutMS: 20000, family: 4 };
+  if (atlas) {
+    try {
+      await mongoose.connect(atlas, options); process.env.ACTIVE_MONGO_MODE = 'atlas';
+    } catch (error) {
+      console.warn('MongoDB Atlas connection failed:', error.message);
+      await mongoose.connect(fallback, { ...options, serverSelectionTimeoutMS: 7000 }); process.env.ACTIVE_MONGO_MODE = 'local';
+    }
+  } else {
+    await mongoose.connect(fallback, { ...options, serverSelectionTimeoutMS: 7000 }); process.env.ACTIVE_MONGO_MODE = 'local';
+  }
+  await migrateLegacyData();
+  try { await Promise.all([Vehicle.createIndexes(), Booking.createIndexes()]); } catch (error) { console.warn('Index sync deferred:', error.message); }
+>>>>>>> 509eae71e1063d5f8e8f372ee9e73ca177e5dcc1
 }
+
+async function ensureAdmin() {
+  const email = String(process.env.ADMIN_EMAIL || 'admin@vroomy.com').trim().toLowerCase();
+  const name = process.env.ADMIN_NAME || 'REVEX Admin';
+  let admin = await User.findOne({ email });
+  if (!admin) {
+    const password = process.env.ADMIN_PASSWORD;
+    if (!password) { console.warn('No admin exists yet. Set ADMIN_PASSWORD or use the admin setup page.'); return null; }
+    admin = await User.create({ name, email, passwordHash: await bcrypt.hash(password, 10), role: 'admin', isVerified: true });
+    console.log('Admin account created:', admin.email);
+  } else {
+    admin.name = name; admin.role = 'admin'; admin.isVerified = true; await admin.save();
+  }
+  return admin;
+}
+
+app.get('/api/health', (req, res) => res.json({ ok: true, database: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected', databaseName: mongoose.connection.name || null, mode: process.env.ACTIVE_MONGO_MODE || 'unknown' }));
+app.use('/api/auth', authRoutes);
+app.use('/api/vehicles', vehicleRoutes);
+app.use('/api/bookings', bookingRoutes);
+app.use('/api/rides', rideRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api/notifications', notificationRoutes);
+app.use((req, res) => res.status(404).json({ message: req.path.startsWith('/api/') ? 'API endpoint not found.' : 'Page not found.' }));
+app.use((error, req, res, next) => {
+  if (res.headersSent) return next(error);
+  const status = error.statusCode || error.status || (error.type === 'entity.too.large' ? 413 : 500);
+  res.status(status).json({ message: status === 413 ? 'Uploaded data is too large. Please compress the file and try again.' : (error.message || 'Unexpected server error.') });
+});
 
 async function start() {
   if (!process.env.JWT_SECRET) throw new Error('JWT_SECRET is missing. Put JWT_SECRET in backend/.env.');
+<<<<<<< HEAD
   reportConfig();
+=======
+>>>>>>> 509eae71e1063d5f8e8f372ee9e73ca177e5dcc1
   await connectMongo();
   await ensureAdmin();
   const server = app.listen(PORT, () => console.log(`REVEX running at http://localhost:${PORT}`));

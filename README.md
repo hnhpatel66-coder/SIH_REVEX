@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 # REVEX � Vehicle Rental & Shared Ride Platform
+=======
+﻿# REVEX — Vehicle Rental & Shared Ride Platform
+>>>>>>> 509eae71e1063d5f8e8f372ee9e73ca177e5dcc1
 
 REVEX is a full-stack vehicle rental and shared-ride application built with Node.js, Express, MongoDB and vanilla HTML/CSS/JavaScript. It has separate User, Owner and Admin portals with server-enforced role authorization.
 
@@ -22,6 +26,7 @@ REVEX is a full-stack vehicle rental and shared-ride application built with Node
 
 ```
 Revex_1_0/
+<<<<<<< HEAD
 +-- api/index.js                 # Vercel/serverless Express entry
 +-- backend/
 �   +-- server.js                # Local Express server
@@ -34,6 +39,20 @@ Revex_1_0/
 +-- *.html                       # Public, owner, user and admin pages
 +-- .env.example
 +-- vercel.json
+=======
+├── api/index.js                 # Vercel/serverless Express entry
+├── backend/
+│   ├── server.js                # Local Express server
+│   ├── models/                  # User, Vehicle, Booking, Agreement, Payment, Review, Notification, Ride
+│   ├── routes/                  # Auth, vehicles, bookings, rides, admin, notifications
+│   ├── middleware/auth.js
+│   └── utils/                   # Pricing and notification helpers
+├── css/                         # Shared responsive styles
+├── js/                          # Frontend modules
+├── *.html                       # Public, owner, user and admin pages
+├── .env.example
+└── vercel.json
+>>>>>>> 509eae71e1063d5f8e8f372ee9e73ca177e5dcc1
 ```
 
 ## Local setup
@@ -61,10 +80,17 @@ The server also reads `backend/.env` when that file exists. Do not commit either
 npm start
 ```
 
+<<<<<<< HEAD
 The local server runs at `http://localhost:5001` by default. Health check:
 
 ```text
 GET http://localhost:5001/api/health
+=======
+The local server runs at `http://localhost:5000` by default. Health check:
+
+```text
+GET http://localhost:5000/api/health
+>>>>>>> 509eae71e1063d5f8e8f372ee9e73ca177e5dcc1
 ```
 
 4. Optional demo data:
@@ -80,10 +106,14 @@ The seed script preserves existing records and only creates missing demo records
 | Variable | Required | Purpose |
 |---|---|---|
 | `MONGODB_URI` | Yes in Atlas deployments | MongoDB connection string |
+<<<<<<< HEAD
 | `MONGODB_DB_NAME` | No (default `vroomy`) | Database used when the URI does not name one. Without it Atlas silently uses `test`. |
 | `MONGODB_FALLBACK_URI` | No | Local MongoDB fallback (only used when `ALLOW_LOCAL_MONGO_FALLBACK=true`) |
 | `ALLOW_LOCAL_MONGO_FALLBACK` | No (default `false`) | Permits falling back to local MongoDB. Keep `false` in production so data is never written to localhost. |
 | `PORT` | No (default `5001`) | Express port |
+=======
+| `MONGODB_FALLBACK_URI` | No | Local MongoDB fallback |
+>>>>>>> 509eae71e1063d5f8e8f372ee9e73ca177e5dcc1
 | `JWT_SECRET` | Yes | Long random JWT signing secret |
 | `ADMIN_EMAIL` | Recommended | Bootstrap admin email |
 | `ADMIN_PASSWORD` | First run only | Bootstrap admin password |
@@ -101,6 +131,7 @@ Generate a secret with:
 node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"
 ```
 
+<<<<<<< HEAD
 ## Appearance: dark and light mode
 
 REVEX ships with two interchangeable themes. The light theme is the default
@@ -199,6 +230,8 @@ The backend also returns a `code` on errors (`VALIDATION_ERROR`,
 step-by-step trace of the registration flow without ever logging passwords,
 hashes, tokens or secrets.
 
+=======
+>>>>>>> 509eae71e1063d5f8e8f372ee9e73ca177e5dcc1
 ## Roles and permissions
 
 ### User
@@ -226,7 +259,11 @@ All privileged operations are protected by `requireAuth` and `requireRole` on th
 
 ## Rental flow
 
+<<<<<<< HEAD
 `Select vehicle ? Booking details ? Agreement & Terms ? Mandatory acceptance ? Payment ? Owner approval ? Booking confirmation`
+=======
+`Select vehicle → Booking details → Agreement & Terms → Mandatory acceptance → Payment → Owner approval → Booking confirmation`
+>>>>>>> 509eae71e1063d5f8e8f372ee9e73ca177e5dcc1
 
 The server recalculates the quote from the stored vehicle configuration. The client displays the same breakdown and the booking stores a pricing snapshot. A direct API request without `agreementAccepted: true` is rejected.
 
@@ -279,8 +316,11 @@ The server recalculates the quote from the stored vehicle configuration. The cli
 - `GET /api/admin/summary`
 - `GET /api/admin/owners`
 - `GET /api/admin/owners/:id`
+<<<<<<< HEAD
 - `GET /api/admin/agreements` (search `?search=`, filter `?status=`)
 - `GET /api/admin/agreements/:id`
+=======
+>>>>>>> 509eae71e1063d5f8e8f372ee9e73ca177e5dcc1
 - `GET /api/admin/vehicles`
 - `PATCH /api/admin/vehicles/:id/verify`
 - `DELETE /api/admin/vehicles/:id` (reason required)
@@ -288,7 +328,10 @@ The server recalculates the quote from the stored vehicle configuration. The cli
 - `PATCH /api/admin/bookings/:id/status`
 - `GET /api/admin/income`
 - `GET /api/admin/users`
+<<<<<<< HEAD
 - `POST /api/admin/create-admin`
+=======
+>>>>>>> 509eae71e1063d5f8e8f372ee9e73ca177e5dcc1
 - `DELETE /api/admin/users/:id` (soft deactivation)
 
 ## Data safety
@@ -297,6 +340,7 @@ Existing records are migrated conservatively. Legacy vehicle statuses are normal
 
 ## Verification performed
 
+<<<<<<< HEAD
 Automated checks (no database required):
 
 ```bash
@@ -345,6 +389,15 @@ real third-party credentials:
   the default and is fully tested.
 - **Cloud storage** � photos and documents are stored as base64 data URLs inside
   MongoDB. `uploads/` static serving is wired up for legacy path-based records.
+=======
+The project was checked with:
+
+```bash
+npm run check
+```
+
+The implementation was exercised against a connected MongoDB test database for registration, role authorization, duplicate plates, owner CRUD, document upload, admin approve/reject, public visibility, quote calculation, agreement enforcement, demo payment, owner requests, approval, review submission, notifications, account deactivation and cancelled-booking rebooking.
+>>>>>>> 509eae71e1063d5f8e8f372ee9e73ca177e5dcc1
 
 ## Deployment
 

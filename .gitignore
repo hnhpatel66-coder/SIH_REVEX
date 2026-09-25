@@ -2,18 +2,24 @@
 node_modules/
 backend/node_modules/
 
+<<<<<<< HEAD
 # Uploaded media (legacy path-based records)
 uploads/
 
+=======
+>>>>>>> 509eae71e1063d5f8e8f372ee9e73ca177e5dcc1
 # Environment files
 .env
 .env.local
 .env.*.local
 backend/.env
 
+<<<<<<< HEAD
 # Database backups (contain user records and password hashes - never commit)
 backups/
 
+=======
+>>>>>>> 509eae71e1063d5f8e8f372ee9e73ca177e5dcc1
 # Build outputs
 dist/
 build/

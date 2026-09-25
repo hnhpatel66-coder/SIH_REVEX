@@ -102,6 +102,12 @@ router.post('/register', rateLimit(15 * 60 * 1000, 10), async (req, res) => {
       trace('rejected', 'invalid email format');
       return res.status(400).json({ success: false, code: 'VALIDATION_ERROR', message: 'Enter a valid email address.' });
     }
+    if (String(password).length < 8) {
+      return res.status(400).json({ message: 'Password must be at least 8 characters.' });
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email).trim())) {
+      return res.status(400).json({ message: 'Enter a valid email address.' });
+    }
 
     const normalizedEmail = email.toLowerCase().trim();
     trace('validation passed');
@@ -128,6 +134,7 @@ router.post('/register', rateLimit(15 * 60 * 1000, 10), async (req, res) => {
     trace('jwt issued', `${Date.now() - startedAt}ms`);
     res.status(201).json({ success: true, token, user: publicUser(user) });
   } catch (e) {
+<<<<<<< HEAD
     // Never surface a raw driver error to the user; log it for the operator.
     console.error('[register] failed:', e.name, e.message);
     if (e.code === 11000) return res.status(409).json({ success: false, code: 'EMAIL_EXISTS', message: 'An account with this email already exists.' });
@@ -136,6 +143,10 @@ router.post('/register', rateLimit(15 * 60 * 1000, 10), async (req, res) => {
       return res.status(503).json({ success: false, code: 'DATABASE_UNAVAILABLE', message: 'Registration is temporarily unavailable. Please try again shortly.' });
     }
     res.status(500).json({ success: false, code: 'REGISTRATION_FAILED', message: 'Registration failed. Please try again.' });
+=======
+    if (e.code === 11000) return res.status(409).json({ message: 'An account with this email already exists.' });
+    res.status(500).json({ message: 'Registration failed. Please check the form and try again.' });
+>>>>>>> 509eae71e1063d5f8e8f372ee9e73ca177e5dcc1
   }
 });
 
@@ -161,6 +172,7 @@ router.post('/forgot-password', rateLimit(15 * 60 * 1000, 8), async (req, res) =
     // A mail provider can be added without changing the API. Never expose a
     // reset token in production; the local demo opt-in is explicit.
     const demoResetEnabled = process.env.NODE_ENV !== 'production' && process.env.ENABLE_DEMO_RESET === 'true';
+<<<<<<< HEAD
     const delivery = await deliverResetEmail(user, resetToken);
     if (!delivery.sent && !demoResetEnabled) {
       // Misconfiguration is an operator problem, surfaced in the server log --
@@ -168,6 +180,8 @@ router.post('/forgot-password', rateLimit(15 * 60 * 1000, 8), async (req, res) =
       console.warn('Password reset requested but no SMTP transport is configured. Set SMTP_HOST/SMTP_USER/SMTP_PASS/SMTP_FROM in .env.');
       return res.json(generic);
     }
+=======
+>>>>>>> 509eae71e1063d5f8e8f372ee9e73ca177e5dcc1
     res.json({
       message: 'If an account with that email exists, a reset link has been sent.',
       ...(demoResetEnabled ? { resetToken, resetLink: `reset-password.html?token=${resetToken}` } : {})
@@ -185,9 +199,12 @@ router.post('/reset-password', rateLimit(15 * 60 * 1000, 10), async (req, res) =
     if (!token || !pwd) {
       return res.status(400).json({ message: 'Token and new password are required.' });
     }
+<<<<<<< HEAD
     if (confirmPassword !== undefined && String(confirmPassword) !== String(pwd)) {
       return res.status(400).json({ message: 'Passwords do not match.' });
     }
+=======
+>>>>>>> 509eae71e1063d5f8e8f372ee9e73ca177e5dcc1
     if (String(pwd).length < 8) {
       return res.status(400).json({ message: 'Password must be at least 8 characters.' });
     }

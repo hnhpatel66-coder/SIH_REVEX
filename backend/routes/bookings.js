@@ -12,7 +12,10 @@ const MonthlyBookingCounter = require('../models/MonthlyBookingCounter');
 const { requireAuth, requireRole } = require('../middleware/auth');
 const { calculateRentalQuote } = require('../utils/pricing');
 const { notifyUser } = require('../utils/notify');
+<<<<<<< HEAD
 const { applyEarningsDelta, hasEarned } = require('../utils/earnings');
+=======
+>>>>>>> 509eae71e1063d5f8e8f372ee9e73ca177e5dcc1
 
 const router = express.Router();
 const TERMS_VERSION = 'revex-v3';
@@ -56,16 +59,23 @@ function quoteFromBooking(booking) {
     extraKmRate: Number(booking.extraKmRate || 0),
     extraKilometerCharges: Number(booking.extraKilometerCharges || 0),
     additionalCharges: Number(booking.additionalCharges || 0),
+<<<<<<< HEAD
     discountPercent: Number(booking.discountPercent || 0),
     discountAmount: Number(booking.discountAmount || 0),
     discountedSubtotal: Number(booking.discountedSubtotal ?? (booking.subtotal || 0)),
+=======
+>>>>>>> 509eae71e1063d5f8e8f372ee9e73ca177e5dcc1
     taxPercent: Number(booking.taxPercent || 0),
     taxFees: Number(booking.taxFees || 0),
     subtotal: Number(booking.subtotal || 0),
     grandTotal: Number(booking.grandTotal ?? booking.totalAmount ?? 0),
     paidAmount: Number(booking.paidAmount ?? (booking.paymentStatus === 'paid' ? (booking.grandTotal ?? booking.totalAmount ?? 0) : 0)),
     remainingAmount: Number(booking.remainingAmount ?? (booking.paymentStatus === 'paid' ? 0 : (booking.grandTotal ?? booking.totalAmount ?? 0))),
+<<<<<<< HEAD
     pricingVersion: booking.pricingSnapshot?.pricingVersion || 'revex-pricing-v3'
+=======
+    pricingVersion: booking.pricingSnapshot?.pricingVersion || 'revex-pricing-v2'
+>>>>>>> 509eae71e1063d5f8e8f372ee9e73ca177e5dcc1
   };
 }
 
@@ -136,7 +146,11 @@ async function createAgreement(bookingId, { legacy = false } = {}) {
     pickupDate: booking.startDate, returnDate: booking.endDate, pickupLocation: vehicle.location || '', returnLocation: vehicle.location || '',
     hours: booking.hours || 0, estimatedKm: booking.estimatedKm || 0,
     rentalAmount: booking.grandTotal ?? booking.totalAmount ?? 0,
+<<<<<<< HEAD
     baseAmount: booking.baseAmount || 0, additionalCharges: booking.additionalCharges || 0, discountPercent: booking.discountPercent || 0, discountAmount: booking.discountAmount || 0, extraKilometerCharges: booking.extraKilometerCharges || 0,
+=======
+    baseAmount: booking.baseAmount || 0, additionalCharges: booking.additionalCharges || 0, extraKilometerCharges: booking.extraKilometerCharges || 0,
+>>>>>>> 509eae71e1063d5f8e8f372ee9e73ca177e5dcc1
     taxFees: booking.taxFees || 0, grandTotal: booking.grandTotal ?? booking.totalAmount ?? 0, pricingSnapshot: booking.pricingSnapshot || quoteFromBooking(booking),
     paymentStatus: paymentLabel(booking.paymentStatus).toUpperCase(),
     agreementStatus: status, acceptedByUser: userAccepted, acceptedAt: userAccepted ? (existing?.acceptedAt || booking.agreementAcceptedAt || new Date()) : null,
@@ -157,6 +171,7 @@ async function createAgreement(bookingId, { legacy = false } = {}) {
 // ASCII first. Without this, a name such as "Ananya" or a rupee sign produced
 // an unreadable PDF and desynchronised the cross-reference table.
 function escapePdfText(value) {
+<<<<<<< HEAD
   const text = String(value ?? '')
     .replace(/[\u20B9]/g, 'Rs.')
     .replace(/[\u2018\u2019]/g, "'")
@@ -171,6 +186,9 @@ function escapePdfText(value) {
     .replace(/\\/g, '\\\\')
     .replace(/\(/g, '\\(')
     .replace(/\)/g, '\\)');
+=======
+  return String(value ?? '').replace(/\\/g, '\\\\').replace(/\(/g, '\\(').replace(/\)/g, '\\)');
+>>>>>>> 509eae71e1063d5f8e8f372ee9e73ca177e5dcc1
 }
 
 function makeAgreementPdf(agreement) {
@@ -182,7 +200,11 @@ function makeAgreementPdf(agreement) {
     'BOOKING DETAILS', `Rental start: ${date(agreement.pickupDate)}`, `Return: ${date(agreement.returnDate)}`, `Rental duration: ${agreement.hours || 0} hour(s)`, `Pickup: ${agreement.pickupLocation || '-'}`,
     '', 'VEHICLE', `Vehicle: ${agreement.vehicleName}`, `Category: ${agreement.vehicleCategory || agreement.vehicleType || '-'}`, `Fuel: ${agreement.vehicleFuelType || '-'}`, `Registration: ${agreement.vehicleNumberPlate || 'As listed'}`, '',
     'RENTER', `${agreement.renterName} | ${agreement.renterEmail} | ${agreement.renterPhone || ''}`, '', 'OWNER', `${agreement.ownerName} | ${agreement.ownerEmail} | ${agreement.ownerPhone || ''}`, '',
+<<<<<<< HEAD
     'PAYMENT BREAKDOWN', `Base rental amount: Rs. ${agreement.baseAmount || agreement.rentalAmount || 0}`, `Additional charges: Rs. ${agreement.additionalCharges || 0}`, `Discount: Rs. ${agreement.discountAmount || 0}`, `Extra kilometre charges: Rs. ${agreement.extraKilometerCharges || 0}`, `Tax / fees: Rs. ${agreement.taxFees || 0}`, `Grand total: Rs. ${agreement.grandTotal || agreement.rentalAmount || 0}`, `Payment status: ${agreement.paymentStatus}`, '',
+=======
+    'PAYMENT BREAKDOWN', `Base rental amount: Rs. ${agreement.baseAmount || agreement.rentalAmount || 0}`, `Additional charges: Rs. ${agreement.additionalCharges || 0}`, `Extra kilometre charges: Rs. ${agreement.extraKilometerCharges || 0}`, `Tax / fees: Rs. ${agreement.taxFees || 0}`, `Grand total: Rs. ${agreement.grandTotal || agreement.rentalAmount || 0}`, `Payment status: ${agreement.paymentStatus}`, '',
+>>>>>>> 509eae71e1063d5f8e8f372ee9e73ca177e5dcc1
     ...TERMS.flatMap(item => [item[0].toUpperCase(), item[1], '']),
     `Renter acceptance: ${agreement.acceptedByUser ? 'YES' : 'PENDING'}`, `Owner acceptance: ${agreement.acceptedByOwner ? 'YES' : 'PENDING'}`, '', 'Generated by REVEX from the booking record.'
   ];
@@ -194,6 +216,7 @@ function makeAgreementPdf(agreement) {
   const content = ['BT', '/F1 16 Tf', '48 760 Td'];
   wrapped.forEach((line, index) => { if (index) content.push('0 -20 Td'); content.push(`(${escapePdfText(line)}) Tj`); });
   content.push('ET');
+<<<<<<< HEAD
   // The stream length and the xref offsets must all be measured in the SAME
   // encoding the buffer is written with (latin1), otherwise strict readers
   // reject the file whenever the content is multi-byte.
@@ -212,6 +235,21 @@ function makeAgreementPdf(agreement) {
   for (let index = 1; index < offsets.length; index++) pdf += `${String(offsets[index]).padStart(10, '0')} 00000 n \n`;
   pdf += `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF`;
   return Buffer.from(pdf, 'latin1');
+=======
+  const objects = [
+    '<< /Type /Catalog /Pages 2 0 R >>', '<< /Type /Pages /Kids [3 0 R] /Count 1 >>',
+    '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>',
+    '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>', `<< /Length ${Buffer.byteLength(content.join('\n'))} >>\nstream\n${content.join('\n')}\nendstream`
+  ];
+  let pdf = '%PDF-1.4\n';
+  const offsets = [0];
+  objects.forEach((object, index) => { offsets[index + 1] = Buffer.byteLength(pdf); pdf += `${index + 1} 0 obj\n${object}\nendobj\n`; });
+  const xref = Buffer.byteLength(pdf);
+  pdf += `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`;
+  for (let index = 1; index < offsets.length; index++) pdf += `${String(offsets[index]).padStart(10, '0')} 00000 n \n`;
+  pdf += `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF`;
+  return Buffer.from(pdf, 'binary');
+>>>>>>> 509eae71e1063d5f8e8f372ee9e73ca177e5dcc1
 }
 
 function razorpayConfigured() { return Boolean(process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET); }
@@ -258,7 +296,10 @@ router.post('/', requireAuth, async (req, res) => {
   const vehicle = await Vehicle.findById(vehicleId);
   if (!vehicle || !vehicle.verified || !['approved', 'available'].includes(vehicle.status) || vehicle.availability === 'unavailable') return res.status(404).json({ message: 'Vehicle is not available for booking.' });
   if (vehicle.availableFrom && new Date(vehicle.availableFrom) > start) return res.status(404).json({ message: 'This vehicle is not available at the selected start time.' });
+<<<<<<< HEAD
   if (String(vehicle.ownerId) === String(req.user._id)) return res.status(403).json({ message: 'You cannot book your own vehicle.' });
+=======
+>>>>>>> 509eae71e1063d5f8e8f372ee9e73ca177e5dcc1
   const overlap = await Booking.findOne({ vehicleId, status: { $in: ['pending', 'payment_pending', 'pending_owner', 'confirmed', 'approved'] }, startDate: { $lt: end }, endDate: { $gt: start } });
   if (overlap) return res.status(409).json({ message: 'Vehicle is already booked for part of this time.' });
   let quote;
@@ -276,7 +317,11 @@ router.post('/', requireAuth, async (req, res) => {
       userId: req.user._id, vehicleId: vehicle._id, ownerId: vehicle.ownerId, startDate: start, endDate: end, estimatedKm: km,
       panNumber: pan, drivingLicenseNumber: drivingLicense, paymentMethod: 'demo', hours: quote.durationHours,
       price: quote.price, priceUnit: quote.priceUnit, billableUnits: quote.billableUnits, includedKm: quote.includedKm, baseAmount: quote.baseRentalAmount, extraKm: quote.extraKm, extraKmRate: quote.extraKmRate,
+<<<<<<< HEAD
       extraKilometerCharges: quote.extraKilometerCharges, additionalCharges: quote.additionalCharges, discountPercent: quote.discountPercent, discountAmount: quote.discountAmount, discountedSubtotal: quote.discountedSubtotal, taxPercent: quote.taxPercent, taxFees: quote.taxFees,
+=======
+      extraKilometerCharges: quote.extraKilometerCharges, additionalCharges: quote.additionalCharges, taxPercent: quote.taxPercent, taxFees: quote.taxFees,
+>>>>>>> 509eae71e1063d5f8e8f372ee9e73ca177e5dcc1
       subtotal: quote.subtotal, grandTotal: quote.grandTotal, totalAmount: quote.grandTotal, paidAmount: 0, remainingAmount: quote.grandTotal,
       pricingSnapshot: quote, monthKey: key, monthlySlot: slot, status: 'payment_pending', paymentStatus: 'pending', agreementAcceptedAt: new Date()
     });
@@ -361,6 +406,7 @@ router.post('/:id/cancel', requireAuth, async (req, res) => {
   if (!mongoose.isValidObjectId(req.params.id)) return res.status(400).json({ message: 'Booking not found.' });
   const booking = await Booking.findOne({ _id: req.params.id, userId: req.user._id, status: { $in: ['pending', 'payment_pending', 'pending_owner', 'confirmed'] } });
   if (!booking) return res.status(404).json({ message: 'This booking cannot be cancelled.' });
+<<<<<<< HEAD
   // A confirmed booking already credited the owner, so cancel must reverse it.
   const earnedBeforeCancel = hasEarned(booking.status) && booking.paymentStatus === 'paid';
   booking.status = 'cancelled'; await booking.save(); await releaseBookingSlot(booking);
@@ -370,6 +416,10 @@ router.post('/:id/cancel', requireAuth, async (req, res) => {
   } else {
     await notifyUser(booking.ownerId, { type: 'booking', title: 'Booking cancelled', message: `The renter cancelled booking ${booking._id}.`, data: { bookingId: booking._id.toString() } });
   }
+=======
+  booking.status = 'cancelled'; await booking.save(); await releaseBookingSlot(booking);
+  await notifyUser(booking.ownerId, { type: 'booking', title: 'Booking cancelled', message: `The renter cancelled booking ${booking._id}.`, data: { bookingId: booking._id.toString() } });
+>>>>>>> 509eae71e1063d5f8e8f372ee9e73ca177e5dcc1
   res.json({ success: true, message: booking.paymentStatus === 'paid' ? 'Booking cancelled. Any refund must follow the payment provider process.' : 'Booking cancelled.', booking: { ...booking.toObject(), id: booking._id.toString() } });
 });
 
@@ -461,7 +511,13 @@ router.post('/:id/owner-decision', requireAuth, requireRole('owner', 'admin'), a
       await agreement.save();
     }
     if (decision === 'approve') {
+<<<<<<< HEAD
       await applyEarningsDelta(updated, 1);
+=======
+      const ownerShare = Math.round((updated.grandTotal || updated.totalAmount || 0) * 0.9);
+      await Vehicle.findByIdAndUpdate(updated.vehicleId, { $inc: { totalEarnings: ownerShare, totalRentals: 1 } });
+      await User.findByIdAndUpdate(updated.ownerId || booking.vehicleId?.ownerId, { $inc: { ownerEarnings: ownerShare } });
+>>>>>>> 509eae71e1063d5f8e8f372ee9e73ca177e5dcc1
     } else {
       await releaseBookingSlot(updated);
     }
@@ -485,6 +541,7 @@ router.get('/my-agreements', requireAuth, async (req, res) => {
   } catch (error) { res.status(500).json({ message: 'Your agreements could not be loaded.' }); }
 });
 
+<<<<<<< HEAD
 // Note: admin booking listings live in routes/admin.js (GET /api/admin/bookings).
 // Do not re-add a duplicate admin route here.
 router.get('/:id/agreement/details', requireAuth, async (req, res) => {
@@ -556,4 +613,79 @@ router.get('/:id', requireAuth, async (req, res) => {
   res.json({ ...booking, id: idOf(booking._id), quote: quoteFromBooking(booking) });
 });
 
+=======
+router.get('/admin/all', requireAuth, requireRole('admin'), async (req, res) => {
+  const bookings = await Booking.find({}).populate('userId', 'name email').populate('vehicleId', 'name type category location').sort({ createdAt: -1 }).lean();
+  res.json(bookings.map(booking => ({ ...booking, id: idOf(booking._id) })));
+});
+
+router.get('/:id/agreement/details', requireAuth, async (req, res) => {
+  if (!mongoose.isValidObjectId(req.params.id)) return res.status(400).json({ message: 'Booking not found.' });
+  try {
+    const booking = await Booking.findById(req.params.id).populate('userId', 'name email phone').populate({ path: 'vehicleId', select: 'name type category location price priceUnit numberPlate ownerId fuelType currentKm', populate: { path: 'ownerId', select: 'name email phone' } });
+    if (!booking) return res.status(404).json({ message: 'Booking not found.' });
+    const renterId = idOf(booking.userId?._id || booking.userId);
+    const ownerId = idOf(booking.vehicleId?.ownerId?._id || booking.vehicleId?.ownerId);
+    const isRenter = renterId === idOf(req.user._id); const isOwner = ownerId === idOf(req.user._id);
+    if (req.user.role !== 'admin' && !isRenter && !isOwner) return res.status(403).json({ message: 'You do not have permission to view this agreement.' });
+    const agreement = await createAgreement(booking._id);
+    res.json({ ...agreement.toObject(), id: agreement._id.toString(), bookingId: idOf(booking._id), booking: { id: idOf(booking._id), bookingDate: booking.createdAt, startDate: booking.startDate, endDate: booking.endDate, hours: booking.hours, estimatedKm: booking.estimatedKm, pickupLocation: booking.vehicleId?.location || '', returnLocation: booking.vehicleId?.location || '', quote: quoteFromBooking(booking), paymentStatus: booking.paymentStatus, status: booking.status, paymentMethod: booking.paymentMethod }, renter: { name: booking.userId?.name || '', email: booking.userId?.email || '', phone: booking.userId?.phone || '' }, owner: { name: booking.vehicleId?.ownerId?.name || '', email: booking.vehicleId?.ownerId?.email || '', phone: booking.vehicleId?.ownerId?.phone || '' }, vehicle: { name: booking.vehicleId?.name || '', type: booking.vehicleId?.type || '', category: booking.vehicleId?.category || '', fuelType: booking.vehicleId?.fuelType || '', location: booking.vehicleId?.location || '', price: booking.vehicleId?.price || 0, numberPlate: booking.vehicleId?.numberPlate || '' }, canOwnerAccept: Boolean((isOwner || req.user.role === 'admin') && !agreement.acceptedByOwner), canUserSign: Boolean((isRenter || req.user.role === 'admin') && !agreement.acceptedByUser), fullySigned: Boolean(agreement.acceptedByUser && agreement.acceptedByOwner) });
+  } catch (error) { res.status(500).json({ message: error.message || 'Agreement could not be loaded.' }); }
+});
+
+router.post('/:id/agreement/owner-accept', requireAuth, requireRole('owner', 'admin'), async (req, res) => {
+  if (!mongoose.isValidObjectId(req.params.id)) return res.status(400).json({ message: 'Booking not found.' });
+  try {
+    const booking = await Booking.findById(req.params.id).populate('vehicleId', 'ownerId');
+    if (!booking) return res.status(404).json({ message: 'Booking not found.' });
+    if (req.user.role !== 'admin' && idOf(booking.vehicleId?.ownerId) !== idOf(req.user._id)) return res.status(403).json({ message: 'Only the vehicle owner can accept this agreement.' });
+    const agreement = await createAgreement(booking._id);
+    agreement.acceptedByOwner = true; agreement.ownerAcceptedAt = new Date(); agreement.agreementStatus = agreement.acceptedByUser ? 'approved' : 'pending_user'; await agreement.save();
+    if (booking.status === 'pending_owner' && booking.paymentStatus === 'paid') {
+      const confirmed = await Booking.findOneAndUpdate({ _id: booking._id, status: 'pending_owner' }, { $set: { status: 'confirmed', ownerDecision: { decision: 'approved', reason: '', decidedAt: new Date(), decidedBy: req.user._id } } }, { returnDocument: 'after' });
+      if (confirmed) {
+        const ownerShare = Math.round((confirmed.grandTotal || confirmed.totalAmount || 0) * 0.9);
+        await Vehicle.findByIdAndUpdate(confirmed.vehicleId, { $inc: { totalEarnings: ownerShare, totalRentals: 1 } });
+        await User.findByIdAndUpdate(confirmed.ownerId || booking.vehicleId?.ownerId, { $inc: { ownerEarnings: ownerShare } });
+        await notifyUser(confirmed.userId, { type: 'booking', title: 'Booking approved', message: 'The owner approved your rental request.', data: { bookingId: confirmed._id.toString() } });
+      }
+    }
+    res.json({ success: true, message: 'Owner agreement accepted.', agreement: { ...agreement.toObject(), id: agreement._id.toString() }, fullySigned: agreement.acceptedByUser && agreement.acceptedByOwner });
+  } catch (error) { res.status(500).json({ message: 'Owner acceptance could not be saved.' }); }
+});
+
+router.post('/:id/agreement/user-sign', requireAuth, async (req, res) => {
+  if (!mongoose.isValidObjectId(req.params.id)) return res.status(400).json({ message: 'Booking not found.' });
+  try {
+    const booking = await Booking.findById(req.params.id);
+    if (!booking) return res.status(404).json({ message: 'Booking not found.' });
+    if (idOf(booking.userId) !== idOf(req.user._id) && req.user.role !== 'admin') return res.status(403).json({ message: 'Only the renter can sign this agreement.' });
+    const agreement = await createAgreement(booking._id);
+    agreement.acceptedByUser = true; agreement.acceptedAt = new Date(); agreement.agreementStatus = agreement.acceptedByOwner ? 'approved' : 'pending_owner'; await agreement.save();
+    booking.agreementAcceptedAt = booking.agreementAcceptedAt || new Date(); await booking.save();
+    res.json({ success: true, message: 'Renter agreement accepted.', agreement: { ...agreement.toObject(), id: agreement._id.toString() }, fullySigned: agreement.acceptedByUser && agreement.acceptedByOwner });
+  } catch (error) { res.status(500).json({ message: 'Renter acceptance could not be saved.' }); }
+});
+
+router.get('/:id/agreement', requireAuth, async (req, res) => {
+  if (!mongoose.isValidObjectId(req.params.id)) return res.status(400).json({ message: 'Booking not found.' });
+  try {
+    const booking = await Booking.findById(req.params.id).populate('vehicleId', 'ownerId');
+    if (!booking) return res.status(404).json({ message: 'Booking not found.' });
+    const isRenter = idOf(booking.userId) === idOf(req.user._id); const isOwner = idOf(booking.vehicleId?.ownerId) === idOf(req.user._id);
+    if (req.user.role !== 'admin' && !isRenter && !isOwner) return res.status(403).json({ message: 'You do not have permission to download this agreement.' });
+    const agreement = await createAgreement(booking._id);
+    res.setHeader('Content-Type', 'application/pdf'); res.setHeader('Content-Disposition', `attachment; filename="${agreement.agreementId}.pdf"`); res.send(makeAgreementPdf(agreement.toObject()));
+  } catch (error) { res.status(500).json({ message: 'Agreement PDF could not be generated.' }); }
+});
+
+router.get('/:id', requireAuth, async (req, res) => {
+  if (!mongoose.isValidObjectId(req.params.id)) return res.status(400).json({ message: 'Booking not found.' });
+  const booking = await Booking.findById(req.params.id).populate('vehicleId').lean();
+  if (!booking) return res.status(404).json({ message: 'Booking not found.' });
+  if (req.user.role !== 'admin' && idOf(booking.userId) !== idOf(req.user._id) && idOf(booking.vehicleId?.ownerId) !== idOf(req.user._id)) return res.status(403).json({ message: 'You do not have permission to view this booking.' });
+  res.json({ ...booking, id: idOf(booking._id), quote: quoteFromBooking(booking) });
+});
+
+>>>>>>> 509eae71e1063d5f8e8f372ee9e73ca177e5dcc1
 module.exports = router;

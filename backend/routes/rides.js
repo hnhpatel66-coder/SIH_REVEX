@@ -5,7 +5,10 @@ const Ride = require('../models/Ride');
 const RideBooking = require('../models/RideBooking');
 const { requireAuth, optionalAuth, requireRole } = require('../middleware/auth');
 const { notifyUser } = require('../utils/notify');
+<<<<<<< HEAD
 const { normalizeMediaUrl } = require('../utils/media');
+=======
+>>>>>>> 509eae71e1063d5f8e8f372ee9e73ca177e5dcc1
 
 const router = express.Router();
 
@@ -14,19 +17,29 @@ function idOf(value) {
   return String(typeof value === 'object' ? value._id || value.id : value);
 }
 
+<<<<<<< HEAD
 function serializeRide(ride, { includePrivate = false } = {}) {
   const value = ride && typeof ride.toObject === 'function' ? ride.toObject() : { ...(ride || {}) };
   const status = value.status === 'available' ? 'approved' : (value.status || 'pending');
   const result = { ...value, id: idOf(value._id || value.id), driverId: idOf(value.driverId), vehicleImage: normalizeMediaUrl(value.vehicleImage, ''), status, statusLabel: ({ pending: 'Pending Approval', approved: 'Available', rejected: 'Rejected', removed: 'Removed' })[status] || 'Pending Approval' };
   if (!includePrivate) { delete result.driverPhone; delete result.driverId; }
   return result;
+=======
+function serializeRide(ride) {
+  const value = ride && typeof ride.toObject === 'function' ? ride.toObject() : { ...(ride || {}) };
+  const status = value.status === 'available' ? 'approved' : (value.status || 'pending');
+  return { ...value, id: idOf(value._id || value.id), driverId: idOf(value.driverId), status, statusLabel: ({ pending: 'Pending Approval', approved: 'Available', rejected: 'Rejected', removed: 'Removed' })[status] || 'Pending Approval' };
+>>>>>>> 509eae71e1063d5f8e8f372ee9e73ca177e5dcc1
 }
 
 function imageValue(value) {
   if (typeof value !== 'string' || !value) return '';
   if (/^data:image\/(png|jpeg|jpg|webp|gif);base64,/i.test(value)) return value;
   if (/^https?:\/\//i.test(value)) return value;
+<<<<<<< HEAD
   if (/^\/?(uploads|images|assets)\//i.test(value)) return normalizeMediaUrl(value, '');
+=======
+>>>>>>> 509eae71e1063d5f8e8f372ee9e73ca177e5dcc1
   return '';
 }
 
@@ -44,6 +57,7 @@ router.get('/', optionalAuth, async (req, res) => {
     } else if (requestedStatus !== 'all') {
       query.date = { $gte: today };
     }
+<<<<<<< HEAD
     // Mirrors GET /vehicles: the public "approved" filter is allowed for anyone,
     // while non-public statuses (pending/rejected/removed) stay admin-only.
     const publicStatuses = ['approved', 'available', ''];
@@ -52,12 +66,21 @@ router.get('/', optionalAuth, async (req, res) => {
       query.status = { $nin: ['removed'] };
     } else if (!publicStatuses.includes(requestedStatus) && req.user?.role !== 'admin') {
       return res.status(403).json({ message: 'Admin access is required to view other ride statuses.' });
+=======
+    if (requestedStatus && requestedStatus !== 'all' && req.user?.role !== 'admin') return res.status(403).json({ message: 'Admin access is required to view other ride statuses.' });
+    if (requestedStatus === 'all') {
+      if (req.user?.role !== 'admin') return res.status(403).json({ message: 'Admin access is required.' });
+>>>>>>> 509eae71e1063d5f8e8f372ee9e73ca177e5dcc1
     } else {
       query.status = { $in: ['approved', 'available'] };
       query.verified = true;
     }
     const rides = await Ride.find(query).sort({ date: 1, time: 1 }).lean();
+<<<<<<< HEAD
     res.json(rides.map(ride => serializeRide(ride, { includePrivate: req.user?.role === 'admin' || req.user?.role === 'owner' })));
+=======
+    res.json(rides.map(serializeRide));
+>>>>>>> 509eae71e1063d5f8e8f372ee9e73ca177e5dcc1
   } catch (error) {
     res.status(500).json({ message: 'Rides could not be loaded. Please try again.' });
   }
@@ -74,7 +97,11 @@ router.get('/bookings/my', requireAuth, async (req, res) => {
 
 router.get('/mine', requireAuth, requireRole('owner', 'admin'), async (req, res) => {
   const rides = await Ride.find(req.user.role === 'admin' && req.query.all === 'true' ? {} : { driverId: req.user._id }).sort({ date: 1 }).lean();
+<<<<<<< HEAD
   res.json(rides.map(ride => serializeRide(ride, { includePrivate: true })));
+=======
+  res.json(rides.map(serializeRide));
+>>>>>>> 509eae71e1063d5f8e8f372ee9e73ca177e5dcc1
 });
 
 router.post('/', requireAuth, requireRole('owner', 'admin'), async (req, res) => {

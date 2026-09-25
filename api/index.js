@@ -17,6 +17,7 @@ const rideRoutes = require('../backend/routes/rides');
 const adminRoutes = require('../backend/routes/admin');
 const notificationRoutes = require('../backend/routes/notifications');
 
+<<<<<<< HEAD
 const { corsOptions, blockPrivateStatic, jsonBodyFallback } = require('../backend/utils/security');
 const { connectMongo: connectMongoShared } = require('../backend/utils/db');
 
@@ -28,6 +29,17 @@ app.use(express.urlencoded({ extended: true, limit: '12mb' }));
 app.use(blockPrivateStatic);
 app.use(jsonBodyFallback());
 app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
+=======
+const app = express();
+const allowedOrigin = process.env.FRONTEND_URL || true;
+app.use(cors({ origin: allowedOrigin, credentials: true, methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], allowedHeaders: ['Content-Type', 'Authorization'] }));
+app.use(express.json({ limit: '12mb' }));
+app.use(express.urlencoded({ extended: true, limit: '12mb' }));
+app.use((req, res, next) => {
+  if (/^\/(backend|node_modules)(\/|$)|(^|\/)\.env/i.test(req.path)) return res.status(404).end();
+  next();
+});
+>>>>>>> 509eae71e1063d5f8e8f372ee9e73ca177e5dcc1
 app.use(express.static(path.join(__dirname, '..')));
 
 let cachedDb = null;
@@ -35,6 +47,7 @@ let adminReady = null;
 
 async function connectToDatabase() {
   if (cachedDb && mongoose.connection.readyState === 1) return cachedDb;
+<<<<<<< HEAD
   const options = { maxPoolSize: 10 };
   // Shared with backend/server.js: guarantees an explicit database name and
   // refuses to silently fall back to a local MongoDB.
@@ -44,6 +57,39 @@ async function connectToDatabase() {
   try { await Promise.all([Vehicle.createIndexes(), Booking.createIndexes()]); } catch (error) { console.warn('Index sync deferred:', error.message); }
   console.log(`[mongo] serverless ready. database="${result.database}" mode=${result.mode}`);
   return cachedDb;
+=======
+  const atlas = process.env.MONGODB_URI;
+  const fallback = process.env.MONGODB_FALLBACK_URI || 'mongodb://127.0.0.1:27017/vroomy';
+  if (!atlas && !fallback) throw new Error('No MongoDB URI configured.');
+  const options = { serverSelectionTimeoutMS: 10000, connectTimeoutMS: 10000, socketTimeoutMS: 20000, family: 4, maxPoolSize: 10 };
+  try {
+    if (atlas) {
+      await mongoose.connect(atlas, options);
+      process.env.ACTIVE_MONGO_MODE = 'atlas';
+    } else {
+      await mongoose.connect(fallback, { ...options, serverSelectionTimeoutMS: 7000 });
+      process.env.ACTIVE_MONGO_MODE = 'local';
+    }
+    cachedDb = mongoose.connection;
+    await migrateLegacyData();
+    try { await Promise.all([Vehicle.createIndexes(), Booking.createIndexes()]); } catch (error) { console.warn('Index sync deferred:', error.message); }
+    return cachedDb;
+  } catch (error) {
+    if (atlas && fallback && mongoose.connection.readyState !== 0) {
+      try { await mongoose.disconnect(); } catch {}
+      try {
+        await mongoose.connect(fallback, { ...options, serverSelectionTimeoutMS: 7000 });
+        process.env.ACTIVE_MONGO_MODE = 'local';
+        cachedDb = mongoose.connection;
+        await migrateLegacyData();
+        return cachedDb;
+      } catch (fallbackError) {
+        throw new Error(`${error.message}; local fallback failed: ${fallbackError.message}`);
+      }
+    }
+    throw error;
+  }
+>>>>>>> 509eae71e1063d5f8e8f372ee9e73ca177e5dcc1
 }
 
 async function migrateLegacyData() {
@@ -79,12 +125,16 @@ async function migrateLegacyData() {
       const active = await Booking.countDocuments({ userId: counter.userId, monthKey: counter.monthKey, status: { $in: ['pending', 'payment_pending', 'pending_owner', 'confirmed', 'completed', 'approved'] } });
       if (!active) await MonthlyBookingCounter.deleteOne({ _id: counter._id });
     }
+<<<<<<< HEAD
     await reconcileEarningsCounters();
+=======
+>>>>>>> 509eae71e1063d5f8e8f372ee9e73ca177e5dcc1
   } catch (error) {
     console.warn('Legacy data migration skipped:', error.message);
   }
 }
 
+<<<<<<< HEAD
 // Recomputes owner earnings counters from the booking ledger so historical
 // cancellations (which previously never decremented) stop inflating totals.
 async function reconcileEarningsCounters() {
@@ -114,6 +164,8 @@ async function reconcileEarningsCounters() {
   }
 }
 
+=======
+>>>>>>> 509eae71e1063d5f8e8f372ee9e73ca177e5dcc1
 async function ensureAdmin() {
   if (adminReady) return adminReady;
   adminReady = (async () => {
@@ -126,10 +178,15 @@ async function ensureAdmin() {
       admin = await User.create({ name, email, passwordHash: await bcrypt.hash(password, 10), role: 'admin', isVerified: true });
       console.log('Admin account created:', admin.email);
     } else {
+<<<<<<< HEAD
       console.warn(`Account ${admin.email} exists but is not an admin. Use /api/auth/setup-admin with ADMIN_SETUP_KEY to promote it.`);
       return { email, id: null };
     }
     admin.name = name; await admin.save();
+=======
+      admin.name = name; admin.role = 'admin'; admin.isVerified = true; await admin.save();
+    }
+>>>>>>> 509eae71e1063d5f8e8f372ee9e73ca177e5dcc1
     return { email: admin.email, id: admin._id.toString() };
   })();
   return adminReady;
@@ -137,12 +194,15 @@ async function ensureAdmin() {
 
 app.use(async (req, res, next) => {
   try {
+<<<<<<< HEAD
     // Fail loudly on a missing secret. Without it, token signing throws inside
     // route handlers and every auth attempt surfaces as a confusing 401/500.
     if (!process.env.JWT_SECRET) {
       console.error('[config] JWT_SECRET is MISSING. Set it in the deployment environment variables.');
       return res.status(500).json({ message: 'Server is not configured correctly. Please contact an administrator.' });
     }
+=======
+>>>>>>> 509eae71e1063d5f8e8f372ee9e73ca177e5dcc1
     await connectToDatabase();
     await ensureAdmin();
     next();

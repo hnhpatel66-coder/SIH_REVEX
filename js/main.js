@@ -64,6 +64,7 @@ function friendlyError(message, status) {
 async function api(path, options = {}) {
   const headers = { ...(options.headers || {}) };
   let body = options.body;
+<<<<<<< HEAD
   if (body && !(body instanceof FormData)) {
     // ROOT CAUSE FIX (registration/login/etc. failing):
     // several pages pass an ALREADY stringified body. The old code only set
@@ -76,10 +77,15 @@ async function api(path, options = {}) {
     if (typeof body !== 'string') body = JSON.stringify(body);
     const hasContentType = Object.keys(headers).some(key => key.toLowerCase() === 'content-type');
     if (!hasContentType) headers['Content-Type'] = 'application/json';
+=======
+  if (body && !(body instanceof FormData) && typeof body !== 'string') {
+    body = JSON.stringify(body); headers['Content-Type'] = 'application/json';
+>>>>>>> 509eae71e1063d5f8e8f372ee9e73ca177e5dcc1
   }
   const token = getToken(); if (token) headers.Authorization = `Bearer ${token}`;
   let response;
   try { response = await fetch(`${API_BASE}${path}`, { ...options, body, headers }); }
+<<<<<<< HEAD
   catch (networkError) {
     // Previously this produced a vague "Cannot reach the REVEX service", which
     // hid the real problem (wrong API origin). Surface the actual target.
@@ -101,12 +107,18 @@ async function api(path, options = {}) {
       location.replace('login.html?expired=1');
     }
   }
+=======
+  catch { throw new Error('Cannot reach the REVEX service. Check your connection and try again.'); }
+  let data = {};
+  try { data = await response.json(); } catch {}
+>>>>>>> 509eae71e1063d5f8e8f372ee9e73ca177e5dcc1
   if (!response.ok) throw new Error(friendlyError(data.message, response.status));
   return data;
 }
 function escapeHtml(value) { return String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char])); }
 function formatMoney(value) { return `₹${Number(value || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`; }
 function formatDate(value) { try { return new Date(value).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }); } catch { return value || '-'; } }
+<<<<<<< HEAD
 function assetUrl(value) {
   const text = String(value || '').trim();
   if (!text) return '';
@@ -117,6 +129,8 @@ function assetUrl(value) {
   const path = clean.replace(/^file:\/\//i, '').replace(/^\/+/, '');
   return /^(uploads|images|assets)\//i.test(path) ? `/${path}` : `/uploads/${path}`;
 }
+=======
+>>>>>>> 509eae71e1063d5f8e8f372ee9e73ca177e5dcc1
 function formatDateTime(value) { try { return new Date(value).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }); } catch { return value || '-'; } }
 function requireLogin() { if (!getToken()) { location.href = `login.html?next=${encodeURIComponent(location.pathname + location.hash)}`; return false; } return true; }
 function requireRole(...roles) { const user = getStoredUser(); if (!getToken()) { location.href = 'login.html'; return false; } if (!roles.includes(user?.role)) { location.href = user?.role === 'admin' ? 'admin.html' : 'profile.html?notice=permission'; return false; } return true; }
@@ -148,7 +162,10 @@ function showModal(title, message) {
 }
 function closeModal() { document.getElementById('successModal')?.classList.remove('show'); }
 document.addEventListener('click', event => { if (event.target?.classList?.contains('modal')) closeModal(); });
+<<<<<<< HEAD
 document.addEventListener('click', event => { if (event.target?.closest?.('[data-close-modal]')) closeModal(); });
+=======
+>>>>>>> 509eae71e1063d5f8e8f372ee9e73ca177e5dcc1
 document.addEventListener('keydown', event => { if (event.key === 'Escape') { closeModal(); document.querySelector('.nav-links.open')?.classList.remove('open'); } });
 
 function buildNav(role, user) {
@@ -170,6 +187,7 @@ function buildNav(role, user) {
   const actions = document.querySelector('.nav-actions');
   if (!actions) return;
   actions.replaceChildren();
+<<<<<<< HEAD
   // Dark/light switch is available on every signed-in and guest page.
   if (window.RevaxTheme && !document.querySelector('nav .theme-toggle')) {
     const themeBtn = document.createElement('button');
@@ -196,6 +214,22 @@ function buildNav(role, user) {
     const login = document.createElement('a'); login.href = `login.html?next=${encodeURIComponent(location.pathname + location.hash)}`; login.textContent = 'Log in'; actions.appendChild(login);
     const join = document.createElement('a'); join.href = 'register.html'; join.className = 'btn btn-primary'; join.textContent = `Join ${BRAND}`; actions.appendChild(join);
   }
+=======
+  if (user) {
+    const profile = document.createElement('a'); profile.href = role === 'admin' ? 'admin.html' : 'profile.html'; profile.className = 'user-nav';
+    const avatar = document.createElement('span'); avatar.className = 'user-avatar'; avatar.textContent = (user.name || 'R').slice(0, 1).toUpperCase();
+    const name = document.createElement('span'); name.className = 'user-nav-name'; name.textContent = user.name || 'Account';
+    profile.append(avatar, name); actions.appendChild(profile);
+    if (role === 'user') { const owner = document.createElement('a'); owner.href = 'profile.html#owner'; owner.className = 'btn btn-outline'; owner.textContent = 'Become an Owner'; actions.appendChild(owner); }
+    if (role === 'owner') { const userLink = document.createElement('a'); userLink.href = 'profile.html#switch'; userLink.className = 'btn btn-outline'; userLink.textContent = 'Switch to User'; actions.appendChild(userLink); }
+    const logout = document.createElement('button'); logout.type = 'button'; logout.className = 'btn btn-primary'; logout.textContent = 'Logout'; logout.onclick = () => { clearSession(); location.href = 'index.html'; }; actions.appendChild(logout);
+  } else if (isPublicSite() && getToken()) {
+    const back = document.createElement('a'); back.href = 'admin.html'; back.className = 'btn btn-outline'; back.textContent = 'Return to Admin'; actions.appendChild(back);
+  } else {
+    const login = document.createElement('a'); login.href = `login.html?next=${encodeURIComponent(location.pathname + location.hash)}`; login.textContent = 'Log in'; actions.appendChild(login);
+    const join = document.createElement('a'); join.href = 'register.html'; join.className = 'btn btn-primary'; join.textContent = `Join ${BRAND}`; actions.appendChild(join);
+  }
+>>>>>>> 509eae71e1063d5f8e8f372ee9e73ca177e5dcc1
 }
 
 function bindMenu() {
@@ -227,11 +261,15 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   if (publicSite) { document.querySelectorAll('[data-owner-only]').forEach(element => { element.hidden = true; }); buildNav('guest', null); bindMenu(); applyBrand(); return; }
   if (role === 'admin') {
+<<<<<<< HEAD
     // Admins may open the agreement viewer and the owner portal (the owner APIs
     // explicitly accept the admin role), but must never be bounced out of
     // admin.html itself.
     if (page === 'profile.html' || page === 'agreement.html') { buildNav('adminLite', user); bindMenu(); applyBrand(); return; }
     if (page === 'list-vehicle.html' || page === 'offer-ride.html') { buildNav('adminLite', user); bindMenu(); applyBrand(); loadNotifications(); return; }
+=======
+    if (page === 'profile.html') { buildNav('adminLite', user); bindMenu(); applyBrand(); return; }
+>>>>>>> 509eae71e1063d5f8e8f372ee9e73ca177e5dcc1
     location.replace('admin.html'); return;
   }
   if (['list-vehicle.html', 'offer-ride.html'].includes(page) && role !== 'owner') { location.replace(role === 'guest' ? `login.html?next=${encodeURIComponent(location.pathname + location.hash)}` : 'profile.html?notice=owner-only'); return; }

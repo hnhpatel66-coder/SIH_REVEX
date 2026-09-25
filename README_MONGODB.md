@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 # REVEX MongoDB notes
+=======
+﻿# REVEX MongoDB notes
+>>>>>>> 509eae71e1063d5f8e8f372ee9e73ca177e5dcc1
 
 ## Start locally
 
@@ -9,7 +13,11 @@ npm install
 npm start
 ```
 
+<<<<<<< HEAD
 Open `http://localhost:5001`. The server reads `backend/.env` and then `.env`; never commit either real environment file.
+=======
+Open `http://localhost:5000`. The server reads `backend/.env` and then `.env`; never commit either real environment file.
+>>>>>>> 509eae71e1063d5f8e8f372ee9e73ca177e5dcc1
 
 ## Environment
 
@@ -33,7 +41,11 @@ Change or remove the demo account before using a shared or production database.
 
 ## Data flow
 
+<<<<<<< HEAD
 Frontend ? Express REST API ? Mongoose ? MongoDB Atlas.
+=======
+Frontend → Express REST API → Mongoose → MongoDB Atlas.
+>>>>>>> 509eae71e1063d5f8e8f372ee9e73ca177e5dcc1
 
 All booking and vehicle IDs are MongoDB ObjectIds. Existing records are migrated conservatively and are not deleted by startup. Vehicle deregistration is a soft status change so historical bookings remain available.
 

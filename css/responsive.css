@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 @media (max-width: 960px) {
   .hero .container { grid-template-columns: 1fr; min-height: auto; padding: 78px 0 70px; }
   .hero { min-height: auto; }
@@ -969,3 +970,8 @@ strong, b { font-weight: 700; }
   .feature-card h3 { font-size: 1.38rem; }
   .page-hero h1 { font-size: clamp(2.05rem, 9.5vw, 2.8rem); }
 }
+=======
+@media(max-width:900px){.hero .container{grid-template-columns:1fr;min-height:auto;padding:70px 0}.hero{min-height:auto}.hero-visual{height:300px}.detail-layout{grid-template-columns:1fr}.booking-panel{position:static}.vehicle-grid,.ride-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.feature-grid{grid-template-columns:1fr}.steps{grid-template-columns:1fr}.footer-grid{flex-direction:column}.request-facts{grid-template-columns:repeat(2,minmax(0,1fr))}.admin-topbar-inner{align-items:center}}
+@media(max-width:600px){.container{width:min(100% - 28px,1140px)}.section{padding:58px 0}.form-grid{grid-template-columns:1fr;padding:14px}.form-two,.terms-grid,.agree-grid,.upload-grid{grid-template-columns:1fr}.vehicle-grid,.ride-grid{grid-template-columns:1fr}.detail-facts{grid-template-columns:repeat(2,minmax(0,1fr))}.hero h1{font-size:3.1rem}.hero-stats{gap:15px}.hero-visual{height:235px}.float-card{font-size:.7rem}.booking-row{align-items:flex-start;flex-direction:column}.booking-actions{width:100%;align-items:flex-start;flex-direction:row;flex-wrap:wrap}.request-card,.moderation-card{padding:15px}.request-facts{grid-template-columns:1fr 1fr}.earnings-highlight{grid-template-columns:1fr}.modal-box{padding:24px 18px}.section-title{font-size:2.15rem}.page-hero{padding:48px 0 38px}.admin-view-site{display:none}}
+@media(max-width:390px){.form-two{grid-template-columns:1fr}.detail-facts{grid-template-columns:1fr}.request-facts{grid-template-columns:1fr}.hero-buttons .btn,.hero-actions .btn{width:100%}.booking-toolbar{align-items:flex-start}.filter-group{width:100%}}
+>>>>>>> 509eae71e1063d5f8e8f372ee9e73ca177e5dcc1

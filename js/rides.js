@@ -2,7 +2,11 @@ let currentRideId = '';
 let currentRide = null;
 
 function rideImage(ride) {
+<<<<<<< HEAD
   const image = assetUrl(ride.vehicleImage || '');
+=======
+  const image = ride.vehicleImage || '';
+>>>>>>> 509eae71e1063d5f8e8f372ee9e73ca177e5dcc1
   const fallback = `data:image/svg+xml;charset=UTF-8,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="800" height="420"><rect width="100%" height="100%" fill="#12333a"/><text x="50%" y="50%" text-anchor="middle" dominant-baseline="middle" font-family="Arial" font-size="28" fill="#cbd5e1">REVEX Ride</text></svg>')}`;
   return image ? `<div class="ride-image"><img src="${escapeHtml(image)}" alt="${escapeHtml(ride.vehicle || 'Ride vehicle')}" onerror="this.onerror=null;this.src='${fallback}'"></div>` : `<div class="ride-image"><img src="${fallback}" alt="REVEX Ride vehicle"></div>`;
 }

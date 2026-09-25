@@ -10,6 +10,7 @@
     "serverless": "node api/index.js",
     "seed": "node backend/seed.js",
     "vercel-dev": "vercel dev",
+<<<<<<< HEAD
     "check": "node scripts/check-syntax.js",
     "test": "node tests/pricing.test.js && node tests/validation.test.js && node tests/registration-regression.test.js && node tests/theme.test.js && node tests/deployment.test.js",
     "test:cluster": "node tests/cluster.test.js",
@@ -23,6 +24,10 @@
     "db:inspect": "node scripts/inspect-db.js",
     "cluster:verify": "node scripts/verify-cluster.js",
     "qa:cleanup": "node scripts/cleanup-qa.js"
+=======
+    "check": "node --check api/index.js && node --check backend/server.js && node --check backend/routes/vehicles.js && node --check backend/routes/bookings.js && node --check backend/routes/admin.js && node --check backend/routes/rides.js && node --check js/main.js",
+    "test": "node tests/pricing.test.js"
+>>>>>>> 509eae71e1063d5f8e8f372ee9e73ca177e5dcc1
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
@@ -31,8 +36,12 @@
     "express": "^4.21.2",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.18.0",
+<<<<<<< HEAD
     "multer": "^2.0.2",
     "nodemailer": "^6.10.1"
+=======
+    "multer": "^2.0.2"
+>>>>>>> 509eae71e1063d5f8e8f372ee9e73ca177e5dcc1
   },
   "engines": {
     "node": ">=18.x"

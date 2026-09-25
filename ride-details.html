@@ -1,4 +1,5 @@
 ﻿<!doctype html>
+<<<<<<< HEAD
 <html lang="en" data-theme="light">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
   <script>(function(){try{var k='revexTheme',s=localStorage.getItem(k);if(!s){s=window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}document.documentElement.setAttribute('data-theme',s);}catch(e){document.documentElement.setAttribute('data-theme','light');}})();</script><title>Ride Details | REVEX</title>  <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -6,12 +7,19 @@
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&amp;family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/style.css"><link rel="stylesheet" href="css/navbar.css"><link rel="stylesheet" href="css/cards.css"><link rel="stylesheet" href="css/responsive.css">  <link rel="stylesheet" href="css/theme.css">
 </head>
+=======
+<html lang="en">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Ride Details | REVEX</title><link rel="stylesheet" href="css/style.css"><link rel="stylesheet" href="css/navbar.css"><link rel="stylesheet" href="css/cards.css"><link rel="stylesheet" href="css/responsive.css"></head>
+>>>>>>> 509eae71e1063d5f8e8f372ee9e73ca177e5dcc1
 <body>
   <header class="container"><nav class="nav"><a class="brand" href="find-ride.html">REV<span>EX</span></a><button class="menu-btn" aria-label="Open navigation">Menu</button><div class="nav-links"></div><div class="nav-actions"></div></nav></header>
   <main class="container detail-layout"><section class="detail-panel" id="rideDetail"><div class="empty">Loading ride details…</div></section><aside class="booking-panel"><h3>Reserve your seat</h3><form onsubmit="confirmRide(event)"><input id="ridePrice" type="hidden"><div class="cost-box"><span>Available seats: <b id="availableSeats">—</b></span></div><div class="field"><label for="seatCount">How many seats?</label><select id="seatCount" onchange="updateSeatTotal()"><option value="1">1 seat</option></select></div><div class="cost-box"><span>Grand Total</span><strong id="seatTotal">₹0</strong></div><button class="btn btn-primary" style="width:100%" type="submit">Review &amp; pay</button></form></aside></main>
   <div class="modal" id="paymentModal"><div class="modal-box"><div class="modal-icon">₹</div><h2>Ride Payment</h2><div class="cost-box"><span>Grand Total</span><strong id="ridePayAmount">₹0</strong></div><p class="form-note">Demo payment for the REVEX project. No real money or card/UPI details are collected.</p><div class="modal-actions"><button class="btn btn-primary" id="ridePayBtn" type="button">Pay Now</button><button class="btn btn-outline" id="ridePayCancel" type="button">Cancel</button></div></div></div>
   <div class="modal" id="successModal"><div class="modal-box"><div class="modal-icon">✓</div><h2>Booking Successful!</h2><p></p><a class="btn btn-primary" href="bookings.html">View my bookings</a></div></div>
   <footer class="footer"><div class="container"><p>© 2026 REVEX · Urban mobility, reimagined.</p></div></footer>
+<<<<<<< HEAD
   <script src="js/theme.js"></script>
+=======
+>>>>>>> 509eae71e1063d5f8e8f372ee9e73ca177e5dcc1
   <script src="js/main.js"></script><script src="js/data.js"></script><script src="js/rides.js"></script>
 </body></html>

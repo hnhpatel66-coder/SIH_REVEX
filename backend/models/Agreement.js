@@ -24,8 +24,11 @@ const agreementSchema = new mongoose.Schema({
   rentalAmount: { type: Number, required: true, min: 0 },
   baseAmount: { type: Number, default: 0, min: 0 },
   additionalCharges: { type: Number, default: 0, min: 0 },
+<<<<<<< HEAD
   discountPercent: { type: Number, default: 0, min: 0, max: 100 },
   discountAmount: { type: Number, default: 0, min: 0 },
+=======
+>>>>>>> 509eae71e1063d5f8e8f372ee9e73ca177e5dcc1
   extraKilometerCharges: { type: Number, default: 0, min: 0 },
   taxFees: { type: Number, default: 0, min: 0 },
   grandTotal: { type: Number, default: 0, min: 0 },

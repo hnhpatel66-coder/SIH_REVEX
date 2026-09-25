@@ -27,7 +27,11 @@ async function connect(){
   let admin=await User.findOne({email:adminEmail});
   const adminPassword=process.env.ADMIN_PASSWORD;
   if(!admin && adminPassword) admin=await User.create({name:process.env.ADMIN_NAME||'REVEX Admin',email:adminEmail,passwordHash:await bcrypt.hash(adminPassword,10),role:'admin',isVerified:true});
+<<<<<<< HEAD
   if(admin && admin.role!=='admin'){admin.role='admin';admin.isVerified=true;await admin.save()}
+=======
+  if(admin){admin.role='admin';admin.isVerified=true;await admin.save()}
+>>>>>>> 509eae71e1063d5f8e8f372ee9e73ca177e5dcc1
   let owner=await User.findOne({email:'demo.owner@vroomy.local'});
   const demoPassword=process.env.DEMO_OWNER_PASSWORD;
   if(!owner && demoPassword) owner=await User.create({name:'REVEX Demo Owner',email:'demo.owner@vroomy.local',phone:'9999999999',passwordHash:await bcrypt.hash(demoPassword,10),role:'owner',isVerified:true});

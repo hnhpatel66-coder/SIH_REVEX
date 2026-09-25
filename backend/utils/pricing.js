@@ -51,6 +51,7 @@ function calculateRentalQuote({ vehicle = {}, startDate, endDate, estimatedKm = 
     throw Object.assign(new Error('Estimated distance must be between 0 and 100,000 km.'), { statusCode: 400 });
   }
 
+<<<<<<< HEAD
   // A booking of "10:00 to 10:00 two days later" is 48 hours exactly, but the
   // client sends timestamps generated a few milliseconds apart, which pushed the
   // raw duration just over 48h. A strict Math.ceil then billed 3 days instead
@@ -62,6 +63,11 @@ function calculateRentalQuote({ vehicle = {}, startDate, endDate, estimatedKm = 
   const price = Math.max(0, numberOr(vehicle.price, 0));
   // Billable units are derived from the same tolerant duration used for the
   // hour count, so an exact 48-hour rental bills 2 days rather than 3.
+=======
+  const hours = Math.max(1, Math.ceil((end.getTime() - start.getTime()) / 3600000));
+  const priceUnit = normalizePriceUnit(vehicle.priceUnit || 'hour');
+  const price = Math.max(0, numberOr(vehicle.price, 0));
+>>>>>>> 509eae71e1063d5f8e8f372ee9e73ca177e5dcc1
   let billableUnits;
   if (priceUnit === 'day') billableUnits = Math.max(1, Math.ceil(hours / 24));
   else if (priceUnit === 'km') billableUnits = Math.max(1, Math.ceil(km));
@@ -73,6 +79,7 @@ function calculateRentalQuote({ vehicle = {}, startDate, endDate, estimatedKm = 
   const extraKm = priceUnit === 'km' ? 0 : Math.max(0, km - includedKm);
   const extraKilometerCharges = roundMoney(extraKm * extraKmRate);
   const additionalCharges = roundMoney(Math.max(0, numberOr(vehicle.additionalCharges, 0)));
+<<<<<<< HEAD
   const discountPercent = clamp(numberOr(vehicle.discountPercent, 0), 0, 100);
   const taxPercent = clamp(numberOr(vehicle.taxPercent, 0), 0, 100);
   const subtotal = roundMoney(baseRentalAmount + extraKilometerCharges + additionalCharges);
@@ -80,6 +87,12 @@ function calculateRentalQuote({ vehicle = {}, startDate, endDate, estimatedKm = 
   const discountedSubtotal = roundMoney(Math.max(0, subtotal - discountAmount));
   const taxFees = roundMoney(discountedSubtotal * taxPercent / 100);
   const grandTotal = roundMoney(discountedSubtotal + taxFees);
+=======
+  const taxPercent = clamp(numberOr(vehicle.taxPercent, 0), 0, 100);
+  const subtotal = roundMoney(baseRentalAmount + extraKilometerCharges + additionalCharges);
+  const taxFees = roundMoney(subtotal * taxPercent / 100);
+  const grandTotal = roundMoney(subtotal + taxFees);
+>>>>>>> 509eae71e1063d5f8e8f372ee9e73ca177e5dcc1
 
   return {
     price: roundMoney(price),
@@ -95,15 +108,23 @@ function calculateRentalQuote({ vehicle = {}, startDate, endDate, estimatedKm = 
     extraKmRate: roundMoney(extraKmRate),
     extraKilometerCharges,
     additionalCharges,
+<<<<<<< HEAD
     discountPercent,
     discountAmount,
     discountedSubtotal,
+=======
+>>>>>>> 509eae71e1063d5f8e8f372ee9e73ca177e5dcc1
     taxPercent,
     taxFees,
     subtotal,
     grandTotal,
+<<<<<<< HEAD
     formula: `${billableUnits} ${priceUnit}${billableUnits === 1 ? '' : 's'} × ₹${roundMoney(price)}${extraKm ? ` + ${extraKm} extra km × ₹${roundMoney(extraKmRate)}` : ''}${additionalCharges ? ' + configured additional charges' : ''}${discountPercent ? ` - ${discountPercent}% discount` : ''}${taxPercent ? ` + ${taxPercent}% tax/fees` : ''}`,
     pricingVersion: 'revex-pricing-v3'
+=======
+    formula: `${billableUnits} ${priceUnit}${billableUnits === 1 ? '' : 's'} × ₹${roundMoney(price)}${extraKm ? ` + ${extraKm} extra km × ₹${roundMoney(extraKmRate)}` : ''}${additionalCharges ? ' + configured additional charges' : ''}${taxPercent ? ` + ${taxPercent}% tax/fees` : ''}`,
+    pricingVersion: 'revex-pricing-v2'
+>>>>>>> 509eae71e1063d5f8e8f372ee9e73ca177e5dcc1
   };
 }
 

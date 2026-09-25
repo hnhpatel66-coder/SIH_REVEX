@@ -10,8 +10,11 @@ const Agreement = require('../models/Agreement');
 const MonthlyBookingCounter = require('../models/MonthlyBookingCounter');
 const { requireAuth, requireRole } = require('../middleware/auth');
 const { notifyUser } = require('../utils/notify');
+<<<<<<< HEAD
 const { applyEarningsDelta, hasEarned } = require('../utils/earnings');
 const { deleteVehicleCascade, deleteUserCascade, summarise } = require('../utils/hardDelete');
+=======
+>>>>>>> 509eae71e1063d5f8e8f372ee9e73ca177e5dcc1
 
 const router = express.Router();
 router.use(requireAuth, requireRole('admin'));
@@ -40,7 +43,11 @@ function vehicleJson(vehicle) {
     category: value.category || value.type || 'Other',
     type: value.type || value.category || 'Other',
     status,
+<<<<<<< HEAD
     statusLabel: ({ pending: 'Pending Approval', approved: 'Approved', rejected: 'Rejected', removed: 'Removed (legacy)' })[status] || 'Pending Approval',
+=======
+    statusLabel: ({ pending: 'Pending Approval', approved: 'Approved', rejected: 'Rejected', removed: 'Removed / Deregistered' })[status] || 'Pending Approval',
+>>>>>>> 509eae71e1063d5f8e8f372ee9e73ca177e5dcc1
     image: value.image || value.vehiclePicture || '',
     vehiclePicture: value.vehiclePicture || value.image || '',
     documents: Array.isArray(value.documents) ? value.documents : []
@@ -60,12 +67,18 @@ function ownerSummaryQuery(ownerId) {
       _id: '$vehicleId',
       totalBookings: { $sum: 1 },
       completedBookings: { $sum: { $cond: [{ $eq: ['$status', 'completed'] }, 1, 0] } },
+<<<<<<< HEAD
       pendingBookings: { $sum: { $cond: [{ $in: ['$status', ['payment_pending', 'pending_owner']] }, 1, 0] } },
       activeBookings: { $sum: { $cond: [{ $in: ['$status', ['confirmed', 'pending_owner']] }, 1, 0] } },
       cancelledBookings: { $sum: { $cond: [{ $eq: ['$status', 'cancelled'] }, 1, 0] } },
       rejectedBookings: { $sum: { $cond: [{ $eq: ['$status', 'rejected'] }, 1, 0] } },
       grossEarnings: { $sum: { $cond: [{ $and: [{ $eq: ['$paymentStatus', 'paid'] }, { $in: ['$status', ['confirmed', 'completed']] }] }, '$grandTotal', 0] } },
       ownerEarnings: { $sum: { $cond: [{ $and: [{ $eq: ['$paymentStatus', 'paid'] }, { $in: ['$status', ['confirmed', 'completed']] }] }, { $multiply: ['$grandTotal', 0.9] }, 0] } }
+=======
+      activeBookings: { $sum: { $cond: [{ $in: ['$status', ['confirmed', 'pending_owner']] }, 1, 0] } },
+      grossEarnings: { $sum: { $cond: [{ $and: [{ $eq: ['$paymentStatus', 'paid'] }, { $ne: ['$status', 'cancelled'] }] }, '$grandTotal', 0] } },
+      ownerEarnings: { $sum: { $cond: [{ $and: [{ $eq: ['$paymentStatus', 'paid'] }, { $ne: ['$status', 'cancelled'] }] }, { $multiply: ['$grandTotal', 0.9] }, 0] } }
+>>>>>>> 509eae71e1063d5f8e8f372ee9e73ca177e5dcc1
     } }
   ];
 }
@@ -138,12 +151,19 @@ router.get('/owners', async (req, res) => {
     const rows = await Promise.all(owners.map(async owner => {
       const vehicles = await Vehicle.find({ ownerId: owner._id }).select('status verified').lean();
       const vehicleIds = vehicles.map(v => v._id);
+<<<<<<< HEAD
       const [bookings, earnings, statusRows] = await Promise.all([
         Booking.countDocuments({ vehicleId: { $in: vehicleIds } }),
         Booking.aggregate([{ $match: { vehicleId: { $in: vehicleIds }, paymentStatus: 'paid', status: { $in: ['confirmed', 'completed'] } } }, { $group: { _id: null, total: { $sum: { $multiply: ['$grandTotal', 0.9] } } } }]),
         Booking.aggregate([{ $match: { vehicleId: { $in: vehicleIds } } }, { $group: { _id: '$status', count: { $sum: 1 } } }])
       ]);
       const statusCounts = Object.fromEntries(statusRows.map(item => [item._id, item.count]));
+=======
+      const [bookings, earnings] = await Promise.all([
+        Booking.countDocuments({ $or: [{ ownerId: owner._id }, { vehicleId: { $in: vehicleIds } }] }),
+        Booking.aggregate([{ $match: { $or: [{ ownerId: owner._id }, { vehicleId: { $in: vehicleIds } }], paymentStatus: 'paid', status: { $ne: 'cancelled' } } }, { $group: { _id: null, total: { $sum: { $multiply: ['$grandTotal', 0.9] } } } }])
+      ]);
+>>>>>>> 509eae71e1063d5f8e8f372ee9e73ca177e5dcc1
       return {
         id: owner._id.toString(), name: owner.name, email: owner.email, phone: owner.phone || '', active: owner.isActive !== false,
         totalVehicles: vehicles.length,
@@ -152,12 +172,15 @@ router.get('/owners', async (req, res) => {
         rejectedVehicles: vehicles.filter(v => vehicleStatus(v) === 'rejected').length,
         removedVehicles: vehicles.filter(v => vehicleStatus(v) === 'removed').length,
         totalBookings: bookings,
+<<<<<<< HEAD
         pendingBookings: statusCounts.pending_owner || statusCounts.pending || 0,
         approvedBookings: statusCounts.confirmed || 0,
         activeBookings: statusCounts.confirmed || 0,
         completedBookings: statusCounts.completed || 0,
         cancelledBookings: statusCounts.cancelled || 0,
         rejectedBookings: statusCounts.rejected || 0,
+=======
+>>>>>>> 509eae71e1063d5f8e8f372ee9e73ca177e5dcc1
         totalEarnings: Math.round(earnings[0]?.total || 0)
       };
     }));
@@ -170,9 +193,13 @@ router.get('/owners', async (req, res) => {
 router.get('/owners/:id', async (req, res) => {
   if (!mongoose.isValidObjectId(req.params.id)) return res.status(400).json({ message: 'Owner not found.' });
   try {
+<<<<<<< HEAD
     // NOTE: `role` MUST stay in the projection — it is checked on the next line.
     // Omitting it made this endpoint return 404 for every owner.
     const owner = await User.findById(req.params.id).select('name email phone role createdAt isActive ownerEarnings').lean();
+=======
+    const owner = await User.findById(req.params.id).select('name email phone createdAt isActive ownerEarnings').lean();
+>>>>>>> 509eae71e1063d5f8e8f372ee9e73ca177e5dcc1
     if (!owner || owner.role !== 'owner') return res.status(404).json({ message: 'Owner not found.' });
     const vehicles = await Vehicle.find({ ownerId: owner._id }).populate('ownerId', 'name email phone').sort({ createdAt: -1 }).lean();
     const vehicleIds = vehicles.map(v => v._id);
@@ -188,16 +215,23 @@ router.get('/owners/:id', async (req, res) => {
         rejectedVehicles: vehicles.filter(v => vehicleStatus(v) === 'rejected').length,
         removedVehicles: vehicles.filter(v => vehicleStatus(v) === 'removed').length,
         totalBookings: stats.reduce((sum, item) => sum + item.totalBookings, 0),
+<<<<<<< HEAD
         pendingBookings: stats.reduce((sum, item) => sum + (item.pendingBookings || 0), 0),
         activeBookings: stats.reduce((sum, item) => sum + (item.activeBookings || 0), 0),
         completedBookings: stats.reduce((sum, item) => sum + (item.completedBookings || 0), 0),
         cancelledBookings: stats.reduce((sum, item) => sum + (item.cancelledBookings || 0), 0),
         rejectedBookings: stats.reduce((sum, item) => sum + (item.rejectedBookings || 0), 0),
+=======
+>>>>>>> 509eae71e1063d5f8e8f372ee9e73ca177e5dcc1
         totalEarnings: Math.round(stats.reduce((sum, item) => sum + item.ownerEarnings, 0))
       },
       vehicles: vehicles.map(vehicle => {
         const item = statsMap[idOf(vehicle._id)] || {};
+<<<<<<< HEAD
         return { ...vehicleJson(vehicle), totalBookings: item.totalBookings || 0, completedBookings: item.completedBookings || 0, activeBookings: item.activeBookings || 0, pendingBookings: item.pendingBookings || 0, cancelledBookings: item.cancelledBookings || 0, rejectedBookings: item.rejectedBookings || 0, grossEarnings: Math.round(item.grossEarnings || 0), totalEarnings: Math.round(item.ownerEarnings || 0) };
+=======
+        return { ...vehicleJson(vehicle), totalBookings: item.totalBookings || 0, completedBookings: item.completedBookings || 0, activeBookings: item.activeBookings || 0, grossEarnings: Math.round(item.grossEarnings || 0), totalEarnings: Math.round(item.ownerEarnings || 0) };
+>>>>>>> 509eae71e1063d5f8e8f372ee9e73ca177e5dcc1
       }),
       recentBookings: recent.map(booking => ({ ...booking, id: idOf(booking._id), vehicleId: booking.vehicleId ? { ...booking.vehicleId, id: idOf(booking.vehicleId) } : null, userId: booking.userId ? { ...booking.userId, id: idOf(booking.userId) } : null }))
     });
@@ -206,6 +240,7 @@ router.get('/owners/:id', async (req, res) => {
   }
 });
 
+<<<<<<< HEAD
 function serializeAgreement(agreement) {
   const value = agreement && typeof agreement.toObject === 'function' ? agreement.toObject() : { ...(agreement || {}) };
   const booking = value.bookingId && typeof value.bookingId === 'object' ? value.bookingId : null;
@@ -352,6 +387,68 @@ router.delete('/vehicles/:id', async (req, res) => {
   }
 });
 
+=======
+router.get('/vehicles', async (req, res) => {
+  try {
+    const status = String(req.query.status || 'all').toLowerCase();
+    const query = status === 'all' ? {} : { status };
+    const vehicles = await Vehicle.find(query).populate('ownerId', 'name email phone').sort({ createdAt: -1 }).lean();
+    res.json(vehicles.map(vehicleJson));
+  } catch (error) {
+    res.status(500).json({ message: 'Vehicle inventory could not be loaded.' });
+  }
+});
+
+router.patch('/vehicles/:id/verify', async (req, res) => {
+  if (!mongoose.isValidObjectId(req.params.id)) return res.status(400).json({ message: 'Vehicle not found.' });
+  try {
+    const vehicle = await Vehicle.findById(req.params.id);
+    if (!vehicle) return res.status(404).json({ message: 'We could not find that vehicle. Please try again.' });
+    const decision = String(req.body.decision || (req.body.verified === true || req.body.verified === 'true' ? 'approve' : 'reject')).toLowerCase();
+    if (!['approve', 'reject'].includes(decision)) return res.status(400).json({ message: 'Choose approve or reject.' });
+    const reason = String(req.body.reason || '').trim().slice(0, 1000);
+    if (decision === 'reject' && !reason) return res.status(400).json({ message: 'Enter a rejection reason so the owner knows what to fix.' });
+    vehicle.status = decision === 'approve' ? 'approved' : 'rejected';
+    vehicle.verified = decision === 'approve';
+    vehicle.availability = decision === 'approve' ? 'available' : 'unavailable';
+    vehicle.reviewedAt = new Date();
+    vehicle.reviewedBy = req.user._id;
+    vehicle.rejectionReason = decision === 'reject' ? reason : '';
+    vehicle.removalReason = '';
+    await vehicle.save();
+    await notifyUser(vehicle.ownerId, {
+      type: 'vehicle',
+      title: decision === 'approve' ? 'Vehicle approved' : 'Vehicle needs attention',
+      message: decision === 'approve' ? `${vehicle.name} is approved and can now be booked.` : `${vehicle.name} was rejected: ${reason}`,
+      data: { vehicleId: vehicle._id.toString(), status: vehicle.status }
+    });
+    res.json({ message: decision === 'approve' ? 'Vehicle approved.' : 'Vehicle rejected and moved to Rejected.', vehicle: vehicleJson(vehicle) });
+  } catch (error) {
+    res.status(500).json({ message: 'Vehicle moderation failed. Please try again.' });
+  }
+});
+
+router.delete('/vehicles/:id', async (req, res) => {
+  if (!mongoose.isValidObjectId(req.params.id)) return res.status(400).json({ message: 'Vehicle not found.' });
+  try {
+    const vehicle = await Vehicle.findById(req.params.id);
+    if (!vehicle) return res.status(404).json({ message: 'We could not find that vehicle. Please try again.' });
+    const reason = String(req.body?.reason || '').trim().slice(0, 1000);
+    if (!reason) return res.status(400).json({ message: 'Enter a reason before deregistering this vehicle.' });
+    vehicle.status = 'removed';
+    vehicle.verified = false;
+    vehicle.availability = 'unavailable';
+    vehicle.removalReason = reason;
+    vehicle.removedAt = new Date();
+    await vehicle.save();
+    await notifyUser(vehicle.ownerId, { type: 'vehicle', title: 'Vehicle deregistered', message: `${vehicle.name} was deregistered: ${reason}`, data: { vehicleId: vehicle._id.toString() } });
+    res.json({ message: 'Vehicle deregistered. Historical bookings were preserved.', vehicle: vehicleJson(vehicle) });
+  } catch (error) {
+    res.status(500).json({ message: 'Vehicle could not be deregistered.' });
+  }
+});
+
+>>>>>>> 509eae71e1063d5f8e8f372ee9e73ca177e5dcc1
 router.get('/income', async (req, res) => {
   try {
     const paidMatch = { paymentStatus: 'paid', status: { $in: ['confirmed', 'completed'] } };
@@ -363,7 +460,11 @@ router.get('/income', async (req, res) => {
       Booking.countDocuments({ paymentStatus: 'paid', status: 'completed' }),
       Booking.countDocuments({ status: { $in: ['payment_pending', 'pending_owner'] } }),
       Booking.countDocuments({ status: 'cancelled' }),
+<<<<<<< HEAD
       Booking.aggregate([{ $match: paidMatch }, { $group: { _id: '$vehicleId', bookings: { $sum: 1 }, revenue: { $sum: '$grandTotal' } } }, { $sort: { revenue: -1 } }])
+=======
+      Booking.aggregate([{ $match: paidMatch }, { $group: { _id: '$vehicleId', bookings: { $sum: 1 }, revenue: { $sum: '$grandTotal' } } }, { $sort: { revenue: -1 } }, { $limit: 50 }])
+>>>>>>> 509eae71e1063d5f8e8f372ee9e73ca177e5dcc1
     ]);
     const vehicleIds = byVehicle.map(row => row._id);
     const vehicles = await Vehicle.find({ _id: { $in: vehicleIds } }).select('name type category ownerId').lean();
@@ -417,6 +518,7 @@ router.patch('/bookings/:id/status', async (req, res) => {
   if (req.body.status === 'confirmed') {
     const agreement = await Agreement.findOne({ bookingId: booking._id });
     if (agreement) { agreement.acceptedByOwner = true; agreement.ownerAcceptedAt = new Date(); agreement.agreementStatus = 'approved'; await agreement.save(); }
+<<<<<<< HEAD
     await applyEarningsDelta(booking, 1);
   }
   if (req.body.status === 'cancelled') {
@@ -424,10 +526,18 @@ router.patch('/bookings/:id/status', async (req, res) => {
     if (hasEarned(booking.status) && booking.paymentStatus === 'paid') await applyEarningsDelta(booking, -1);
     await releaseBookingCounter(booking);
   }
+=======
+    const ownerShare = Math.round((booking.grandTotal || booking.totalAmount || 0) * 0.9);
+    const vehicle = await Vehicle.findById(booking.vehicleId).select('ownerId').lean();
+    if (vehicle?.ownerId) { await Vehicle.findByIdAndUpdate(booking.vehicleId, { $inc: { totalEarnings: ownerShare, totalRentals: 1 } }); await User.findByIdAndUpdate(vehicle.ownerId, { $inc: { ownerEarnings: ownerShare } }); }
+  }
+  if (req.body.status === 'cancelled') await releaseBookingCounter(booking);
+>>>>>>> 509eae71e1063d5f8e8f372ee9e73ca177e5dcc1
   await notifyUser(booking.userId, { type: 'booking', title: 'Booking status updated', message: `Your booking is now ${req.body.status}.`, data: { bookingId: booking._id.toString() } });
   res.json({ ...booking.toObject(), id: booking._id.toString() });
 });
 
+<<<<<<< HEAD
 // Note: use PATCH /api/admin/bookings/:id/status to change booking status.
 // The old POST /bookings/cancel duplicate was removed.
 
@@ -472,6 +582,34 @@ router.delete('/users/:id', async (req, res) => {
     console.error('[admin] user delete failed:', error.message);
     res.status(500).json({ message: 'Account could not be deleted.' });
   }
+=======
+router.post('/bookings/cancel', async (req, res) => {
+  if (!mongoose.isValidObjectId(req.body.id)) return res.status(400).json({ message: 'Booking ID is required.' });
+  const booking = await Booking.findById(req.body.id);
+  if (!booking) return res.status(404).json({ message: 'Booking not found.' });
+  if (booking.paymentStatus === 'paid') return res.status(400).json({ message: 'A paid booking cannot be cancelled without a refund process.' });
+  booking.status = 'cancelled';
+  await booking.save();
+  await releaseBookingCounter(booking);
+  res.json({ success: true, message: 'Booking cancelled by admin.', booking: { ...booking.toObject(), id: booking._id.toString() } });
+});
+
+router.get('/ride-bookings', async (req, res) => {
+  const docs = await RideBooking.find({}).populate('userId', 'name email').populate('rideId').sort({ createdAt: -1 }).lean();
+  res.json(docs.map(booking => ({ ...booking, id: idOf(booking._id) })));
+});
+
+router.delete('/users/:id', async (req, res) => {
+  if (!mongoose.isValidObjectId(req.params.id)) return res.status(400).json({ message: 'Account not found.' });
+  if (req.params.id === req.user._id.toString()) return res.status(400).json({ message: 'You cannot deactivate your own admin account.' });
+  const user = await User.findById(req.params.id);
+  if (!user) return res.status(404).json({ message: 'Account not found.' });
+  if (user.role === 'admin' && await User.countDocuments({ role: 'admin', isActive: { $ne: false } }) <= 1) return res.status(400).json({ message: 'Cannot deactivate the last active admin account.' });
+  user.isActive = false;
+  user.deactivatedAt = new Date();
+  await user.save();
+  res.json({ success: true, message: 'Account deactivated. Historical records were preserved.' });
+>>>>>>> 509eae71e1063d5f8e8f372ee9e73ca177e5dcc1
 });
 
 router.delete('/rides/:id', async (req, res) => {
@@ -481,10 +619,15 @@ router.delete('/rides/:id', async (req, res) => {
   ride.status = 'removed';
   ride.verified = false;
   await ride.save();
+<<<<<<< HEAD
   // Only unpaid seats are auto-cancelled; paid bookings are preserved so revenue
   // is never silently zeroed without a refund decision.
   const cancelled = await RideBooking.updateMany({ rideId: ride._id, status: 'payment_pending' }, { status: 'cancelled' });
   res.json({ success: true, message: `Ride offer removed. ${cancelled.modifiedCount || 0} unpaid seat booking(s) cancelled; paid bookings were preserved.` });
+=======
+  await RideBooking.updateMany({ rideId: ride._id, status: { $in: ['payment_pending', 'confirmed'] } }, { status: 'cancelled' });
+  res.json({ success: true, message: 'Ride offer removed. Historical seat bookings were preserved.' });
+>>>>>>> 509eae71e1063d5f8e8f372ee9e73ca177e5dcc1
 });
 
 router.patch('/ride-bookings/:id/status', async (req, res) => {
@@ -493,12 +636,15 @@ router.patch('/ride-bookings/:id/status', async (req, res) => {
   if (!allowed.includes(req.body.status)) return res.status(400).json({ message: 'Invalid ride booking status.' });
   const booking = await RideBooking.findById(req.params.id);
   if (!booking) return res.status(404).json({ message: 'Ride booking not found.' });
+<<<<<<< HEAD
   if (req.body.status === 'cancelled' && booking.paymentStatus === 'paid') {
     return res.status(400).json({ message: 'A paid ride booking cannot be cancelled without a refund process.' });
   }
   if (req.body.status === 'cancelled' && booking.status === 'cancelled') {
     return res.status(409).json({ message: 'This ride booking is already cancelled.' });
   }
+=======
+>>>>>>> 509eae71e1063d5f8e8f372ee9e73ca177e5dcc1
   booking.status = req.body.status;
   await booking.save();
   res.json({ ...booking.toObject(), id: booking._id.toString() });

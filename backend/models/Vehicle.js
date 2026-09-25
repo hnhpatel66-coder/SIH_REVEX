@@ -29,7 +29,10 @@ const vehicleSchema = new mongoose.Schema({
   includedKm: { type: Number, default: 300, min: 0, max: 100000 },
   extraKmRate: { type: Number, default: 10, min: 0, max: 10000 },
   additionalCharges: { type: Number, default: 0, min: 0, max: 1000000 },
+<<<<<<< HEAD
   discountPercent: { type: Number, default: 0, min: 0, max: 100 },
+=======
+>>>>>>> 509eae71e1063d5f8e8f372ee9e73ca177e5dcc1
   taxPercent: { type: Number, default: 0, min: 0, max: 100 },
   availableFrom: { type: Date },
   availability: { type: String, enum: ['available', 'unavailable'], default: 'available' },

@@ -21,9 +21,12 @@ const bookingSchema = new mongoose.Schema({
   extraKmRate: { type: Number, default: 0, min: 0 },
   extraKilometerCharges: { type: Number, default: 0, min: 0 },
   additionalCharges: { type: Number, default: 0, min: 0 },
+<<<<<<< HEAD
   discountPercent: { type: Number, default: 0, min: 0, max: 100 },
   discountAmount: { type: Number, default: 0, min: 0 },
   discountedSubtotal: { type: Number, default: 0, min: 0 },
+=======
+>>>>>>> 509eae71e1063d5f8e8f372ee9e73ca177e5dcc1
   taxPercent: { type: Number, default: 0, min: 0, max: 100 },
   taxFees: { type: Number, default: 0, min: 0 },
   subtotal: { type: Number, default: 0, min: 0 },
