@@ -12,20 +12,49 @@ const LOCAL_ORIGINS = DEV_PORTS.flatMap(port => [
 // A single source of truth shared by backend/server.js and api/index.js so the
 // two entry points cannot drift apart.
 function corsOptions() {
-  const configured = String(process.env.FRONTEND_URL || '').split(',').map(value => value.trim()).filter(Boolean);
+  const configured = String(
+    [
+      process.env.FRONTEND_URL,
+      process.env.BACKEND_URL,
+      process.env.RENDER_EXTERNAL_URL,
+      process.env.PUBLIC_URL
+    ].filter(Boolean).join(',')
+  )
+    .split(',')
+    .map(value => value.trim().replace(/\/+$/, ''))
+    .filter(Boolean);
+
+  // Render exposes the public service hostname/URL at runtime. Including it
+  // here is important when the HTML and /api are served by the SAME Render
+  // service: browsers can still send an Origin header on POST requests, and
+  // the old configuration rejected that perfectly valid same-service origin.
+  const renderHostname = String(process.env.RENDER_EXTERNAL_HOSTNAME || '').trim();
+  if (renderHostname) {
+    configured.push(`https://${renderHostname}`);
+  }
+
   const allowed = new Set([...LOCAL_ORIGINS, ...configured]);
+
   return {
     origin(origin, callback) {
-      // Same-origin / server-to-server / curl requests have no Origin header.
+      // Requests without an Origin header (same-origin GETs, curl, server-to-
+      // server requests) do not need CORS headers.
       if (!origin) return callback(null, true);
-      if (allowed.has(origin)) return callback(null, true);
-      // https variant of a configured http origin (e.g. Live Preview tunnels)
-      if (allowed.has(origin.replace(/^http:/, 'https:'))) return callback(null, true);
+
+      const normalized = String(origin).trim().replace(/\/+$/, '');
+      if (allowed.has(normalized)) return callback(null, true);
+
+      // Support a configured HTTP origin being upgraded to HTTPS in production.
+      if (allowed.has(normalized.replace(/^http:/, 'https:'))) {
+        return callback(null, true);
+      }
+
       return callback(new Error('Origin not allowed by CORS policy.'));
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization']
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    optionsSuccessStatus: 204
   };
 }
 

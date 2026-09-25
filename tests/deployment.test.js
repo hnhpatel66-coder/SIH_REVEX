@@ -95,6 +95,13 @@ check('the server honours an injected PORT before its default', () => {
   );
 });
 
+check('CORS configuration allows the Render service origin automatically', () => {
+  const security = fs.readFileSync(path.join(__dirname, '..', 'backend', 'utils', 'security.js'), 'utf8');
+  assert.match(security, /RENDER_EXTERNAL_URL/);
+  assert.match(security, /RENDER_EXTERNAL_HOSTNAME/);
+  assert.match(security, /credentials:\s*true/);
+});
+
 check('the server serves the frontend itself (same-origin is possible)', () => {
   const server = fs.readFileSync(path.join(__dirname, '..', 'backend', 'server.js'), 'utf8');
   assert.match(server, /express\.static\(path\.join\(__dirname, '\.\.'\)\)/);
