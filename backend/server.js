@@ -134,4 +134,14 @@ async function start() {
   });
 }
 
-start();
+// Export the Express app for Vercel serverless functions.
+// Locally, keep the existing Node/Express server behavior.
+module.exports = {
+  app,
+  connectMongo,
+  ensureAdmin
+};
+
+if (!process.env.VERCEL) {
+  start();
+}
