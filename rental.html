@@ -6,15 +6,20 @@
   <link rel="stylesheet" href="css/style.css"><link rel="stylesheet" href="css/navbar.css"><link rel="stylesheet" href="css/cards.css"><link rel="stylesheet" href="css/responsive.css">
 </head>
 <body>
-  <header class="container"><nav class="nav">
-    <a class="brand" href="index.html">REV<span>EX</span></a><button class="menu-btn" aria-label="Open navigation">Menu</button>
-    <div class="nav-links"><a href="index.html">Home</a><a href="find-ride.html">Find a Ride</a><a class="active" href="rental.html">Rent a Vehicle</a><a href="offer-ride.html">Offer a Ride</a><a href="bookings.html">My Bookings</a><a href="profile.html">Profile</a></div>
-    <div class="nav-actions" aria-label="Account actions"></div>
-  </nav></header>
-  <main><section class="page-hero"><div class="container"><span class="eyebrow">FLEXIBLE RENTALS</span><h1>Your ride, on your time.</h1><p>Choose a trusted vehicle nearby and pay only for the hours you need.</p>
-    <form class="form-grid" id="rentalSearch"><div class="field"><label>Pick-up location</label><input name="location" placeholder="e.g. Vesu, Surat"></div><div class="field"><label>Vehicle type</label><select name="type"><option value="">Any vehicle</option><option>Bike</option><option>Scooter</option><option>Car</option></select></div><div class="field"><label>Max hourly price</label><input name="maxPrice" type="number" placeholder="Price per hour"></div><button class="btn btn-primary" type="submit">Search vehicles</button></form>
-  </div></section><section class="section container" style="padding-top:55px"><span class="eyebrow">AVAILABLE NEAR YOU</span><h2 class="section-title">Find your perfect ride</h2><div class="vehicle-grid" id="vehicleResults"></div></section></main>
-  <script src="js/main.js"></script><script src="js/data.js"></script><script src="js/rental.js"></script>
+  <header class="container"><nav class="nav"><a class="brand" href="index.html">REV<span>EX</span></a><button class="menu-btn" aria-label="Open navigation">Menu</button><div class="nav-links"></div><div class="nav-actions"></div></nav></header>
+  <main>
+    <section class="page-hero"><div class="container"><span class="eyebrow">FLEXIBLE RENTALS</span><h1>Your ride, on your time.</h1><p>Choose a trusted vehicle nearby and see the complete rental price before you book.</p>
+      <form class="form-grid" id="rentalSearch">
+        <div class="field"><label for="rentalLocation">Pick-up location</label><input id="rentalLocation" name="location" placeholder="e.g. Vesu, Surat"></div>
+        <div class="field"><label for="rentalCategory">Category</label><select id="rentalCategory" name="category"><option value="">Any category</option><option>Car</option><option>Bike</option><option>Scooter</option><option>Other</option></select></div>
+        <div class="field"><label for="rentalFuel">Fuel type</label><select id="rentalFuel" name="fuelType"><option value="">Any fuel</option><option>Petrol</option><option>Diesel</option><option>Electric</option><option>CNG</option><option>Hybrid</option></select></div>
+        <div class="field"><label for="rentalPrice">Max price</label><input id="rentalPrice" name="maxPrice" type="number" min="1" placeholder="Per hour"></div>
+        <button class="btn btn-primary" type="submit">Search vehicles</button>
+      </form>
+    </div></section>
+    <section class="section container"><span class="eyebrow">AVAILABLE NEAR YOU</span><h2 class="section-title">Find your perfect ride</h2><div class="vehicle-grid" id="vehicleResults"></div></section>
+  </main>
+  <footer class="footer"><div class="container"><div class="footer-grid"><div><div class="footer-brand">REVEX</div><p>Move Smart. Share More.</p></div><div><h3>Quick Links</h3><a href="find-ride.html">Find a Ride</a><a href="bookings.html">My Bookings</a></div></div><p>© 2026 REVEX · Urban mobility, reimagined.</p></div></footer>
+  <script src="js/main.js"></script><script src="js/pricing.js"></script><script src="js/data.js"></script><script src="js/rental.js"></script>
 </body>
 </html>
-

@@ -34,6 +34,12 @@ router.post('/register', async (req, res) => {
     if (!name || !email || !password) {
       return res.status(400).json({ message: 'Name, email and password are required.' });
     }
+    if (String(password).length < 8) {
+      return res.status(400).json({ message: 'Password must be at least 8 characters.' });
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email).trim())) {
+      return res.status(400).json({ message: 'Enter a valid email address.' });
+    }
 
     const normalizedEmail = email.toLowerCase().trim();
     const exists = await User.findOne({ email: normalizedEmail });
@@ -54,7 +60,8 @@ router.post('/register', async (req, res) => {
 
     res.status(201).json({ token: signToken(user), user: publicUser(user) });
   } catch (e) {
-    res.status(500).json({ message: 'Registration failed. Please try again.' });
+    if (e.code === 11000) return res.status(409).json({ message: 'An account with this email already exists.' });
+    res.status(500).json({ message: 'Registration failed. Please check the form and try again.' });
   }
 });
 
@@ -74,9 +81,13 @@ router.post('/forgot-password', async (req, res) => {
     user.resetPasswordToken = resetToken;
     user.resetPasswordExpires = Date.now() + 3600000; // 1 hour expiry
     await user.save();
-    // Demo build has no mail server, so the token is returned for testing.
-    // In production, email the link and do NOT return the token.
-    res.json({ message: 'If an account with that email exists, a reset link has been sent.', resetToken, resetLink: `reset-password.html?token=${resetToken}` });
+    // A mail provider can be added without changing the API. Never expose a
+    // reset token in production; the local demo opt-in is explicit.
+    const demoResetEnabled = process.env.NODE_ENV !== 'production' && process.env.ENABLE_DEMO_RESET === 'true';
+    res.json({
+      message: 'If an account with that email exists, a reset link has been sent.',
+      ...(demoResetEnabled ? { resetToken, resetLink: `reset-password.html?token=${resetToken}` } : {})
+    });
   } catch (e) {
     res.status(500).json({ message: 'Failed to generate reset token.' });
   }
@@ -90,8 +101,8 @@ router.post('/reset-password', async (req, res) => {
     if (!token || !pwd) {
       return res.status(400).json({ message: 'Token and new password are required.' });
     }
-    if (String(pwd).length < 6) {
-      return res.status(400).json({ message: 'Password must be at least 6 characters.' });
+    if (String(pwd).length < 8) {
+      return res.status(400).json({ message: 'Password must be at least 8 characters.' });
     }
     const user = await User.findOne({
       resetPasswordToken: token,
@@ -174,7 +185,12 @@ router.post('/login', async (req, res) => {
     if (!user || !(await bcrypt.compare(password, user.passwordHash))) {
       return res.status(401).json({ message: 'Invalid login details.' });
     }
+    if (user.isActive === false) {
+      return res.status(403).json({ message: 'This account has been deactivated. Contact support.' });
+    }
 
+    user.lastLoginAt = new Date();
+    await user.save();
     res.json({ token: signToken(user), user: publicUser(user) });
   } catch (e) {
     res.status(500).json({ message: 'Login failed. Please try again.' });

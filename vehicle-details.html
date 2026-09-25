@@ -1,27 +1,34 @@
-﻿<!doctype html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Vehicle Details | REVEX</title><link rel="stylesheet" href="css/style.css"><link rel="stylesheet" href="css/navbar.css"><link rel="stylesheet" href="css/cards.css"><link rel="stylesheet" href="css/responsive.css"></head><body><header class="container"><nav class="nav"><a class="brand" href="index.html">REV<span>EX</span></a><button class="menu-btn">☰</button><div class="nav-links"><a href="index.html">Home</a><a href="find-ride.html">Find a Ride</a><a class="active" href="rental.html">Rent a Vehicle</a><a href="offer-ride.html">Offer a Ride</a><a href="bookings.html">My Bookings</a></div><div class="nav-actions"><a href="login.html">Log in</a></div></nav></header><main class="container detail-layout"><section class="detail-panel" id="vehicleDetail"></section><aside class="booking-panel"><h3>Book this vehicle</h3><form id="rentalBooking" onsubmit="confirmRental(event)"><input type="hidden" id="hourlyPrice">
-<div class="field">
-  <label>Estimated distance (km)</label>
-  <input type="number" name="estimatedKm" min="0" placeholder="e.g. 350" required>
-</div>
-<div class="field">
-  <label>PAN Number</label>
-  <input type="text" name="panNumber" maxlength="10" placeholder="ABCDE1234F" style="text-transform:uppercase" required>
-</div>
-<div class="field">
-  <label>Driving Licence Number</label>
-  <input type="text" name="drivingLicenseNumber" maxlength="25" placeholder="Enter driving licence number" style="text-transform:uppercase" required>
-</div><div class="field"><label>Start date</label><input required name="startDate" type="date" onchange="calculateRental()"></div><div class="field"><label>Start time</label><input required name="startTime" type="time" onchange="calculateRental()"></div><div class="field"><label>End date</label><input required name="endDate" type="date" onchange="calculateRental()"></div><div class="field"><label>End time</label><input required name="endTime" type="time" onchange="calculateRental()"></div><div class="cost-box" id="rentalTotal"><span>Choose your times to see total</span></div><button class="btn btn-primary" style="width:100%">Proceed to payment</button></form><p style="font-size:.78rem;text-align:center">Enter your KYC details, then complete the simple REVEX payment before confirmation.</p></aside></main><div class="modal" id="simplePaymentModal">
-<div class="modal-box" style="max-width:430px">
-<div class="modal-icon">₹</div>
-<h2>Payment Gateway</h2>
-<p>REVEX Simple Payment</p>
-<div class="cost-box" style="margin:14px 0"><span>Total amount</span><strong id="simplePaymentAmount">₹0</strong></div>
-<p style="font-size:.86rem;color:#64748b">Demo payment for the REVEX project. No card number, CVV, UPI PIN or bank password is collected.</p>
-<div style="display:grid;gap:10px;margin-top:16px">
-<button class="btn btn-primary" id="simplePayNow" type="button">Pay Now</button>
-<button class="btn btn-outline" id="simplePayCancel" type="button">Cancel</button>
-</div>
-</div>
-</div>
-<div class="modal" id="successModal"><div class="modal-box"><div class="modal-icon">✓</div><h2>Success</h2><p></p><div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap"><a class="btn btn-primary" href="bookings.html">View my bookings</a><button class="btn btn-outline" id="downloadAgreementBtn" type="button" style="display:none">Download Agreement</button></div></div></div><script src="js/main.js"></script><script src="js/data.js"></script><script src="js/rental.js"></script><footer class="footer"><div class="container"><div class="footer-grid"><div><div class="footer-brand">REVEX</div><p>Move Smart. Share More.</p></div><div><h3>Contact</h3><p>Phone: +91 98765 43210</p><p>Email: info@revex.com</p></div><div><h3>Quick Links</h3><a href="index.html">Home</a> <a href="rental.html">Rent a Vehicle</a> <a href="find-ride.html">Find a Ride</a></div></div><p>2026 REVEX - Urban mobility, reimagined.</p></div></footer></body></html>
-
+﻿<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Vehicle Details | REVEX</title>
+  <link rel="stylesheet" href="css/style.css"><link rel="stylesheet" href="css/navbar.css"><link rel="stylesheet" href="css/cards.css"><link rel="stylesheet" href="css/responsive.css">
+</head>
+<body>
+  <header class="container"><nav class="nav"><a class="brand" href="index.html">REV<span>EX</span></a><button class="menu-btn" aria-label="Open navigation">Menu</button><div class="nav-links"></div><div class="nav-actions"></div></nav></header>
+  <main class="container detail-layout">
+    <section class="detail-panel" id="vehicleDetail"><div class="empty">Loading vehicle details…</div></section>
+    <aside class="booking-panel" id="bookingPanel">
+      <h3>Book this vehicle</h3>
+      <form id="rentalBooking" onsubmit="confirmRental(event)">
+        <input type="hidden" id="hourlyPrice"><input type="hidden" name="termsVersion" value="revex-v3">
+        <div class="field"><label for="estimatedKm">Estimated distance (km)</label><input id="estimatedKm" name="estimatedKm" type="number" min="0" max="100000" value="0" required></div>
+        <div class="field"><label for="panNumber">PAN Number</label><input id="panNumber" name="panNumber" maxlength="10" pattern="[A-Za-z]{5}[0-9]{4}[A-Za-z]" placeholder="ABCDE1234F" style="text-transform:uppercase" required></div>
+        <div class="field"><label for="drivingLicenseNumber">Driving Licence Number</label><input id="drivingLicenseNumber" name="drivingLicenseNumber" maxlength="25" placeholder="Enter driving licence number" style="text-transform:uppercase" required></div>
+        <div class="form-two"><div class="field"><label for="startDate">Start date</label><input id="startDate" name="startDate" type="date" required></div><div class="field"><label for="startTime">Start time</label><input id="startTime" name="startTime" type="time" required></div></div>
+        <div class="form-two"><div class="field"><label for="endDate">End date</label><input id="endDate" name="endDate" type="date" required></div><div class="field"><label for="endTime">End time</label><input id="endTime" name="endTime" type="time" required></div></div>
+        <div class="cost-box" id="rentalBreakdown"><div class="empty">Choose valid future times to see the price breakdown.</div></div>
+        <div class="agreement-consent"><label class="check-label"><input id="agreementConsent" type="checkbox" required><span>I have read and agree to the <a href="#rentalTerms">Rental Agreement and Terms &amp; Conditions</a>.</span></label></div>
+        <button class="btn btn-primary" style="width:100%" type="submit" disabled>Review agreement &amp; continue</button>
+      </form>
+      <p class="form-note">Your booking is created only after this acceptance. Payment is processed after the server validates the agreement.</p>
+    </aside>
+  </main>
+  <section class="container terms-section" id="rentalTerms"><span class="eyebrow">BEFORE YOU PAY</span><h2 class="section-title small-title">Rental Agreement &amp; Terms &amp; Conditions</h2><div class="terms-grid"><article><h3>Vehicle condition</h3><p>Record exterior condition, fuel/charge level and odometer at pickup and return. New damage may be charged to the renter.</p></article><article><h3>Distance and fuel</h3><p>The included kilometres, extra-kilometre rate and fuel policy are shown in the price breakdown. Return the vehicle at the agreed level.</p></article><article><h3>Responsible use</h3><p>Follow traffic laws. The renter is responsible for tolls, parking, fines, accidents and damage caused during the rental.</p></article><article><h3>Cancellation</h3><p>Cancellation conditions are shown with the booking. Paid demo payments are not automatically refunded; a real gateway follows its refund policy.</p></article></div></section>
+  <div class="modal" id="simplePaymentModal"><div class="modal-box"><div class="modal-icon">₹</div><h2>Payment Gateway</h2><p>Your agreement is accepted and saved with this booking.</p><div class="cost-box"><span>Grand Total</span><strong id="simplePaymentAmount">₹0</strong></div><p class="form-note">Demo payment for the REVEX project. No card, UPI PIN or bank password is collected.</p><div class="modal-actions"><button class="btn btn-primary" id="simplePayNow" type="button">Pay Now</button><button class="btn btn-outline" id="simplePayCancel" type="button">Cancel</button></div></div></div>
+  <div class="modal" id="successModal"><div class="modal-box"><div class="modal-icon">✓</div><h2>Success</h2><p></p><div class="modal-actions"><a class="btn btn-primary" href="bookings.html">View my bookings</a><button class="btn btn-outline" id="downloadAgreementBtn" type="button" style="display:none">Download Agreement</button></div></div></div>
+  <footer class="footer"><div class="container"><div class="footer-grid"><div><div class="footer-brand">REVEX</div><p>Move Smart. Share More.</p></div><div><h3>Quick Links</h3><a href="rental.html">Find a Vehicle</a><a href="bookings.html">My Bookings</a></div></div><p>© 2026 REVEX · Urban mobility, reimagined.</p></div></footer>
+  <script src="js/main.js"></script><script src="js/pricing.js"></script><script src="js/data.js"></script><script src="js/rental.js"></script>
+</body>
+</html>

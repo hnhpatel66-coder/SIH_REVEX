@@ -2,12 +2,16 @@
   "name": "revex-app",
   "version": "1.0.0",
   "private": true,
-  "description": "REVEX hackathon web app with MongoDB Atlas",
-  "main": "backend/server.js",
+  "description": "REVEX vehicle rental and shared ride platform",
+  "main": "api/index.js",
   "scripts": {
     "start": "node backend/server.js",
     "dev": "node backend/server.js",
-    "seed": "node backend/seed.js"
+    "serverless": "node api/index.js",
+    "seed": "node backend/seed.js",
+    "vercel-dev": "vercel dev",
+    "check": "node --check api/index.js && node --check backend/server.js && node --check backend/routes/vehicles.js && node --check backend/routes/bookings.js && node --check backend/routes/admin.js && node --check backend/routes/rides.js && node --check js/main.js",
+    "test": "node tests/pricing.test.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
@@ -19,6 +23,6 @@
     "multer": "^2.0.2"
   },
   "engines": {
-    "node": "22.x"
+    "node": ">=18.x"
   }
 }

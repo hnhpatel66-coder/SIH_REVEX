@@ -1,112 +1,18 @@
 ﻿<!doctype html>
 <html lang="en">
-<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Admin Dashboard | REVEX</title>
-<link rel="stylesheet" href="css/style.css"><link rel="stylesheet" href="css/navbar.css"><link rel="stylesheet" href="css/cards.css"><link rel="stylesheet" href="css/responsive.css">
-</head>
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Admin Control Centre | REVEX</title><link rel="stylesheet" href="css/style.css"><link rel="stylesheet" href="css/navbar.css"><link rel="stylesheet" href="css/cards.css"><link rel="stylesheet" href="css/responsive.css"></head>
 <body>
-<div class="admin-topbar"><div class="container">
-<a class="brand" href="index.html">REV<span>EX</span></a>
-<nav class="admin-tabs" aria-label="Admin navigation">
-<button class="admin-tab active" data-tab="dashboard">Dashboard</button>
-<button class="admin-tab" data-tab="approvals">Approvals</button>
-<button class="admin-tab" data-tab="users">Users</button>
-<button class="admin-tab" data-tab="vehicles">Owners / Vehicles</button>
-<button class="admin-tab" data-tab="addadmin">Add Admin</button>
-<button class="admin-tab" data-tab="income">Income / Revenue</button>
-<button class="admin-tab" data-tab="bookings">Bookings</button>
-<button class="admin-tab" data-tab="reports">Reports</button>
-<button class="admin-tab" data-tab="profile">Profile</button>
-</nav>
-<a class="admin-tab" href="index.html" style="text-decoration:none">View Site</a>
-<a class="btn btn-outline" data-exit-admin href="index.html">Logout</a>
-</div></div>
-<main class="container section">
-<span class="eyebrow">REVEX CONTROL CENTRE</span>
-<h1 class="section-title">Admin dashboard</h1>
-<p>Live platform data. Admin-only controls are protected.</p>
-
-<section class="admin-panel active" id="panel-dashboard">
-<div class="vehicle-grid" id="adminStats"></div>
-</section>
-
-<section class="admin-panel" id="panel-approvals">
-<h2 class="section-title" style="font-size:2rem">Approvals</h2>
-<p>Review vehicle listings and ride offers waiting for verification.</p>
-<div class="feature-grid">
-<article class="detail-panel"><h3>Vehicle approvals</h3><div id="adminApprovals"></div></article>
-<article class="detail-panel"><h3>Ride approvals</h3><div id="adminRideApprovals"></div></article>
-</div>
-</section>
-
-<section class="admin-panel" id="panel-users">
-<h2 class="section-title" style="font-size:2rem">Users &amp; owners</h2>
-<div class="detail-panel" id="adminUsers"></div>
-</section>
-
-<section class="admin-panel" id="panel-vehicles">
-<h2 class="section-title" style="font-size:2rem">Owners / Vehicles</h2>
-<div class="feature-grid">
-<article class="detail-panel"><h3>Vehicle inventory &amp; verification</h3><div id="adminVehicles"></div></article>
-<article class="detail-panel"><h3>Ride-sharing activity</h3><div id="adminRides"></div></article>
-</div>
-</section>
-
-<section class="admin-panel" id="panel-addadmin">
-<h2 class="section-title" style="font-size:2rem">Add New Admin</h2>
-<div class="detail-panel" style="max-width:560px">
-<div id="addAdminMsg" class="notice"></div>
-<form id="addAdminForm">
-<div class="field"><label>Full name</label><input name="name" required placeholder="Admin name"></div>
-<div class="field"><label>Email</label><input name="email" type="email" required placeholder="admin@example.com"></div>
-<div class="field"><label>Phone (optional)</label><input name="phone" placeholder="Contact number"></div>
-<div class="field"><label>Password (min 8 characters)</label><input name="password" type="password" minlength="8" required></div>
-<div class="field"><label>Confirm password</label><input name="confirmPassword" type="password" minlength="8" required></div>
-<button class="btn btn-primary" style="width:100%;margin-top:16px">Create admin</button>
-</form>
-</div>
-</section>
-
-<section class="admin-panel" id="panel-income">
-<h2 class="section-title" style="font-size:2rem">Income / Revenue</h2>
-<p>Calculated from paid bookings in the system. No estimated values.</p>
-<div class="vehicle-grid" id="incomeCards"></div>
-<div class="feature-grid" style="margin-top:24px">
-<article class="detail-panel"><h3>Revenue by vehicle</h3><div id="incomeByVehicle"></div></article>
-<article class="detail-panel"><h3>Revenue by owner</h3><div id="incomeByOwner"></div></article>
-</div>
-<article class="detail-panel" style="margin-top:24px"><h3>Recent transactions</h3><div id="incomeRecent"></div></article>
-</section>
-
-<section class="admin-panel" id="panel-bookings">
-<h2 class="section-title" style="font-size:2rem">All bookings</h2>
-<div id="adminBookings"></div>
-</section>
-
-<section class="admin-panel" id="panel-reports">
-<h2 class="section-title" style="font-size:2rem">Reports</h2>
-<div class="detail-panel" id="adminReports"></div>
-</section>
-
-<section class="admin-panel" id="panel-profile">
-<h2 class="section-title" style="font-size:2rem">Admin profile</h2>
-<div class="detail-panel" id="adminProfile">Loading...</div>
-</section>
-</main>
-<footer class="footer"><div class="container"><div class="footer-grid">
-<div><div class="footer-brand">REVEX</div><p>Move Smart. Share More.</p></div>
-<div><h3>Contact</h3><p>Phone: +91 98765 43210</p><p>Email: info@revex.com</p></div>
-<div><h3>Quick Links</h3><a href="index.html">Home</a> <a href="rental.html">Rent a Vehicle</a> <a href="find-ride.html">Find a Ride</a></div>
-</div><p>2026 REVEX - Urban mobility, reimagined.</p></div></footer>
-<script src="js/main.js"></script><script src="js/admin.js"></script>
-<script>
-document.querySelectorAll('.admin-tab').forEach(btn=>btn.addEventListener('click',()=>{
-  document.querySelectorAll('.admin-tab').forEach(b=>b.classList.remove('active'));
-  document.querySelectorAll('.admin-panel').forEach(p=>p.classList.remove('active'));
-  btn.classList.add('active');
-  document.getElementById('panel-'+btn.dataset.tab)?.classList.add('active');
-  btn.scrollIntoView({block:'nearest',inline:'nearest'});
-}));
-</script>
+  <div class="admin-topbar"><div class="container admin-topbar-inner"><a class="brand" href="admin.html">REV<span>EX</span></a><button class="menu-btn admin-menu" aria-label="Open admin navigation">Menu</button><nav class="admin-tabs" aria-label="Admin navigation"><button class="admin-tab active" data-tab="dashboard"><span>▦</span> Dashboard</button><button class="admin-tab" data-tab="owners"><span>♙</span> Owners</button><button class="admin-tab" data-tab="vehicles"><span>▣</span> Vehicles</button><button class="admin-tab" data-tab="bookings"><span>▤</span> Bookings</button><button class="admin-tab" data-tab="reports"><span>◒</span> Reports / Earnings</button><button class="admin-tab" data-tab="users"><span>♟</span> Users</button><button class="admin-tab" data-tab="settings"><span>⚙</span> Settings</button></nav><a class="btn btn-outline admin-view-site" href="index.html?viewSite=1" target="_blank" rel="noopener">View Site</a><button class="btn btn-primary" data-exit-admin type="button">Logout</button></div></div>
+  <main class="container section admin-main"><div id="adminMessage" class="form-message" role="status"></div>
+    <section class="admin-panel active" id="panel-dashboard"><div class="section-heading"><div><span class="eyebrow">CONTROL CENTRE</span><h1 class="section-title">Platform overview</h1><p>Live, role-protected operational data.</p></div><button class="btn btn-outline" id="refreshAdmin" type="button">Refresh data</button></div><div class="vehicle-grid" id="adminStats"></div><div class="feature-grid" style="margin-top:24px"><article class="detail-panel"><div class="panel-heading"><h3>Vehicle approval queue</h3><button class="btn btn-outline btn-small" data-go-tab="vehicles" data-status-filter="pending" type="button">Open queue</button></div><div id="adminApprovalSummary"></div></article><article class="detail-panel"><div class="panel-heading"><h3>Recent activity</h3><button class="btn btn-outline btn-small" data-go-tab="bookings" type="button">View bookings</button></div><div id="adminActivity"></div></article></div></section>
+    <section class="admin-panel" id="panel-owners"><div class="section-heading"><div><span class="eyebrow">OWNER MANAGEMENT</span><h1 class="section-title">Owner summary</h1><p>Open an owner to inspect vehicles, bookings and vehicle-wise earnings.</p></div><button class="btn btn-outline" data-refresh="owners" type="button">Refresh</button></div><div class="detail-panel"><div id="adminOwners"><div class="empty">Loading owners…</div></div></div><div id="adminOwnerDetail"></div></section>
+    <section class="admin-panel" id="panel-vehicles"><div class="section-heading"><div><span class="eyebrow">VEHICLE MANAGEMENT</span><h1 class="section-title">Vehicle moderation</h1><p>Review documents and process vehicles continuously without leaving this page.</p></div><button class="btn btn-outline" data-refresh="vehicles" type="button">Refresh</button></div><div class="filter-group admin-filters"><button class="filter-chip active" data-vehicle-filter="all" type="button">All</button><button class="filter-chip" data-vehicle-filter="pending" type="button">Pending</button><button class="filter-chip" data-vehicle-filter="approved" type="button">Approved</button><button class="filter-chip" data-vehicle-filter="rejected" type="button">Rejected</button><button class="filter-chip" data-vehicle-filter="removed" type="button">Removed</button></div><div class="detail-panel"><div id="adminVehicles"><div class="empty">Loading vehicles…</div></div></div></section>
+    <section class="admin-panel" id="panel-bookings"><div class="section-heading"><div><span class="eyebrow">BOOKING MANAGEMENT</span><h1 class="section-title">All bookings</h1><p>Review payment, agreement and owner decision states.</p></div><button class="btn btn-outline" data-refresh="bookings" type="button">Refresh</button></div><div class="detail-panel" id="adminBookings"><div class="empty">Loading bookings…</div></div></section>
+    <section class="admin-panel" id="panel-reports"><div class="section-heading"><div><span class="eyebrow">REPORTS / EARNINGS</span><h1 class="section-title">Platform earnings</h1><p>Revenue is calculated from paid, non-cancelled records.</p></div><button class="btn btn-outline" data-refresh="income" type="button">Refresh</button></div><div class="vehicle-grid" id="incomeCards"></div><div class="feature-grid" style="margin-top:24px"><article class="detail-panel"><h3>Revenue by vehicle</h3><div id="incomeByVehicle"></div></article><article class="detail-panel"><h3>Revenue by owner</h3><div id="incomeByOwner"></div></article></div><article class="detail-panel" style="margin-top:24px"><h3>Recent transactions</h3><div id="incomeRecent"></div></article></section>
+    <section class="admin-panel" id="panel-users"><div class="section-heading"><div><span class="eyebrow">USER MANAGEMENT</span><h1 class="section-title">Users and account access</h1><p>Accounts are deactivated rather than deleting historical records.</p></div><button class="btn btn-outline" data-refresh="users" type="button">Refresh</button></div><div class="detail-panel" id="adminUsers"><div class="empty">Loading users…</div></div></section>
+    <section class="admin-panel" id="panel-settings"><div class="section-heading"><div><span class="eyebrow">SETTINGS</span><h1 class="section-title">Admin settings</h1><p>Create additional admins and review your account.</p></div></div><div class="feature-grid"><article class="detail-panel"><h3>Create admin</h3><div id="addAdminMsg" class="form-message"></div><form id="addAdminForm"><div class="field"><label>Full name</label><input name="name" required></div><div class="field"><label>Email</label><input name="email" type="email" required></div><div class="field"><label>Phone</label><input name="phone"></div><div class="field"><label>Password (min 8 characters)</label><input name="password" type="password" minlength="8" required></div><div class="field"><label>Confirm password</label><input name="confirmPassword" type="password" minlength="8" required></div><button class="btn btn-primary" style="width:100%" type="submit">Create admin</button></form></article><article class="detail-panel"><h3>Admin profile</h3><div id="adminProfile"><div class="empty">Loading profile…</div></div></article></div></section>
+  </main>
+  <footer class="footer"><div class="container"><p>© 2026 REVEX · Admin control centre</p></div></footer>
+  <script src="js/main.js"></script><script src="js/admin.js"></script>
 </body>
 </html>

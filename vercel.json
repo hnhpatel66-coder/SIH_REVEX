@@ -1,1 +1,17 @@
-{ "version": 2 }
+{
+  "version": 2,
+  "buildCommand": "npm install",
+  "devCommand": "node backend/server.js",
+  "installCommand": "npm install",
+  "framework": null,
+  "functions": {
+    "api/index.js": {
+      "maxDuration": 30
+    }
+  },
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api" }
+  ],
+  "outputDirectory": ".",
+  "staticDirectory": "."
+}

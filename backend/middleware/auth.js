@@ -3,70 +3,59 @@ const bcrypt = require('bcryptjs');
 
 const User = require('../models/User');
 
-async function requireAuth(req, res, next) {
+function tokenFromRequest(req) {
+    const header = req.headers.authorization || '';
+    return header.startsWith('Bearer ') ? header.slice(7).trim() : null;
+}
+
+async function resolveUser(req) {
+    const token = tokenFromRequest(req);
+    if (!token || !process.env.JWT_SECRET) return null;
     try {
-        const header = req.headers.authorization || '';
-
-        const token = header.startsWith('Bearer ')
-            ? header.slice(7)
-            : null;
-
-        if (!token) {
-            return res.status(401).json({
-                message: 'Login required.'
-            });
-        }
-
-        const payload = jwt.verify(
-            token,
-            process.env.JWT_SECRET
-        );
-
-        const user = await User.findById(payload.userId)
-            .select('-passwordHash');
-
-        if (!user) {
-            return res.status(401).json({
-                message: 'User account not found.'
-            });
-        }
-
-        req.user = user;
-
-        next();
-
+        const payload = jwt.verify(token, process.env.JWT_SECRET);
+        return await User.findById(payload.userId).select('-passwordHash').then(user => (user && user.isActive === false ? null : user));
     } catch (error) {
-        return res.status(401).json({
-            message: 'Invalid or expired login session.'
-        });
+        return null;
     }
+}
+
+async function requireAuth(req, res, next) {
+    const user = await resolveUser(req);
+    if (!user) {
+        return res.status(401).json({ message: 'Login required or your session has expired.' });
+    }
+    req.user = user;
+    next();
+}
+
+// Used for public detail endpoints where an owner/admin may be viewing a
+// pending or rejected listing. Invalid tokens remain anonymous; protected
+// endpoints should always use requireAuth.
+async function optionalAuth(req, res, next) {
+    req.user = await resolveUser(req);
+    next();
 }
 
 function requireRole(...roles) {
     return (req, res, next) => {
-
         if (!req.user || !roles.includes(req.user.role)) {
-            return res.status(403).json({
-                message: 'You do not have permission for this action.'
-            });
+            return res.status(403).json({ message: 'You do not have permission for this action.' });
         }
-
         next();
     };
 }
 
-// Bcrypt: password hash
 async function hashPassword(password) {
-    return await bcrypt.hash(password, 10);
+    return bcrypt.hash(password, 10);
 }
 
-// Bcrypt: password compare
 async function comparePassword(password, passwordHash) {
-    return await bcrypt.compare(password, passwordHash);
+    return bcrypt.compare(password, passwordHash);
 }
 
 module.exports = {
     requireAuth,
+    optionalAuth,
     requireRole,
     hashPassword,
     comparePassword
