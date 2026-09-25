@@ -1,0 +1,20 @@
+const assert = require('node:assert/strict');
+const { calculateRentalQuote, suggestRentalPrice, normalizePlate } = require('../backend/utils/pricing');
+
+const start = new Date('2030-01-01T10:00:00.000Z');
+const end = new Date('2030-01-01T15:00:00.000Z');
+const quote = calculateRentalQuote({ vehicle: { price: 120, priceUnit: 'hour', includedKm: 300, extraKmRate: 10, taxPercent: 5 }, startDate: start, endDate: end, estimatedKm: 450 });
+assert.equal(quote.durationHours, 5);
+assert.equal(quote.baseRentalAmount, 600);
+assert.equal(quote.extraKm, 150);
+assert.equal(quote.extraKilometerCharges, 1500);
+assert.equal(quote.taxFees, 105);
+assert.equal(quote.grandTotal, 2205);
+const dayQuote = calculateRentalQuote({ vehicle: { price: 1000, priceUnit: 'day' }, startDate: start, endDate: end, estimatedKm: 10 });
+assert.equal(dayQuote.billableUnits, 1);
+assert.equal(dayQuote.grandTotal, 1000);
+assert.equal(normalizePlate('gj 05-ab 1234'), 'GJ05AB1234');
+const suggestion = suggestRentalPrice({ kilometers: 70000, category: 'Car', fuelType: 'Electric' });
+assert.equal(suggestion.configuration.maxKilometer, 70000);
+assert.ok(suggestion.suggestedPrice >= 10);
+console.log('pricing tests passed');

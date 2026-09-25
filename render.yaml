@@ -1,0 +1,41 @@
+# Render blueprint for the REVEX Node web service.
+#
+# Use this so a redeploy is reproducible: Render's own dashboard values are
+# not version controlled, which is how the wrong PORT / cluster ended up live
+# in the first place.
+#
+# NOTE: environment values are intentionally NOT set here. Put the real
+# MONGODB_URI / JWT_SECRET / ADMIN_PASSWORD in the Render dashboard
+# (Dashboard -> Environment), never in this file.
+services:
+  - type: web
+    name: revex
+    runtime: node
+    plan: free
+    region: singapore
+    # Render injects PORT automatically; the app binds process.env.PORT.
+    # Do NOT hard-code a port here or Render cannot route traffic to it.
+    buildCommand: npm install --omit=dev
+    startCommand: node backend/server.js
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      # Explicit database name. Without it Atlas silently uses "test".
+      - key: MONGODB_DB_NAME
+        value: vroomy
+      - key: ALLOW_LOCAL_MONGO_FALLBACK
+        value: "false"
+      - key: FRONTEND_URL
+        sync: false
+      - key: MONGODB_URI
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: ADMIN_EMAIL
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: ADMIN_NAME
+        value: REVEX Admin

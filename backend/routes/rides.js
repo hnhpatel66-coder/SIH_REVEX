@@ -3,190 +3,167 @@ const mongoose = require('mongoose');
 const crypto = require('crypto');
 const Ride = require('../models/Ride');
 const RideBooking = require('../models/RideBooking');
-const { requireAuth } = require('../middleware/auth');
+const { requireAuth, optionalAuth, requireRole } = require('../middleware/auth');
+const { notifyUser } = require('../utils/notify');
+const { normalizeMediaUrl } = require('../utils/media');
 
 const router = express.Router();
 
-function serializeRide(r) {
-  return { ...r, id: r._id.toString(), driverId: r.driverId?.toString() };
+function idOf(value) {
+  if (!value) return '';
+  return String(typeof value === 'object' ? value._id || value.id : value);
 }
 
-router.get('/', async (req, res) => {
+function serializeRide(ride, { includePrivate = false } = {}) {
+  const value = ride && typeof ride.toObject === 'function' ? ride.toObject() : { ...(ride || {}) };
+  const status = value.status === 'available' ? 'approved' : (value.status || 'pending');
+  const result = { ...value, id: idOf(value._id || value.id), driverId: idOf(value.driverId), vehicleImage: normalizeMediaUrl(value.vehicleImage, ''), status, statusLabel: ({ pending: 'Pending Approval', approved: 'Available', rejected: 'Rejected', removed: 'Removed' })[status] || 'Pending Approval' };
+  if (!includePrivate) { delete result.driverPhone; delete result.driverId; }
+  return result;
+}
+
+function imageValue(value) {
+  if (typeof value !== 'string' || !value) return '';
+  if (/^data:image\/(png|jpeg|jpg|webp|gif);base64,/i.test(value)) return value;
+  if (/^https?:\/\//i.test(value)) return value;
+  if (/^\/?(uploads|images|assets)\//i.test(value)) return normalizeMediaUrl(value, '');
+  return '';
+}
+
+router.get('/', optionalAuth, async (req, res) => {
   try {
-    const q = {};
-    if (req.query.from) q.from = { $regex: req.query.from.trim(), $options: 'i' };
-    if (req.query.to) q.to = { $regex: req.query.to.trim(), $options: 'i' };
+    const query = {};
+    if (req.query.from) query.from = { $regex: String(req.query.from).trim().slice(0, 100), $options: 'i' };
+    if (req.query.to) query.to = { $regex: String(req.query.to).trim().slice(0, 100), $options: 'i' };
+    if (req.query.vehicleType) query.vehicleType = String(req.query.vehicleType);
+    const requestedStatus = String(req.query.status || '').toLowerCase();
+    const today = new Date(); today.setHours(0, 0, 0, 0);
     if (req.query.date) {
-      const d = new Date(req.query.date);
-      if (!Number.isNaN(d.getTime())) {
-        const next = new Date(d); next.setDate(next.getDate() + 1);
-        q.date = { $gte: d, $lt: next };
-      }
+      const date = new Date(req.query.date);
+      if (!Number.isNaN(date.getTime())) { const next = new Date(date); next.setDate(next.getDate() + 1); query.date = { $gte: date, $lt: next }; }
+    } else if (requestedStatus !== 'all') {
+      query.date = { $gte: today };
     }
-    // Public listing shows only approved rides. Admin passes ?status=all.
-    if (req.query.status !== 'all') { q.status = 'available'; q.verified = true; }
-    const docs = await Ride.find(q).sort({ date: 1, time: 1 }).lean();
-    res.json(docs.map(serializeRide));
-  } catch (e) {
-    res.status(500).json({ message: e.message });
+    // Mirrors GET /vehicles: the public "approved" filter is allowed for anyone,
+    // while non-public statuses (pending/rejected/removed) stay admin-only.
+    const publicStatuses = ['approved', 'available', ''];
+    if (requestedStatus === 'all') {
+      if (req.user?.role !== 'admin') return res.status(403).json({ message: 'Admin access is required to view all ride statuses.' });
+      query.status = { $nin: ['removed'] };
+    } else if (!publicStatuses.includes(requestedStatus) && req.user?.role !== 'admin') {
+      return res.status(403).json({ message: 'Admin access is required to view other ride statuses.' });
+    } else {
+      query.status = { $in: ['approved', 'available'] };
+      query.verified = true;
+    }
+    const rides = await Ride.find(query).sort({ date: 1, time: 1 }).lean();
+    res.json(rides.map(ride => serializeRide(ride, { includePrivate: req.user?.role === 'admin' || req.user?.role === 'owner' })));
+  } catch (error) {
+    res.status(500).json({ message: 'Rides could not be loaded. Please try again.' });
   }
 });
 
 router.get('/bookings/my', requireAuth, async (req, res) => {
-  const docs = await RideBooking.find({ userId: req.user._id })
-    .populate('rideId')
-    .sort({ createdAt: -1 }).lean();
-  res.json(docs.map(b => ({
-    ...b,
-    id: b._id.toString(),
-    type: 'ride',
-    rideId: b.rideId ? { ...b.rideId, id: b.rideId._id.toString() } : null
-  })));
+  try {
+    const docs = await RideBooking.find({ userId: req.user._id }).populate('rideId').sort({ createdAt: -1 }).lean();
+    res.json(docs.map(booking => ({ ...booking, id: idOf(booking._id), type: 'ride', rideId: booking.rideId ? { ...booking.rideId, id: idOf(booking.rideId) } : null })));
+  } catch (error) {
+    res.status(500).json({ message: 'Ride bookings could not be loaded.' });
+  }
 });
 
-router.post('/', requireAuth, async (req, res) => {
-  try {
-    const { from, to, date, time, seats, price, vehicle, vehicleType, numberPlate, driverPhone, vehicleImage } = req.body;
-    if (!from || !to || !date || !time || !vehicle || Number(seats) < 1 || Number(price) < 1) {
-      return res.status(400).json({ message: 'From, to, date, time, vehicle, seats and price are required.' });
-    }
-    if (!vehicleType || !['Bike','Scooter','Car','Other'].includes(vehicleType)) {
-      return res.status(400).json({ message: 'Vehicle type must be Bike, Scooter, Car or Other.' });
-    }
-    const tripDate = new Date(date);
-    if (Number.isNaN(tripDate.getTime())) return res.status(400).json({ message: 'Invalid ride date.' });
-    const today = new Date(); today.setHours(0,0,0,0);
-    const day = new Date(tripDate); day.setHours(0,0,0,0);
-    if (day < today) return res.status(400).json({ message: 'Ride date cannot be in the past.' });
-    if (vehicleImage && typeof vehicleImage === 'string' && vehicleImage.length > 5*1024*1024) {
-      return res.status(400).json({ message: 'Vehicle image must be smaller than about 3.5MB.' });
-    }
+router.get('/mine', requireAuth, requireRole('owner', 'admin'), async (req, res) => {
+  const rides = await Ride.find(req.user.role === 'admin' && req.query.all === 'true' ? {} : { driverId: req.user._id }).sort({ date: 1 }).lean();
+  res.json(rides.map(ride => serializeRide(ride, { includePrivate: true })));
+});
 
-    const r = await Ride.create({
-      driverId: req.user._id,
-      driver: req.user.name,
-      driverPhone: (driverPhone || req.user.phone || '').toString().trim(),
-      from: String(from).trim(),
-      to: String(to).trim(),
-      date: tripDate,
-      time: String(time),
-      seats: Math.min(6, Number(seats)),
-      price: Number(price),
-      vehicle: String(vehicle).trim(),
-      vehicleType,
-      numberPlate: String(numberPlate || '').trim().toUpperCase(),
-      vehicleImage: (typeof vehicleImage === 'string' && vehicleImage.startsWith('data:image/')) ? vehicleImage : '',
-      verified: req.user.role === 'admin' ? true : false,
-      status: req.user.role === 'admin' ? 'available' : 'pending'
+router.post('/', requireAuth, requireRole('owner', 'admin'), async (req, res) => {
+  try {
+    const { from, to, date, time, seats, price, vehicle, vehicleType, fuelType, numberPlate, driverPhone, vehicleImage } = req.body;
+    if (!from || !to || !date || !time || !vehicle || Number(seats) < 1 || Number(price) < 1) return res.status(400).json({ message: 'From, to, date, time, vehicle, seats and price are required.' });
+    if (!['Bike', 'Scooter', 'Car', 'Other'].includes(vehicleType)) return res.status(400).json({ message: 'Vehicle type must be Bike, Scooter, Car or Other.' });
+    const tripDate = new Date(date);
+    if (Number.isNaN(tripDate.getTime())) return res.status(400).json({ message: 'Enter a valid ride date.' });
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const day = new Date(tripDate); day.setHours(0, 0, 0, 0);
+    if (day < today) return res.status(400).json({ message: 'Ride date cannot be in the past.' });
+    if (vehicleImage && typeof vehicleImage === 'string' && vehicleImage.length > 4 * 1024 * 1024) return res.status(400).json({ message: 'Vehicle photo must be smaller than 3 MB.' });
+    const ride = await Ride.create({
+      driverId: req.user._id, driver: req.user.name, driverPhone: String(driverPhone || req.user.phone || '').trim(),
+      from: String(from).trim(), to: String(to).trim(), date: tripDate, time: String(time),
+      seats: Math.min(6, Number(seats)), price: Number(price), vehicle: String(vehicle).trim(), vehicleType,
+      fuelType: ['Petrol', 'Diesel', 'Electric', 'CNG', 'Hybrid'].includes(fuelType) ? fuelType : 'Petrol',
+      numberPlate: String(numberPlate || '').trim().toUpperCase(), vehicleImage: imageValue(vehicleImage),
+      verified: req.user.role === 'admin', status: req.user.role === 'admin' ? 'approved' : 'pending'
     });
-    res.status(201).json({...serializeRide(r.toObject()), message: r.status==='pending' ? 'Ride submitted. It will appear after admin approval.' : 'Ride published.'});
-  } catch (e) {
-    res.status(400).json({ message: e.message });
+    res.status(201).json({ ...serializeRide(ride), message: ride.status === 'pending' ? 'Ride submitted. It will appear after admin approval.' : 'Ride published.' });
+  } catch (error) {
+    res.status(400).json({ message: error.message || 'Ride could not be published.' });
   }
 });
 
 router.post('/:id/book', requireAuth, async (req, res) => {
   if (!mongoose.isValidObjectId(req.params.id)) return res.status(400).json({ message: 'We could not find that ride. Please try again.' });
-
-  const seats = Math.max(1, Number(req.body.seats) || 1);
-  const ride = await Ride.findById(req.params.id);
-  if (!ride) return res.status(404).json({ message: 'We could not find that ride. Please try again.' });
-  if (ride.driverId?.toString() === req.user._id.toString()) return res.status(400).json({ message: 'You cannot book your own ride.' });
-
-  const activeBookings = await RideBooking.aggregate([
-    { $match: { rideId: ride._id, status: { $in: ['payment_pending', 'confirmed'] } } },
-    { $group: { _id: '$rideId', seats: { $sum: '$seats' } } }
-  ]);
-  const booked = activeBookings[0]?.seats || 0;
-  const available = Math.max(0, Number(ride.seats) - booked);
-  if (seats > available) return res.status(409).json({ message: `Only ${available} seat(s) are available.` });
-
-  const total = seats * Number(ride.price);
-  const b = await RideBooking.create({
-    rideId: ride._id,
-    userId: req.user._id,
-    seats,
-    totalAmount: total,
-    paymentMethod: 'demo',
-    status: 'payment_pending',
-    paymentStatus: 'pending'
-  });
-
-  res.status(201).json({
-    ...b.toObject(),
-    id: b._id.toString(),
-    payment: { method: 'demo', currency: 'INR', displayAmount: total }
-  });
+  try {
+    const requestedSeats = Number(req.body.seats || 1);
+    if (!Number.isInteger(requestedSeats) || requestedSeats < 1 || requestedSeats > 6) return res.status(400).json({ message: 'Seat count must be a whole number from 1 to 6.' });
+    const seats = requestedSeats;
+    const ride = await Ride.findById(req.params.id);
+    if (!ride || !['approved', 'available'].includes(ride.status) || !ride.verified) return res.status(404).json({ message: 'This ride is not available for booking.' });
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    if (new Date(ride.date) < today) return res.status(400).json({ message: 'This ride has already departed and cannot be booked.' });
+    if (idOf(ride.driverId) === idOf(req.user._id)) return res.status(400).json({ message: 'You cannot book your own ride.' });
+    const activeBookings = await RideBooking.aggregate([{ $match: { rideId: ride._id, status: { $in: ['payment_pending', 'confirmed'] } } }, { $group: { _id: '$rideId', seats: { $sum: '$seats' } } }]);
+    const available = Math.max(0, Number(ride.seats) - (activeBookings[0]?.seats || 0));
+    if (seats > available) return res.status(409).json({ message: `Only ${available} seat(s) are available.` });
+    const totalAmount = seats * Number(ride.price);
+    const booking = await RideBooking.create({ rideId: ride._id, userId: req.user._id, seats, totalAmount, paymentMethod: 'demo', status: 'payment_pending', paymentStatus: 'pending' });
+    await notifyUser(ride.driverId, { type: 'booking', title: 'New ride booking request', message: `${req.user.name} reserved ${seats} seat(s) on your ${ride.from} to ${ride.to} ride.`, data: { rideBookingId: booking._id.toString() } });
+    res.status(201).json({ ...booking.toObject(), id: booking._id.toString(), payment: { method: 'demo', currency: 'INR', displayAmount: totalAmount } });
+  } catch (error) {
+    res.status(500).json({ message: 'Ride booking could not be created. Please try again.' });
+  }
 });
 
 router.post('/bookings/:id/payment-demo', requireAuth, async (req, res) => {
-  if (!mongoose.isValidObjectId(req.params.id)) return res.status(400).json({ message: 'We could not find that ride booking. Please try again.' });
-
-  const b = await RideBooking.findOne({
-    _id: req.params.id, userId: req.user._id,
-    status: 'payment_pending', paymentStatus: 'pending'
-  });
-  if (!b) return res.status(404).json({ message: 'We could not find that ride booking. Please try again.' });
-
+  if (!mongoose.isValidObjectId(req.params.id)) return res.status(400).json({ message: 'Ride booking not found.' });
+  const booking = await RideBooking.findOne({ _id: req.params.id, userId: req.user._id, status: 'payment_pending', paymentStatus: 'pending' });
+  if (!booking) return res.status(404).json({ message: 'Ride booking is no longer awaiting payment.' });
   const reference = `REVEX-RIDE-${crypto.randomBytes(6).toString('hex').toUpperCase()}`;
-  const updated = await RideBooking.findOneAndUpdate(
-    { _id: b._id, userId: req.user._id, status: 'payment_pending', paymentStatus: 'pending' },
-    { status: 'confirmed', paymentStatus: 'paid', paymentReference: reference },
-    { new: true }
-  );
+  const updated = await RideBooking.findOneAndUpdate({ _id: booking._id, userId: req.user._id, status: 'payment_pending', paymentStatus: 'pending' }, { status: 'confirmed', paymentStatus: 'paid', paymentReference: reference }, { returnDocument: 'after' });
   if (!updated) return res.status(409).json({ message: 'Ride booking was already processed.' });
-
   res.json({ success: true, message: 'Ride payment successful. Seat confirmed.', booking: { ...updated.toObject(), id: updated._id.toString() } });
 });
 
 router.post('/bookings/:id/payment-failed', requireAuth, async (req, res) => {
-  if (!mongoose.isValidObjectId(req.params.id)) return res.status(400).json({ message: 'We could not find that ride booking. Please try again.' });
-  const b = await RideBooking.findOneAndUpdate(
-    { _id: req.params.id, userId: req.user._id, status: 'payment_pending' },
-    { status: 'cancelled', paymentStatus: 'failed' }, { new: true }
-  );
-  if (!b) return res.status(404).json({ message: 'We could not find that ride booking. Please try again.' });
+  if (!mongoose.isValidObjectId(req.params.id)) return res.status(400).json({ message: 'Ride booking not found.' });
+  const booking = await RideBooking.findOneAndUpdate({ _id: req.params.id, userId: req.user._id, status: 'payment_pending' }, { status: 'cancelled', paymentStatus: 'failed' }, { returnDocument: 'after' });
+  if (!booking) return res.status(404).json({ message: 'Ride booking cannot be cancelled.' });
   res.json({ success: true });
 });
 
 router.post('/bookings/:id/cancel', requireAuth, async (req, res) => {
-  if (!mongoose.isValidObjectId(req.params.id)) return res.status(400).json({ message: 'We could not find that ride booking. Please try again.' });
-  const b = await RideBooking.findOne({
-    _id: req.params.id, userId: req.user._id,
-    status: { $in: ['payment_pending', 'confirmed'] }
-  });
-  if (!b) return res.status(404).json({ message: 'This ride booking cannot be cancelled.' });
-  b.status = 'cancelled';
-  await b.save();
-  res.json({ success: true, message: 'Ride booking cancelled. Demo payment is not automatically refunded.' });
+  if (!mongoose.isValidObjectId(req.params.id)) return res.status(400).json({ message: 'Ride booking not found.' });
+  const booking = await RideBooking.findOne({ _id: req.params.id, userId: req.user._id, status: { $in: ['payment_pending', 'confirmed'] } });
+  if (!booking) return res.status(404).json({ message: 'This ride booking cannot be cancelled.' });
+  booking.status = 'cancelled';
+  await booking.save();
+  res.json({ success: true, message: 'Ride booking cancelled.' });
 });
 
-/* Feedback/rating for a ride seat booking. Handles populated and raw ObjectIds. */
 router.post('/bookings/:id/feedback', requireAuth, async (req, res) => {
-  if (!mongoose.isValidObjectId(req.params.id)) return res.status(400).json({ message: 'We could not find that ride booking. Please try again.' });
-
-  const b = await RideBooking.findById(req.params.id).populate('rideId').populate('userId','_id name');
-  if (!b) return res.status(404).json({ message: 'Ride booking not found.' });
-
-  const riderId = b.userId?._id?.toString() || b.userId?.toString();
-  const isRider = riderId === req.user._id.toString();
-  if (!isRider && req.user.role !== 'admin') return res.status(403).json({ message: 'Not allowed.' });
-
+  if (!mongoose.isValidObjectId(req.params.id)) return res.status(400).json({ message: 'Ride booking not found.' });
+  const booking = await RideBooking.findById(req.params.id).populate('rideId').populate('userId', '_id name');
+  if (!booking) return res.status(404).json({ message: 'Ride booking not found.' });
+  const riderId = idOf(booking.userId?._id || booking.userId);
+  if (riderId !== idOf(req.user._id) && req.user.role !== 'admin') return res.status(403).json({ message: 'You can only rate your own ride booking.' });
+  if (!['confirmed', 'completed'].includes(booking.status)) return res.status(400).json({ message: 'Rate a confirmed or completed ride.' });
   const rating = Number(req.body.rating);
-  const comment = String(req.body.comment || '').trim().slice(0,500);
-  if (!rating || rating < 1 || rating > 5) {
-    return res.status(400).json({ message: 'Rating must be between 1 and 5.' });
-  }
-
-  b.rating = rating;
-  b.comment = comment;
-  await b.save();
-
-  res.json({
-    success: true,
-    message: 'Feedback submitted successfully.',
-    booking: { ...b.toObject(), id: b._id.toString() }
-  });
+  if (!Number.isInteger(rating) || rating < 1 || rating > 5) return res.status(400).json({ message: 'Rating must be a whole number from 1 to 5.' });
+  booking.rating = rating;
+  booking.comment = String(req.body.comment || '').trim().slice(0, 500);
+  await booking.save();
+  res.json({ success: true, message: 'Feedback submitted successfully.', booking: { ...booking.toObject(), id: booking._id.toString() } });
 });
 
 module.exports = router;

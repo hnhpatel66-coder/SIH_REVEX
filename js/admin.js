@@ -1,158 +1,263 @@
-function escapeHtml(value){return String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
-function inr(n){return 'Rs.'+Number(n||0).toLocaleString('en-IN');}
-document.addEventListener('DOMContentLoaded',async()=>{
- const user=getStoredUser();if(user?.role!=='admin')return;
- try{
-  /* ---------- Dashboard ---------- */
-  const s=await api('/admin/summary');
-  const stat=(label,value,note)=>`<article class="vehicle-card"><div class="card-body"><span class="eyebrow">${label}</span><h2 style="font-size:2.1rem;margin:12px 0">${value}</h2><p style="margin:0">${note}</p></div></article>`;
-  const approved=(s.vehicles||0)-(s.pendingVehicleVerification||0);
-  document.getElementById('adminStats').innerHTML=
-    stat('Total users',s.users,'Registered accounts')+
-    stat('Total owners',s.owners,'Owner accounts')+
-    stat('Total vehicles',s.vehicles,'Vehicle inventory')+
-    stat('Pending approvals',s.pendingVehicleVerification,'Awaiting verification')+
-    stat('Approved vehicles',approved,'Verified listings')+
-    stat('Total bookings',s.bookings,'Stored rental bookings')+
-    stat('Shared rides',s.rides,'Published ride offers')+
-    stat('Total revenue',inr(s.totalRevenue),'Successful paid bookings');
+const adminState = {
+  summary: null, vehicles: [], owners: [], bookings: [], users: [], income: null, rides: [], profile: null,
+  vehicleFilter: 'all', activeTab: 'dashboard', activeOwnerId: null, agreements: [], missingAgreements: [], agreementFilter: 'all', agreementSearch: ''
+};
 
-  /* ---------- Inventory (vehicles + rides) ---------- */
-  const vs=await api('/vehicles?status=all');
-  const vehicleRow=v=>`<div style="padding:12px 0;border-bottom:1px solid #e5ebf4">
-    <b>${escapeHtml(v.name)}</b><br><small>${escapeHtml(v.type)} - ${escapeHtml(v.location)} - Rs.${v.price}/hour - ${v.verified?'Verified':'Pending'}</small>
-    ${!v.verified
- ? `<br><button class="btn btn-primary" style="margin-top:8px;padding:8px 12px" data-verify="${v.id}">Approve</button>
-    <button class="btn btn-outline" style="margin-top:8px;padding:8px 12px" data-reject="${v.id}">Reject</button>`
- : `<br><span class="pill">Approved</span> <button class="btn btn-outline" style="margin-top:8px;padding:8px 12px" data-del-vehicle="${v.id}">Remove vehicle</button>`}
-  </div>`;
-  document.getElementById('adminVehicles').innerHTML=vs.length?vs.map(vehicleRow).join(''):'<p>No vehicles.</p>';
-
-  const pending=vs.filter(v=>!v.verified);
-  document.getElementById('adminApprovals').innerHTML=pending.length?pending.map(v=>`<div style="padding:12px 0;border-bottom:1px solid #e5ebf4">
-    <b>${escapeHtml(v.name)}</b><br><small>${escapeHtml(v.type)} - ${escapeHtml(v.location)} - Rs.${v.price}/hour${v.numberPlate?` - Plate: ${escapeHtml(v.numberPlate)}`:''}</small>
-    ${v.image?`<br><img src="${v.image}" style="max-width:100%;max-height:120px;border-radius:8px;margin-top:8px">`:''}
-    <br><button class="btn btn-primary" style="margin-top:8px;padding:8px 12px" data-verify="${v.id}">Approve</button>
-    <button class="btn btn-outline" style="margin-top:8px;padding:8px 12px" data-reject="${v.id}">Reject</button></div>`).join(''):'<p>No pending vehicle approvals.</p>';
-
-  const rs=await api('/rides?status=all');
-  const rideRow=r=>`<p style="padding:11px 0;border-bottom:1px solid #e5ebf4;margin:0"><b>${escapeHtml(r.from)} to ${escapeHtml(r.to)}</b><br><small>${escapeHtml(r.driver)}${r.driverPhone?` (${escapeHtml(r.driverPhone)})`:''} - ${r.seats} seats - Rs.${r.price}/seat - ${escapeHtml(r.vehicleType||'Car')}${r.numberPlate?` - ${escapeHtml(r.numberPlate)}`:''} - ${r.verified?'Verified':'Pending'}</small><br>${!r.verified?`<button class="btn btn-primary" style="margin-top:6px;padding:6px 10px" data-verify-ride="${r.id}">Approve ride</button> `:''}<button class="btn btn-outline" style="margin-top:6px;padding:6px 10px" data-del-ride="${r.id}">Remove ride</button></p>`;
-  document.getElementById('adminRides').innerHTML=(rs.map(rideRow).join('')||'<p>No rides.</p>');
-  const pendingRides=rs.filter(r=>!r.verified);
-  document.getElementById('adminRideApprovals').innerHTML=pendingRides.length?pendingRides.map(rideRow).join(''):'<p>No pending ride approvals.</p>';
-  try{
-    const rbs=await api('/admin/ride-bookings');
-    document.getElementById('adminRides').innerHTML += rbs.length
-      ? '<h4 style="margin-top:18px">Ride bookings</h4>'+rbs.map(b=>`<p style="padding:10px 0;border-bottom:1px solid #e5ebf4;margin:0"><b>${escapeHtml(b.rideId?.from||'')} to ${escapeHtml(b.rideId?.to||'')}</b><br><small>${escapeHtml(b.userId?.name||'User')} - ${b.seats} seat(s) - ${inr(b.totalAmount)} - ${escapeHtml(b.status)}</small><br>${!['cancelled','completed'].includes(b.status)?`<button class="btn btn-outline" style="margin-top:6px;padding:6px 10px" data-ride-booking-cancel="${b.id}">Cancel booking</button>`:''}</p>`).join('')
-      : '';
-  }catch{}
-
-  /* ---------- Bookings ---------- */
-  const bs=await api('/admin/bookings');
-  document.getElementById('adminBookings').innerHTML=bs.map(b=>`<article class="booking-row"><div>
-    <span class="pill">${escapeHtml(b.paymentStatus||'pending')}</span>
-    <h3 style="margin:8px 0 0">${escapeHtml(b.vehicleId?.name||'Vehicle')}</h3>
-    <small>${escapeHtml(b.userId?.name||'User')} - ${b.startDate?new Date(b.startDate).toLocaleString('en-IN'):''}${b.rating?` - Rated ${b.rating}/5`:''}${b.comment?` - "${escapeHtml(b.comment)}"`:''}</small>
-  </div><div style="text-align:right"><b>${inr(b.totalAmount)}</b><br><span class="status">${escapeHtml(b.status)}</span>
-    ${!['cancelled','completed'].includes(b.status)?`<br><button class="btn btn-outline" style="margin-top:8px;padding:7px 10px" data-booking-action="completed" data-booking-id="${b.id}">Mark completed</button> <button class="btn btn-outline" style="margin-top:8px;padding:7px 10px" data-booking-action="cancelled" data-booking-id="${b.id}">Cancel</button>`:''}
-  </div></article>`).join('')||'<p>No bookings.</p>';
-
-  /* ---------- Users ---------- */
-  const users=await api('/admin/users');
-  const me=getStoredUser();
-  const owners=users.filter(u=>u.role==='owner'), regulars=users.filter(u=>u.role==='user'), admins=users.filter(u=>u.role==='admin');
-  const userRow=u=>`<p style="padding:10px 0;border-bottom:1px solid #e5ebf4;margin:0"><b>${escapeHtml(u.name)}</b><br><small>${escapeHtml(u.email)} - ${escapeHtml(u.role)} - Cars: ${u.totalCarsOnRent||0} - Earnings: ${inr(u.ownerEarnings)} - ${escapeHtml(u.carApprovalStatus||'pending')}</small>${u.id!==me.id?`<br><button class="btn btn-outline" style="margin-top:6px;padding:6px 10px" data-del-user="${u.id}" data-del-role="${escapeHtml(u.role)}">Remove ${escapeHtml(u.role)}</button>`:'<br><small>(your account)</small>'}</p>`;
-  document.getElementById('adminUsers').innerHTML=
-    `<h4>Admins (${admins.length})</h4>`+(admins.map(userRow).join('')||'<p>No admins.</p>')+
-    `<h4 style="margin-top:14px">Owners (${owners.length})</h4>`+(owners.map(userRow).join('')||'<p>No owners.</p>')+
-    `<h4 style="margin-top:14px">Users (${regulars.length})</h4>`+(regulars.map(userRow).join('')||'<p>No users.</p>');
-
-  /* ---------- Income ---------- */
-  try{
-    const inc=await api('/admin/income');
-    document.getElementById('incomeCards').innerHTML=
-      stat('Total revenue',inr(inc.totalRevenue),'Paid rental + ride bookings')+
-      stat('Completed revenue',inr(inc.completedRevenue),'Completed paid bookings')+
-      stat('Pending revenue',inr(inc.pendingRevenue),'Awaiting payment')+
-      stat('Platform share (10%)',inr(inc.commission),'Service share')+
-      stat('Owner payout (90%)',inr(inc.ownerPayout),'Paid to owners')+
-      stat('Completed bookings',inc.completedBookings,'Finished trips')+
-      stat('Pending bookings',inc.pendingBookings,'In progress')+
-      stat('Cancelled bookings',inc.cancelledBookings,'Cancelled trips');
-    document.getElementById('incomeByVehicle').innerHTML=inc.revenueByVehicle.length?inc.revenueByVehicle.map(v=>`<p style="padding:10px 0;border-bottom:1px solid #e5ebf4;margin:0"><b>${escapeHtml(v.vehicleName)}</b> (${escapeHtml(v.vehicleType)})<br><small>${escapeHtml(v.ownerName)} - ${v.bookings} booking(s) - Revenue ${inr(v.revenue)} - Owner share ${inr(v.ownerShare)}</small></p>`).join(''):'<p>No paid bookings yet.</p>';
-    document.getElementById('incomeByOwner').innerHTML=inc.revenueByOwner.length?inc.revenueByOwner.map(o=>`<p style="padding:10px 0;border-bottom:1px solid #e5ebf4;margin:0"><b>${escapeHtml(o.ownerName)}</b><br><small>${o.bookings} booking(s) - Revenue ${inr(o.revenue)} - Payout ${inr(o.ownerShare)}</small></p>`).join(''):'<p>No owner revenue yet.</p>';
-    document.getElementById('incomeRecent').innerHTML=inc.recent.length?inc.recent.map(t=>`<p style="padding:10px 0;border-bottom:1px solid #e5ebf4;margin:0"><b>${escapeHtml(t.vehicle)}</b><br><small>${escapeHtml(t.renter)} - ${inr(t.amount)} - ${escapeHtml(t.status)} - ${new Date(t.date).toLocaleString('en-IN')}</small></p>`).join(''):'<p>No transactions yet.</p>';
-  }catch(e){
-    document.getElementById('incomeCards').innerHTML=`<div class="empty">${escapeHtml(e.message)}</div>`;
+function adminMessage(message, error = false) {
+  const box = document.getElementById('adminMessage');
+  if (!box) return;
+  box.textContent = message;
+  box.className = `form-message${error ? ' form-message-error' : ''}`;
+  if (message) setTimeout(() => { if (box.textContent === message) box.textContent = ''; }, 5000);
+}
+function statCard(label, value, note) {
+  return `<article class="stat-card"><span class="eyebrow">${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong><small>${escapeHtml(note)}</small></article>`;
+}
+function documentLinks(vehicle) {
+  const documents = vehicle.documents || [];
+  if (!documents.length) return '<span class="muted-text">No documents uploaded</span>';
+  return `<div class="document-list">${documents.map(document => {
+    const dataUrl = document.dataUrl || '';
+    const isImage = String(document.mimeType || dataUrl).startsWith('image/') || dataUrl.startsWith('data:image/');
+    const preview = dataUrl && isImage ? `<img class="document-thumb" src="${escapeHtml(dataUrl)}" alt="${escapeHtml(document.label || document.type)}">` : '';
+    const links = dataUrl ? `<a href="${escapeHtml(dataUrl)}" target="_blank" rel="noopener">Open</a> <a href="${escapeHtml(dataUrl)}" download="${escapeHtml(document.fileName || `${document.type}.bin`)}">Download</a>` : `<span>${escapeHtml(document.fileName || 'File name only')}</span>`;
+    return `<div class="document-item">${preview}<div><b>${escapeHtml(document.label || document.type)}</b><small>${escapeHtml(document.fileName || 'Uploaded file')} · ${escapeHtml(document.status || 'pending')}</small><br>${links}</div></div>`;
+  }).join('')}</div>`;
+}
+function vehicleRow(vehicle) {
+  const status = vehicle.status || 'pending';
+  const canReview = ['pending', 'rejected'].includes(status);
+  const badgeClass = status === 'approved' ? 'badge-approved' : status === 'rejected' ? 'badge-rejected' : status === 'removed' ? 'badge-removed' : 'badge-pending';
+  return `<article class="moderation-card"><div class="moderation-main"><div class="badge-row"><span class="badge ${badgeClass}">${escapeHtml(vehicle.statusLabel || status)}</span><span class="badge badge-category">${escapeHtml(vehicle.category || vehicle.type || 'Other')}</span><span class="badge badge-fuel">${escapeHtml(vehicle.fuelType || 'Petrol')}</span></div><h3>${escapeHtml(vehicle.name)}</h3><p class="card-meta">${escapeHtml(vehicle.brand || '')} ${escapeHtml(vehicle.model || '')} · ${escapeHtml(vehicle.location || '-')} · ${Number(vehicle.currentKm || 0).toLocaleString('en-IN')} km · ${formatMoney(vehicle.price)}/${escapeHtml(vehicle.priceUnit || 'hour')}${vehicle.discountPercent ? ` · ${vehicle.discountPercent}% discount` : ''}</p><p class="card-meta">Plate: <b>${escapeHtml(vehicle.numberPlate || '-')}</b> · Owner: ${escapeHtml(vehicle.owner?.name || 'Unknown')} ${vehicle.owner?.email ? `(${escapeHtml(vehicle.owner.email)})` : ''}</p>${vehicle.rejectionReason ? `<p class="status-error">Rejection reason: ${escapeHtml(vehicle.rejectionReason)}</p>` : ''}${vehicle.removalReason ? `<p class="status-error">Removal reason: ${escapeHtml(vehicle.removalReason)}</p>` : ''}<div class="document-section"><h4>Uploaded documents</h4>${documentLinks(vehicle)}</div></div><div class="moderation-actions">${canReview ? `<button class="btn btn-primary" type="button" data-verify="${vehicle.id}" data-decision="approve">Approve</button><button class="btn btn-danger" type="button" data-verify="${vehicle.id}" data-decision="reject">Reject</button>` : ''}${status !== 'removed' ? `<button class="btn btn-danger" type="button" data-remove-vehicle="${vehicle.id}" data-vehicle-name="${escapeHtml(vehicle.name || '')}">Delete</button>` : ''}</div></article>`;
+}
+function renderStats() {
+  const summary = adminState.summary;
+  if (!summary) return;
+  document.getElementById('adminStats').innerHTML = [
+    statCard('Total users', summary.users, 'Active accounts'), statCard('Total owners', summary.owners, 'Owner accounts'), statCard('Total vehicles', summary.vehicles, 'All registrations'),
+    statCard('Pending approval', summary.pendingVehicleVerification, 'Awaiting documents'), statCard('Approved vehicles', summary.approvedVehicles, 'Live listings'), statCard('Rejected vehicles', summary.rejectedVehicles, 'Needs correction'),
+    statCard('Total bookings', summary.bookings, 'Rental records'), statCard('Total revenue', formatMoney(summary.totalRevenue), 'Paid bookings')
+  ].join('');
+}
+function renderApprovalSummary() {
+  const box = document.getElementById('adminApprovalSummary');
+  if (!box) return;
+  const pending = adminState.vehicles.filter(vehicle => vehicle.status === 'pending');
+  const pendingRides = adminState.rides.filter(ride => !ride.verified && ride.status !== 'removed');
+  const vehicleMarkup = pending.length ? pending.slice(0, 4).map(vehicle => `<div class="list-row"><div><strong>${escapeHtml(vehicle.name)}</strong><small>${escapeHtml(vehicle.owner?.name || 'Owner')} · ${escapeHtml(vehicle.numberPlate || 'No plate')}</small></div><button class="btn btn-primary btn-small" data-verify="${vehicle.id}" data-decision="approve">Approve</button></div>`).join('') : '<div class="empty">No vehicles are waiting for approval.</div>';
+  const rideMarkup = pendingRides.length ? `<h4 style="margin-top:18px">Ride offers</h4>${pendingRides.slice(0, 3).map(ride => `<div class="list-row"><div><strong>${escapeHtml(ride.from)} → ${escapeHtml(ride.to)}</strong><small>${escapeHtml(ride.driver || 'Owner')}</small></div><button class="btn btn-primary btn-small" data-ride-verify="${ride.id}" data-ride-id="${ride.id}" data-decision="approve">Approve</button><button class="btn btn-danger btn-small" data-ride-verify="${ride.id}" data-ride-id="${ride.id}" data-decision="reject">Reject</button></div>`).join('')}` : '';
+  box.innerHTML = vehicleMarkup + rideMarkup;
+}
+function renderActivity() {
+  const box = document.getElementById('adminActivity');
+  if (!box) return;
+  const recent = adminState.bookings.slice(0, 5);
+  box.innerHTML = recent.length ? recent.map(item => `<div class="list-row"><div><strong>${escapeHtml(item.vehicleId?.name || 'Vehicle')}</strong><small>${escapeHtml(item.userId?.name || 'User')} · ${formatDateTime(item.createdAt)}</small></div><span class="badge badge-muted">${escapeHtml(item.status)}</span></div>`).join('') : '<div class="empty">No booking activity yet.</div>';
+}
+function renderVehicles() {
+  const box = document.getElementById('adminVehicles');
+  if (!box) return;
+  const list = adminState.vehicleFilter === 'all' ? adminState.vehicles : adminState.vehicles.filter(vehicle => vehicle.status === adminState.vehicleFilter);
+  box.innerHTML = list.length ? list.map(vehicleRow).join('') : '<div class="empty">No vehicles in this status.</div>';
+}
+function renderOwners() {
+  const box = document.getElementById('adminOwners');
+  if (!box) return;
+  box.innerHTML = adminState.owners.length ? adminState.owners.map(owner => `<article class="owner-summary-row"><div><h3>${escapeHtml(owner.name)}</h3><p>${escapeHtml(owner.email)} ${owner.phone ? `· ${escapeHtml(owner.phone)}` : ''}</p><div class="owner-metrics"><span><b>${owner.totalVehicles}</b> vehicles</span><span><b>${owner.totalBookings}</b> bookings</span><span><b>${owner.pendingBookings || 0}</b> pending</span><span><b>${owner.activeBookings || 0}</b> active</span><span><b>${owner.completedBookings || 0}</b> completed</span><span><b>${owner.cancelledBookings || 0}</b> cancelled</span><span><b>${formatMoney(owner.totalEarnings)}</b> earnings</span></div></div><button class="btn btn-outline" type="button" data-owner-details="${owner.id}">View owner</button></article>`).join('') : '<div class="empty">No owner accounts found.</div>';
+}
+function renderOwnerDetail(data) {
+  const box = document.getElementById('adminOwnerDetail');
+  if (!box) return;
+  if (!data) { box.innerHTML = ''; return; }
+  const totals = data.totals || {};
+  box.innerHTML = `<article class="detail-panel owner-detail-panel"><div class="panel-heading"><div><span class="eyebrow">OWNER DETAILS</span><h2>${escapeHtml(data.owner.name)}</h2><p>${escapeHtml(data.owner.email)} ${data.owner.phone ? `· ${escapeHtml(data.owner.phone)}` : ''}</p></div><button class="btn btn-outline" id="closeOwnerDetail" type="button">Close</button></div><div class="owner-metrics"><span><b>${totals.totalVehicles || 0}</b> total vehicles</span><span><b>${totals.approvedVehicles || 0}</b> approved</span><span><b>${totals.pendingVehicles || 0}</b> pending</span><span><b>${totals.rejectedVehicles || 0}</b> rejected</span><span><b>${totals.totalBookings || 0}</b> bookings</span><span><b>${totals.pendingBookings || 0}</b> pending</span><span><b>${totals.activeBookings || 0}</b> active</span><span><b>${totals.completedBookings || 0}</b> completed</span><span><b>${totals.cancelledBookings || 0}</b> cancelled</span><span><b>${totals.rejectedBookings || 0}</b> rejected</span><span><b>${formatMoney(totals.totalEarnings || 0)}</b> earnings</span></div><h3>Vehicles and vehicle-wise income</h3><div class="admin-vehicle-detail-list">${(data.vehicles || []).map(vehicle => `<div class="admin-vehicle-detail"><div><strong>${escapeHtml(vehicle.name)}</strong><small>${escapeHtml(vehicle.numberPlate || '-')} · ${escapeHtml(vehicle.statusLabel || vehicle.status)}</small><small>${vehicle.totalBookings || 0} booking(s) · ${formatMoney(vehicle.totalEarnings || 0)} owner income</small></div>${vehicle.status !== 'removed' ? `<button class="btn btn-danger btn-small" type="button" data-delete-owner-vehicle="${vehicle.id}" data-owner-name="${escapeHtml(data.owner.name)}" data-vehicle-name="${escapeHtml(vehicle.name || '')}">Delete</button>` : ''}</div>`).join('')}</div><h3 style="margin-top:24px">Recent bookings</h3>${(data.recentBookings || []).slice(0, 8).map(booking => `<div class="list-row"><div><strong>${escapeHtml(booking.vehicleId?.name || 'Vehicle')}</strong><small>${escapeHtml(booking.userId?.name || 'User')} · ${formatDateTime(booking.startDate)}</small></div><span class="badge badge-muted">${escapeHtml(booking.status)}</span></div>`).join('') || '<div class="empty">No bookings for this owner.</div>'}</article>`;
+  box.querySelector('#closeOwnerDetail')?.addEventListener('click', () => { adminState.activeOwnerId = null; renderOwnerDetail(null); });
+}
+function renderBookings() {
+  const box = document.getElementById('adminBookings');
+  if (!box) return;
+  box.innerHTML = adminState.bookings.length ? adminState.bookings.map(booking => `<article class="booking-row" data-booking-row="${escapeHtml(booking.id)}"><div><div class="badge-row"><span class="badge badge-muted">${escapeHtml(booking.status)}</span><span class="badge ${booking.paymentStatus === 'paid' ? 'badge-approved' : 'badge-pending'}">${escapeHtml(booking.paymentStatus)}</span></div><h3>${escapeHtml(booking.vehicleId?.name || 'Vehicle')}</h3><p class="card-meta">${escapeHtml(booking.userId?.name || 'User')} · ${formatDateTime(booking.startDate)} · Grand Total ${formatMoney(booking.grandTotal || booking.totalAmount || 0)}</p></div><div class="request-actions">${booking.status === 'pending_owner' && booking.paymentStatus === 'paid' ? `<button class="btn btn-outline btn-small" data-booking-status="confirmed" data-booking-id="${booking.id}" type="button">Confirm</button>` : ''}${!['completed', 'cancelled', 'rejected'].includes(booking.status) && booking.paymentStatus !== 'paid' ? `<button class="btn btn-danger btn-small" data-booking-status="cancelled" data-booking-id="${booking.id}" type="button">Cancel</button>` : ''}<a class="btn btn-outline btn-small" href="agreement.html?bookingId=${encodeURIComponent(booking.id)}">Agreement</a></div></article>`).join('') : '<div class="empty">No bookings found.</div>';
+}
+function renderIncome() {
+  const income = adminState.income;
+  if (!income) return;
+  document.getElementById('incomeCards').innerHTML = [statCard('Total revenue', formatMoney(income.totalRevenue), 'Paid rental + rides'), statCard('Platform share', formatMoney(income.commission), '10% service share'), statCard('Owner payout', formatMoney(income.ownerPayout), '90% owner share'), statCard('Completed bookings', income.completedBookings, 'Completed rentals'), statCard('Pending bookings', income.pendingBookings, 'Payment or owner review'), statCard('Cancelled bookings', income.cancelledBookings, 'Excluded from revenue')].join('');
+  document.getElementById('incomeByVehicle').innerHTML = income.revenueByVehicle?.length ? income.revenueByVehicle.map(item => `<div class="list-row"><div><strong>${escapeHtml(item.vehicleName)}</strong><small>${escapeHtml(item.ownerName)} · ${item.bookings} booking(s)</small></div><strong>${formatMoney(item.revenue)}</strong></div>`).join('') : '<div class="empty">No paid vehicle revenue yet.</div>';
+  document.getElementById('incomeByOwner').innerHTML = income.revenueByOwner?.length ? income.revenueByOwner.map(item => `<div class="list-row"><div><strong>${escapeHtml(item.ownerName)}</strong><small>${item.bookings} booking(s)</small></div><strong>${formatMoney(item.revenue)}</strong></div>`).join('') : '<div class="empty">No owner revenue yet.</div>';
+  document.getElementById('incomeRecent').innerHTML = income.recent?.length ? income.recent.map(item => `<div class="list-row"><div><strong>${escapeHtml(item.vehicle)}</strong><small>${escapeHtml(item.renter)} · ${formatDateTime(item.date)}</small></div><strong>${formatMoney(item.amount)}</strong></div>`).join('') : '<div class="empty">No transactions yet.</div>';
+}
+function renderAgreements() {
+  const box = document.getElementById('adminAgreements');
+  if (!box) return;
+  const search = adminState.agreementSearch.toLowerCase();
+  const list = adminState.agreements.filter(item => (adminState.agreementFilter === 'all' || item.agreementStatus === adminState.agreementFilter) && (!search || [item.agreementId, item.bookingId, item.renter?.name, item.owner?.name, item.vehicle?.name].some(value => String(value || '').toLowerCase().includes(search))));
+  box.innerHTML = list.length ? list.map(item => `<article class="agreement-row"><div><div class="badge-row"><span class="badge badge-muted">${escapeHtml(item.agreementId)}</span><span class="badge ${item.agreementStatus === 'approved' ? 'badge-approved' : item.agreementStatus === 'rejected' ? 'badge-rejected' : 'badge-pending'}">${escapeHtml(item.agreementStatus || 'pending_user')}</span><span class="badge ${item.paymentStatus === 'PAID' ? 'badge-approved' : 'badge-pending'}">${escapeHtml(item.paymentStatus || 'PENDING')}</span></div><h3>${escapeHtml(item.vehicle?.name || 'Vehicle')} · ${escapeHtml(item.renter?.name || 'Renter')}</h3><p class="card-meta">Booking ${escapeHtml(item.bookingId)} · Owner: ${escapeHtml(item.owner?.name || '-')} · ${escapeHtml(item.vehicle?.numberPlate || 'No plate')}</p><div class="request-facts"><span><b>Rental start</b>${formatDateTime(item.booking?.startDate || item.pickupDate)}</span><span><b>Return</b>${formatDateTime(item.booking?.endDate || item.returnDate)}</span><span><b>Rental Amount</b>${formatMoney(item.baseAmount ?? item.rentalAmount ?? 0)}</span><span><b>Extra charges</b>${formatMoney(item.extraKilometerCharges || 0)}</span><span><b>Tax / fees</b>${formatMoney(item.taxFees || 0)}</span><span><b>Grand Total</b>${formatMoney(item.grandTotal || item.rentalAmount || 0)}</span><span><b>Paid</b>${formatMoney(item.booking?.paidAmount || 0)}</span><span><b>Remaining</b>${formatMoney(item.booking?.remainingAmount || 0)}</span><span><b>Acceptance</b>${item.acceptedByUser ? 'Renter ' : ''}${item.acceptedByOwner ? 'Owner' : ''}${(!item.acceptedByUser && !item.acceptedByOwner) ? 'Pending' : ''}</span></div></div><div class="request-actions"><a class="btn btn-outline btn-small" href="agreement.html?bookingId=${encodeURIComponent(item.bookingId)}" target="_blank" rel="noopener">View</a><button class="btn btn-outline btn-small" data-download-agreement="${escapeHtml(item.bookingId)}" type="button">PDF</button><a class="btn btn-primary btn-small" href="admin.html?bookingId=${encodeURIComponent(item.bookingId)}" target="_blank" rel="noopener">Open booking</a></div></article>`).join('') : '<div class="empty">No agreements match this filter.</div>';
+  const missing = document.getElementById('adminMissingAgreements');
+  if (missing) missing.innerHTML = adminState.missingAgreements.length ? `<div class="detail-panel" style="margin-top:18px"><h3>Bookings without an agreement (${adminState.missingAgreements.length})</h3>${adminState.missingAgreements.slice(0, 20).map(item => `<div class="list-row"><div><strong>Booking ${escapeHtml(item.id)}</strong><small>${formatDateTime(item.createdAt)} · ${escapeHtml(item.status)}</small></div><span class="badge badge-pending">Agreement unavailable</span></div>`).join('')}</div>` : '';
+}
+function renderUsers() {
+  const box = document.getElementById('adminUsers');
+  if (!box) return;
+  const me = getStoredUser();
+  const groups = [['Admins', 'admin'], ['Owners', 'owner'], ['Users', 'user']];
+  box.innerHTML = groups.map(([label, role]) => {
+    const users = adminState.users.filter(user => user.role === role);
+    return `<h3>${label} (${users.length})</h3>${users.map(user => `<div class="user-admin-row"><div><strong>${escapeHtml(user.name)}</strong><small>${escapeHtml(user.email)} · ${escapeHtml(user.phone || 'No phone')} · ${user.active === false ? 'Deactivated' : 'Active'}</small></div>${user.id !== me?.id ? `<button class="btn btn-danger btn-small" data-delete-user="${user.id}" data-user-name="${escapeHtml(user.name)}" data-user-role="${escapeHtml(role)}" type="button">Delete</button>` : ''}</div>`).join('') || '<div class="empty">No accounts.</div>'}`;
+  }).join('');
+}
+function renderAdminProfile() {
+  const box = document.getElementById('adminProfile');
+  if (!box || !adminState.profile) return;
+  const user = adminState.profile;
+  box.innerHTML = `<p><b>Name:</b> ${escapeHtml(user.name)}</p><p><b>Email:</b> ${escapeHtml(user.email)}</p><p><b>Phone:</b> ${escapeHtml(user.phone || '-')}</p><p><b>Role:</b> Admin</p><a class="btn btn-outline" href="profile.html">Edit profile</a>`;
+}
+async function loadData() {
+  const requests = [api('/admin/summary'), api('/admin/vehicles?status=all'), api('/admin/owners'), api('/admin/bookings'), api('/admin/income'), api('/admin/users'), api('/rides?status=all'), api('/auth/me'), api('/admin/agreements')];
+  const results = await Promise.allSettled(requests);
+  const values = results.map(result => result.status === 'fulfilled' ? result.value : null);
+  const safeArray = value => Array.isArray(value) ? value : [];
+  adminState.summary = values[0] || null;
+  adminState.vehicles = safeArray(values[1]);
+  adminState.owners = safeArray(values[2]);
+  adminState.bookings = safeArray(values[3]);
+  adminState.income = values[4] || null;
+  adminState.users = safeArray(values[5]);
+  adminState.rides = safeArray(values[6]);
+  adminState.profile = values[7]?.user || null;
+  adminState.agreements = safeArray(values[8]?.agreements);
+  adminState.missingAgreements = safeArray(values[8]?.missingBookings);
+  renderStats(); renderApprovalSummary(); renderActivity(); renderVehicles(); renderOwners(); renderBookings(); renderAgreements(); renderIncome(); renderUsers(); renderAdminProfile();
+  const failed = results.find(result => result.status === 'rejected');
+  if (failed) adminMessage(failed.reason?.message || 'Some admin data could not be loaded.', true);
+}
+function showTab(tab) {
+  adminState.activeTab = tab;
+  document.querySelectorAll('.admin-tab').forEach(button => button.classList.toggle('active', button.dataset.tab === tab));
+  document.querySelectorAll('.admin-panel').forEach(panel => panel.classList.toggle('active', panel.id === `panel-${tab}`));
+  try { sessionStorage.setItem('revexAdminTab', tab); } catch {}
+}
+async function moderateVehicle(button) {
+  const decision = button.dataset.decision; let reason = '';
+  if (decision === 'reject') { reason = prompt('Enter a rejection reason for the owner:'); if (reason === null || !reason.trim()) return; }
+  if (decision === 'approve' && !confirm('Approve this vehicle and make it bookable?')) return;
+  try { const result = await api(`/admin/vehicles/${encodeURIComponent(button.dataset.verify)}/verify`, { method: 'PATCH', body: { decision, reason } }); adminMessage(result.message); await loadData(); } catch (error) { adminMessage(error.message, true); }
+}
+async function removeVehicle(button) {
+  const name = button.dataset.vehicleName || 'this vehicle';
+  const ok = await confirmDelete({
+    title: 'Delete vehicle permanently',
+    lead: `${name} will be removed from MongoDB and will no longer appear anywhere in REVEX.`,
+    impact: [
+      'The vehicle document and its uploaded documents are deleted',
+      'Every booking, agreement, payment and review for this vehicle is deleted',
+      'The number plate becomes available for registration again'
+    ],
+    warning: 'This cannot be undone. Any booking history for this vehicle is permanently lost.',
+    confirmLabel: 'Delete vehicle',
+    onConfirm: async reason => {
+      const result = await api(`/admin/vehicles/${encodeURIComponent(button.dataset.removeVehicle)}`, { method: 'DELETE', body: { reason, confirm: true } });
+      adminMessage(result.message);
+      await loadData();
+      return true;
+    }
+  });
+  if (!ok) adminMessage('Deletion cancelled.');
+}
+async function loadOwnerDetail(id) {
+  try { const data = await api(`/admin/owners/${encodeURIComponent(id)}`); adminState.activeOwnerId = id; renderOwnerDetail(data); document.getElementById('adminOwnerDetail')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (error) { adminMessage(error.message, true); }
+}
+async function deleteOwnerVehicle(button) {
+  const name = button.dataset.vehicleName || button.dataset.ownerName || 'this vehicle';
+  const ok = await confirmDelete({
+    title: 'Delete vehicle permanently',
+    lead: `${name} will be removed from MongoDB and will no longer appear anywhere in REVEX.`,
+    impact: [
+      'The vehicle document and its uploaded documents are deleted',
+      'Every booking, agreement, payment and review for this vehicle is deleted',
+      'The number plate becomes available for registration again'
+    ],
+    warning: 'This cannot be undone. Any booking history for this vehicle is permanently lost.',
+    confirmLabel: 'Delete vehicle',
+    onConfirm: async reason => {
+      const result = await api(`/admin/vehicles/${encodeURIComponent(button.dataset.ownerRemoveVehicle)}`, { method: 'DELETE', body: { reason, confirm: true } });
+      adminMessage(result.message);
+      await loadData();
+      if (adminState.activeOwnerId) await loadOwnerDetail(adminState.activeOwnerId);
+      return true;
+    }
+  });
+  if (!ok) adminMessage('Deletion cancelled.');
+}
+async function updateBooking(button) {
+  if (!confirm(`Set this booking to ${button.dataset.bookingStatus}?`)) return;
+  try { const result = await api(`/admin/bookings/${encodeURIComponent(button.dataset.bookingId)}/status`, { method: 'PATCH', body: { status: button.dataset.bookingStatus } }); adminMessage(`Booking updated: ${result.status}`); await loadData(); } catch (error) { adminMessage(error.message, true); }
+}
+async function deleteUserAccount(button) {
+  const name = button.dataset.userName || 'this account';
+  const role = button.dataset.userRole || 'user';
+  const ok = await confirmDelete({
+    title: 'Delete account permanently',
+    lead: `${name} will be removed from MongoDB along with everything they created.`,
+    impact: [
+      'The user account is deleted and can no longer log in',
+      `All vehicles listed by this ${role} are deleted with their bookings`,
+      'Their bookings, agreements, payments, reviews and notifications are deleted',
+      'Their ride offers and seat bookings are deleted'
+    ],
+    warning: 'This cannot be undone. The person will have to register again from scratch.',
+    confirmLabel: 'Delete account',
+    onConfirm: async reason => {
+      const result = await api(`/admin/users/${encodeURIComponent(button.dataset.deactivateUser)}`, { method: 'DELETE', body: { reason, confirm: true } });
+      adminMessage(result.message);
+      await loadData();
+      return true;
+    }
+  });
+  if (!ok) adminMessage('Deletion cancelled.');
+}
+async function verifyRide(button) {
+  const decision = button.dataset.decision || 'approve'; let reason = '';
+  if (decision === 'reject') { reason = prompt('Enter a ride rejection reason:'); if (reason === null || !reason.trim()) return; }
+  try { await api(`/admin/rides/${encodeURIComponent(button.dataset.rideId || button.dataset.rideVerify)}/verify`, { method: 'PATCH', body: { decision, reason } }); adminMessage(decision === 'approve' ? 'Ride approved.' : 'Ride rejected.'); await loadData(); } catch (error) { adminMessage(error.message, true); }
+}
+document.addEventListener('DOMContentLoaded', async () => {
+  if (getStoredUser()?.role !== 'admin') return;
+  document.querySelector('[data-exit-admin]')?.addEventListener('click', () => { clearSession(); location.href = 'index.html'; });
+  document.querySelector('.admin-tabs')?.addEventListener('click', event => { const button = event.target.closest('[data-tab]'); if (button) showTab(button.dataset.tab); });
+  document.body.addEventListener('click', async event => {
+    const go = event.target.closest('[data-go-tab]'); if (go) { if (go.dataset.statusFilter) { adminState.vehicleFilter = go.dataset.statusFilter; document.querySelectorAll('[data-vehicle-filter]').forEach(chip => chip.classList.toggle('active', chip.dataset.vehicleFilter === adminState.vehicleFilter)); renderVehicles(); } showTab(go.dataset.goTab); return; }
+    const refresh = event.target.closest('[data-refresh]'); if (refresh) { await loadData(); return; }
+    const filter = event.target.closest('[data-vehicle-filter]'); if (filter) { adminState.vehicleFilter = filter.dataset.vehicleFilter; document.querySelectorAll('[data-vehicle-filter]').forEach(chip => chip.classList.toggle('active', chip === filter)); renderVehicles(); return; }
+    const verify = event.target.closest('[data-verify]'); if (verify) return moderateVehicle(verify);
+    const remove = event.target.closest('[data-remove-vehicle]'); if (remove) return removeVehicle(remove);
+    const owner = event.target.closest('[data-owner-details]'); if (owner) return loadOwnerDetail(owner.dataset.ownerDetails);
+    const ownerRemove = event.target.closest('[data-delete-owner-vehicle]'); if (ownerRemove) return deleteOwnerVehicle(ownerRemove);
+    const booking = event.target.closest('[data-booking-status]'); if (booking) return updateBooking(booking);
+    const user = event.target.closest('[data-delete-user]'); if (user) return deleteUserAccount(user);
+    const ride = event.target.closest('[data-ride-verify]'); if (ride) return verifyRide(ride);
+    const agreementDownload = event.target.closest('[data-download-agreement]'); if (agreementDownload) return downloadAgreement(agreementDownload.dataset.downloadAgreement);
+  });
+  document.getElementById('refreshAdmin')?.addEventListener('click', loadData);
+  document.querySelectorAll('[data-agreement-filter]').forEach(chip => chip.addEventListener('click', () => { document.querySelectorAll('[data-agreement-filter]').forEach(item => item.classList.remove('active')); chip.classList.add('active'); adminState.agreementFilter = chip.dataset.agreementFilter; renderAgreements(); }));
+  document.getElementById('agreementSearch')?.addEventListener('input', event => { adminState.agreementSearch = event.target.value.trim(); renderAgreements(); });
+  document.getElementById('addAdminForm')?.addEventListener('submit', async event => {
+    event.preventDefault(); const form = event.target; const message = document.getElementById('addAdminMsg');
+    try { const result = await api('/admin/create-admin', { method: 'POST', body: { name: form.name.value.trim(), email: form.email.value.trim(), phone: form.phone.value.trim(), password: form.password.value, confirmPassword: form.confirmPassword.value } }); message.textContent = result.message; message.className = 'form-message'; form.reset(); await loadData(); } catch (error) { message.textContent = error.message; message.className = 'form-message form-message-error'; }
+  });
+  try { const saved = sessionStorage.getItem('revexAdminTab'); if (saved) showTab(saved); } catch {}
+  // Deep link support: admin.html?bookingId=... opens the Bookings tab and
+  // highlights the matching row instead of silently reloading the dashboard.
+  const params = new URLSearchParams(location.search);
+  const focusBooking = params.get('bookingId');
+  if (focusBooking) showTab('bookings');
+  await loadData();
+  if (focusBooking) {
+    const target = document.querySelector(`[data-booking-row="${CSS.escape(focusBooking)}"]`);
+    if (target) {
+      target.classList.add('is-highlighted');
+      target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    } else {
+      adminMessage(`Booking ${focusBooking} was not found in the current list.`);
+    }
   }
-
-  /* ---------- Reports ---------- */
-  document.getElementById('adminReports').innerHTML=
-    `<p><b>Users:</b> ${s.users} (owners: ${s.owners})</p>`+
-    `<p><b>Vehicles:</b> ${s.vehicles} (pending verification: ${s.pendingVehicleVerification})</p>`+
-    `<p><b>Rental bookings:</b> ${s.bookings}</p>`+
-    `<p><b>Ride offers:</b> ${s.rides} (seat bookings: ${s.rideBookings})</p>`+
-    `<p><b>Total revenue:</b> ${inr(s.totalRevenue)} (platform share ${inr(s.commission)}, owner payout ${inr(s.ownerPayout)})</p>`;
-
-  /* ---------- Admin profile ---------- */
-  try{
-    const meData=await api('/auth/me');
-    document.getElementById('adminProfile').innerHTML=`<p><b>Name:</b> ${escapeHtml(meData.user.name)}</p><p><b>Email:</b> ${escapeHtml(meData.user.email)}</p><p><b>Phone:</b> ${escapeHtml(meData.user.phone||'-')}</p><p><b>Role:</b> admin</p><p><a class="btn btn-outline" href="profile.html">Edit profile</a></p>`;
-  }catch{ document.getElementById('adminProfile').innerHTML='<p>Could not load profile.</p>'; }
-
-  /* ---------- Events ---------- */
-  const approveVehicle=async id=>{ await api('/admin/vehicles/'+id+'/verify',{method:'PATCH',body:JSON.stringify({verified:true})}); location.reload(); };
-  const rejectVehicle=async id=>{ if(!confirm('Reject this vehicle? It will stay pending.'))return; await api('/admin/vehicles/'+id+'/verify',{method:'PATCH',body:JSON.stringify({verified:false})}); location.reload(); };
-  document.getElementById('adminVehicles').addEventListener('click',async e=>{
-    try{
-      const a=e.target.closest('[data-verify]'); if(a){await approveVehicle(a.dataset.verify);return;}
-      const r=e.target.closest('[data-reject]'); if(r){await rejectVehicle(r.dataset.reject);return;}
-      const d=e.target.closest('[data-del-vehicle]'); if(d){if(!confirm('Remove this vehicle? Past bookings are preserved.'))return; await api('/admin/vehicles/'+d.dataset.delVehicle,{method:'DELETE'}); location.reload();}
-    }catch(err){alert(err.message)}
-  });
-  document.getElementById('adminApprovals').addEventListener('click',async e=>{
-    try{
-      const a=e.target.closest('[data-verify]'); if(a){await approveVehicle(a.dataset.verify);return;}
-      const r=e.target.closest('[data-reject]'); if(r){await rejectVehicle(r.dataset.reject);return;}
-    }catch(err){alert(err.message)}
-  });
-  document.getElementById('adminBookings').addEventListener('click',async e=>{
-    const btn=e.target.closest('[data-booking-action]');if(!btn)return;
-    if(!confirm(`Set booking to ${btn.dataset.bookingAction}?`))return;
-    try{
-      await api('/admin/bookings/'+btn.dataset.bookingId+'/status',{method:'PATCH',body:JSON.stringify({status:btn.dataset.bookingAction})});
-      location.reload();
-    }catch(err){alert(err.message)}
-  });
-  document.getElementById('adminRides').addEventListener('click',async e=>{
-    try{
-      const v=e.target.closest('[data-verify-ride]'); if(v){await api('/admin/rides/'+v.dataset.verifyRide+'/verify',{method:'PATCH',body:JSON.stringify({verified:true})}); location.reload();return;}
-      const del=e.target.closest('[data-del-ride]'); if(del){if(!confirm('Remove this ride offer and its seat bookings?'))return; await api('/admin/rides/'+del.dataset.delRide,{method:'DELETE'}); location.reload();return;}
-      const cancel=e.target.closest('[data-ride-booking-cancel]'); if(cancel){if(!confirm('Cancel this ride booking?'))return; await api('/admin/ride-bookings/'+cancel.dataset.rideBookingCancel+'/status',{method:'PATCH',body:JSON.stringify({status:'cancelled'})}); location.reload();}
-    }catch(err){alert(err.message)}
-  });
-  document.getElementById('adminRideApprovals').addEventListener('click',async e=>{
-    try{
-      const v=e.target.closest('[data-verify-ride]'); if(v){await api('/admin/rides/'+v.dataset.verifyRide+'/verify',{method:'PATCH',body:JSON.stringify({verified:true})}); location.reload();return;}
-      const del=e.target.closest('[data-del-ride]'); if(del){if(!confirm('Remove this ride offer?'))return; await api('/admin/rides/'+del.dataset.delRide,{method:'DELETE'}); location.reload();}
-    }catch(err){alert(err.message)}
-  });
-  document.getElementById('adminUsers').addEventListener('click',async e=>{
-    const btn=e.target.closest('[data-del-user]');if(!btn)return;
-    if(!confirm(`Remove this ${btn.dataset.delRole} and ALL their vehicles, rides and bookings? This cannot be undone.`))return;
-    try{ await api('/admin/users/'+btn.dataset.delUser,{method:'DELETE'}); location.reload(); }
-    catch(err){alert(err.message)}
-  });
-  document.getElementById('addAdminForm').addEventListener('submit',async e=>{
-    e.preventDefault();
-    const f=e.target, msg=document.getElementById('addAdminMsg');
-    try{
-      const d=await api('/admin/create-admin',{method:'POST',body:JSON.stringify({name:f.name.value.trim(),email:f.email.value.trim(),phone:f.phone.value.trim(),password:f.password.value,confirmPassword:f.confirmPassword.value})});
-      msg.textContent=d.message+' ('+d.user.email+')'; msg.style.display='block'; f.reset();
-    }catch(err){ msg.textContent=err.message; msg.style.display='block'; }
-  });
- }catch(e){
-   const el=document.getElementById('adminStats');
-   if(el)el.innerHTML=`<div class="empty">${escapeHtml(e.message)}</div>`;
- }
 });

@@ -1,123 +1,48 @@
-function rideCard(r){
- const img=r.vehicleImage?`<div style="height:140px;overflow:hidden;border-radius:8px;margin-bottom:10px"><img src="${r.vehicleImage}" alt="vehicle" style="width:100%;height:100%;object-fit:cover"></div>`:'';
- return `<article class="ride-card">${img}
-  <div class="card-top"><div><span class="pill">Route match</span><h3 class="ride-route">${escapeHtml(r.from)} <span style="color:#176bff">-&gt;</span> ${escapeHtml(r.to)}</h3></div><span class="rating">* ${r.rating||5}</span></div>
-  <p class="card-meta">Driver: <b>${escapeHtml(r.driver)}</b>${r.driverPhone?` (${escapeHtml(r.driverPhone)})`:''} - ${escapeHtml(r.vehicle||'')}</p>
-  <p class="card-meta">${escapeHtml(r.vehicleType||'Car')}${r.numberPlate?` - Plate: <b>${escapeHtml(r.numberPlate)}</b>`:''}</p>
-  <div class="ride-details"><div><b>Departure</b>${formatDate(r.date)} - ${escapeHtml(r.time)}</div><div><b>Available</b>${r.seats} seats</div><div><b>Price</b>Rs.${r.price}/person</div></div>
-  <div class="card-actions"><a class="btn btn-outline" href="ride-details.html?id=${encodeURIComponent(r.id)}">View ride</a><a class="btn btn-primary" href="ride-details.html?id=${encodeURIComponent(r.id)}">Book seat</a></div>
- </article>`;
+let currentRideId = '';
+let currentRide = null;
+
+function rideImage(ride) {
+  const image = assetUrl(ride.vehicleImage || '');
+  const fallback = `data:image/svg+xml;charset=UTF-8,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="800" height="420"><rect width="100%" height="100%" fill="#12333a"/><text x="50%" y="50%" text-anchor="middle" dominant-baseline="middle" font-family="Arial" font-size="28" fill="#cbd5e1">REVEX Ride</text></svg>')}`;
+  return image ? `<div class="ride-image"><img src="${escapeHtml(image)}" alt="${escapeHtml(ride.vehicle || 'Ride vehicle')}" onerror="this.onerror=null;this.src='${fallback}'"></div>` : `<div class="ride-image"><img src="${fallback}" alt="REVEX Ride vehicle"></div>`;
 }
-function escapeHtml(value){return String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
-async function getRides(params={}){const p=new URLSearchParams();Object.entries(params).forEach(([k,v])=>v&&p.set(k,v));return api('/rides?'+p.toString())}
-async function renderRides(list){const el=document.getElementById('rideResults');if(el)el.innerHTML=list?.length?list.map(rideCard).join(''):'<div class="empty">No matching rides. New rides appear after admin approval.</div>'}
-function fileToDataUrl(file){
- return new Promise((resolve,reject)=>{
-  if(!file)return resolve('');
-  if(file.size>3*1024*1024)return reject(new Error('Vehicle photo must be 3 MB or smaller.'));
-  const reader=new FileReader();
-  reader.onload=()=>resolve(reader.result);
-  reader.onerror=()=>reject(new Error('Could not read photo.'));
-  reader.readAsDataURL(file);
- });
+function rideCard(ride) {
+  return `<article class="ride-card">${rideImage(ride)}<div class="card-top"><div><span class="badge badge-category">${escapeHtml(ride.vehicleType || 'Other').toUpperCase()}</span><h3 class="ride-route">${escapeHtml(ride.from)} <span class="route-arrow">→</span> ${escapeHtml(ride.to)}</h3></div><span class="star-rating">★ ${Number(ride.rating || 5).toFixed(1)}</span></div><p class="card-meta">Driver: <b>${escapeHtml(ride.driver || 'REVEX driver')}</b> · ${escapeHtml(ride.vehicle || 'Vehicle')}</p><div class="vehicle-facts"><span>${escapeHtml(ride.fuelType || 'Petrol')}</span><span>${ride.seats} seats</span><span>${escapeHtml(ride.numberPlate || 'Plate listed at pickup')}</span></div><div class="ride-details"><div><b>Departure</b>${formatDate(ride.date)} · ${escapeHtml(ride.time || '')}</div><div><b>Price</b>${formatMoney(ride.price)} / person</div></div><div class="card-actions"><a class="btn btn-outline" href="ride-details.html?id=${encodeURIComponent(ride.id)}">View ride</a><a class="btn btn-primary" href="ride-details.html?id=${encodeURIComponent(ride.id)}">Book seat</a></div></article>`;
 }
-
-let currentRideId='';
-document.addEventListener('DOMContentLoaded',async()=>{
- const search=document.getElementById('rideSearch');
- if(document.getElementById('rideResults')){
-  try{await renderRides(await getRides())}catch(e){renderRides([])}
-  search?.addEventListener('submit',async e=>{
-   e.preventDefault(); const f=e.target;
-   try{await renderRides(await getRides({from:f.from.value,to:f.to.value,date:f.date.value}))}
-   catch(err){alert(err.message)}
-  });
- }
-
- const offer=document.getElementById('offerRide');
- offer?.addEventListener('submit',async e=>{
-  e.preventDefault(); if(!requireLogin())return;
-  const f=e.target;
-  try{
-   const vehicleImage=await fileToDataUrl(f.vehicleImage?.files?.[0]);
-   const r=await api('/rides',{method:'POST',body:JSON.stringify({
-    from:f.from.value.trim(),to:f.to.value.trim(),date:f.date.value,time:f.time.value,
-    seats:Number(f.seats.value),price:Number(f.price.value),vehicle:f.vehicle.value.trim(),
-    vehicleType:f.vehicleType?.value||'Car',numberPlate:f.numberPlate?.value.trim()||'',
-    driverPhone:f.driverPhone?.value.trim()||''
-   ,vehicleImage})});
-   showModal('Ride submitted!',r.message||`${r.from} to ${r.to} saved.`);
-   f.reset();
-  }catch(err){alert(err.message)}
- });
-
- const panel=document.getElementById('rideDetail');
- if(panel){
-  currentRideId=new URLSearchParams(location.search).get('id');
-  try{
-   const list=await getRides();
-   let item=list.find(x=>x.id===currentRideId);
-   if(!item){
-     try{ const all=await api('/rides?status=all'); item=all.find(x=>x.id===currentRideId); }catch{}
-   }
-   if(!item)throw new Error('Ride not found (it may be pending admin approval).');
-
-   panel.innerHTML=`<span class="pill">${item.verified===false?'Pending approval':'Available'}</span>
-   ${item.vehicleImage?`<div style="height:220px;overflow:hidden;border-radius:10px;margin:14px 0"><img src="${item.vehicleImage}" style="width:100%;height:100%;object-fit:cover"></div>`:''}
-   <h1 class="section-title">${escapeHtml(item.from)} -&gt; ${escapeHtml(item.to)}</h1>
-   <p>Travel with ${escapeHtml(item.driver)}${item.driverPhone?` (${escapeHtml(item.driverPhone)})`:''} in a ${escapeHtml(item.vehicle||'')} (${escapeHtml(item.vehicleType||'Car')}).</p>
-   ${item.numberPlate?`<p><b>Number plate:</b> ${escapeHtml(item.numberPlate)}</p>`:''}
-   <div class="ride-details"><div><b>Date</b>${formatDate(item.date)}</div><div><b>Departure</b>${escapeHtml(item.time)}</div><div><b>Seats available</b><span id="detailSeats">${item.seats}</span></div><div><b>Price</b>Rs.${item.price} per seat</div></div>`;
-
-   document.getElementById('ridePrice').value=Number(item.price)||0;
-   document.getElementById('availableSeats').textContent=item.seats;
-   const select=document.getElementById('seatCount');
-   const max=Math.max(1,Math.min(Number(item.seats)||1,6));
-   select.innerHTML=Array.from({length:max},(_,i)=>`<option value="${i+1}">${i+1} ${i===0?'seat':'seats'}</option>`).join('');
-   updateSeatTotal();
-  }catch(e){panel.innerHTML=`<div class="empty">${escapeHtml(e.message)}</div>`}
- }
+async function getRides(params = {}) { const query = new URLSearchParams(); Object.entries(params).forEach(([key, value]) => { if (value) query.set(key, value); }); return api(`/rides?${query.toString()}`); }
+async function renderRides(rides) { const box = document.getElementById('rideResults'); if (box) box.innerHTML = rides?.length ? rides.map(rideCard).join('') : '<div class="empty">No matching approved rides. New offers appear after admin approval.</div>'; }
+function fileToDataUrl(file, maxMb = 3) {
+  return new Promise((resolve, reject) => { if (!file) return resolve(''); if (file.size > maxMb * 1024 * 1024) return reject(new Error(`Photo must be smaller than ${maxMb} MB.`)); const reader = new FileReader(); reader.onload = () => resolve(reader.result); reader.onerror = () => reject(new Error('Could not read the selected photo.')); reader.readAsDataURL(file); });
+}
+async function loadRideDetail(id) {
+  const panel = document.getElementById('rideDetail'); if (!panel) return;
+  try {
+    let rides = await getRides(); let item = rides.find(ride => ride.id === id);
+    if (!item && getStoredUser()?.role === 'owner') { try { item = (await api('/rides/mine')).find(ride => ride.id === id); } catch {} }
+    if (!item) throw new Error('Ride not found or it is still awaiting approval.');
+    currentRide = item; currentRideId = id;
+    panel.innerHTML = `${rideImage(item)}<div class="badge-row"><span class="badge badge-category">${escapeHtml(item.vehicleType || 'Other').toUpperCase()}</span><span class="badge badge-fuel">${escapeHtml(item.fuelType || 'Petrol').toUpperCase()}</span><span class="pill">${item.verified ? 'Available' : 'Pending approval'}</span></div><h1 class="section-title">${escapeHtml(item.from)} <span class="route-arrow">→</span> ${escapeHtml(item.to)}</h1><p>Travel with ${escapeHtml(item.driver || 'a REVEX driver')} in ${escapeHtml(item.vehicle || 'a verified vehicle')}.</p><div class="detail-facts"><div><b>Departure</b>${formatDate(item.date)} · ${escapeHtml(item.time || '')}</div><div><b>Seats</b>${item.seats}</div><div><b>Number plate</b>${escapeHtml(item.numberPlate || '-')}</div><div><b>Driver contact</b>${escapeHtml(item.driverPhone || 'Available after booking')}</div></div>`;
+    const price = document.getElementById('ridePrice'); if (price) price.value = Number(item.price) || 0;
+    const seats = document.getElementById('seatCount'); if (seats) seats.innerHTML = Array.from({ length: Math.max(1, Math.min(6, Number(item.seats) || 1)) }, (_, index) => `<option value="${index + 1}">${index + 1} seat${index ? 's' : ''}</option>`).join('');
+    document.getElementById('availableSeats').textContent = item.seats; updateSeatTotal();
+  } catch (error) { panel.innerHTML = `<div class="empty">${escapeHtml(error.message)}</div>`; }
+}
+function updateSeatTotal() { const seats = Number(document.getElementById('seatCount')?.value) || 1; const price = Number(document.getElementById('ridePrice')?.value) || 0; const total = seats * price; const label = document.getElementById('seatTotal'); const pay = document.getElementById('ridePayAmount'); if (label) label.textContent = formatMoney(total); if (pay) pay.textContent = formatMoney(total); }
+async function confirmRide(event) {
+  event.preventDefault(); if (!requireLogin() || !currentRideId) return;
+  const seats = Number(document.getElementById('seatCount')?.value) || 1; const total = seats * Number(document.getElementById('ridePrice')?.value || 0);
+  if (total <= 0) return alert('Ride price is unavailable.');
+  let booking;
+  try { booking = await api(`/rides/${encodeURIComponent(currentRideId)}/book`, { method: 'POST', body: { seats } }); } catch (error) { alert(error.message); return; }
+  const modal = document.getElementById('paymentModal'); modal?.classList.add('show'); document.getElementById('ridePayAmount').textContent = formatMoney(total);
+  const pay = document.getElementById('ridePayBtn'); const cancel = document.getElementById('ridePayCancel');
+  pay.onclick = async () => { pay.disabled = true; pay.textContent = 'Processing…'; try { await api(`/rides/bookings/${encodeURIComponent(booking.id)}/payment-demo`, { method: 'POST' }); modal.classList.remove('show'); showModal('Ride booked successfully', `${formatMoney(total)} paid. Your seat is confirmed.`); } catch (error) { alert(error.message); } finally { pay.disabled = false; pay.textContent = 'Pay Now'; } };
+  cancel.onclick = async () => { modal.classList.remove('show'); try { await api(`/rides/bookings/${encodeURIComponent(booking.id)}/payment-failed`, { method: 'POST' }); } catch {} };
+}
+document.addEventListener('DOMContentLoaded', async () => {
+  const search = document.getElementById('rideSearch');
+  if (document.getElementById('rideResults')) { try { await renderRides(await getRides()); } catch (error) { document.getElementById('rideResults').innerHTML = `<div class="empty">${escapeHtml(error.message)}</div>`; } search?.addEventListener('submit', async event => { event.preventDefault(); try { await renderRides(await getRides({ from: search.from.value, to: search.to.value, date: search.date.value, vehicleType: search.vehicleType.value })); } catch (error) { alert(error.message); } }); }
+  const offer = document.getElementById('offerRide');
+  offer?.addEventListener('submit', async event => { event.preventDefault(); if (!requireRole('owner', 'admin')) return; const form = event.target; const submit = form.querySelector('button[type="submit"]'); submit.disabled = true; try { const vehicleImage = await fileToDataUrl(form.vehicleImage?.files?.[0]); const ride = await api('/rides', { method: 'POST', body: { from: form.from.value.trim(), to: form.to.value.trim(), date: form.date.value, time: form.time.value, seats: Number(form.seats.value), price: Number(form.price.value), vehicle: form.vehicle.value.trim(), vehicleType: form.vehicleType.value, fuelType: form.fuelType?.value || 'Petrol', numberPlate: form.numberPlate.value.trim(), driverPhone: form.driverPhone.value.trim(), vehicleImage } }); showModal('Ride submitted', ride.message || 'Your offer is pending admin approval.'); form.reset(); } catch (error) { alert(error.message); } finally { submit.disabled = false; } });
+  if (document.getElementById('rideDetail')) await loadRideDetail(new URLSearchParams(location.search).get('id'));
 });
-
-function updateSeatTotal(){
- const n=Number(document.getElementById('seatCount')?.value)||1;
- const p=Number(document.getElementById('ridePrice')?.value)||0;
- const total=n*p;
- const el=document.getElementById('seatTotal'); if(el)el.textContent='Rs.'+total.toLocaleString('en-IN');
- const pay=document.getElementById('ridePayAmount'); if(pay)pay.textContent='Rs.'+total.toLocaleString('en-IN');
-}
-
-async function confirmRide(e){
- e.preventDefault();
- if(!requireLogin())return;
- if(!currentRideId){alert('Ride ID is missing.');return;}
- const seats=Number(document.getElementById('seatCount')?.value)||1;
- const total=seats*(Number(document.getElementById('ridePrice')?.value)||0);
- if(total<=0){alert('Ride price is unavailable.');return;}
-
- const payment=document.getElementById('paymentModal');
- const payBtn=document.getElementById('ridePayBtn');
- const cancelBtn=document.getElementById('ridePayCancel');
- const amount=document.getElementById('ridePayAmount');
- if(amount)amount.textContent='Rs.'+total.toLocaleString('en-IN');
-
- let booking;
- try{
-   booking=await api('/rides/'+encodeURIComponent(currentRideId)+'/book',{method:'POST',body:JSON.stringify({seats})});
- }catch(err){alert(err.message);return;}
-
- payment?.classList.add('show');
- payBtn.onclick=async()=>{
-   payBtn.disabled=true; payBtn.textContent='Processing...';
-   try{
-    await api('/rides/bookings/'+encodeURIComponent(booking.id)+'/payment-demo',{method:'POST'});
-    payment?.classList.remove('show');
-    showModal('Ride booked successfully!',`Rs.${total.toLocaleString('en-IN')} paid. Your seat is confirmed.`);
-   }catch(err){alert(err.message)}
-   finally{payBtn.disabled=false;payBtn.textContent='Pay Now';}
- };
- cancelBtn.onclick=async()=>{
-   payment?.classList.remove('show');
-   try{await api('/rides/bookings/'+encodeURIComponent(booking.id)+'/payment-failed',{method:'POST'})}catch{}
- };
-}
