@@ -1,0 +1,28 @@
+REVEX ASSISTANT - GEMINI API KEY SETUP
+======================================
+
+ONLY EDIT THIS FILE FOR THE KEY:
+  .env
+
+Project path after extracting:
+  SIH_REVEX-main/.env
+
+Add/paste your key here:
+  GEMINI_API_KEY=YOUR_GEMINI_API_KEY_HERE
+
+Recommended model (already configured):
+  GEMINI_MODEL=gemini-2.5-flash
+
+IMPORTANT:
+- Do NOT put GEMINI_API_KEY inside js/chatbot.js or any HTML file.
+- Do NOT commit .env to GitHub.
+- After changing .env, stop the server and restart it with:
+    npm.cmd start
+
+Verification:
+  npm.cmd run check:chatbot
+
+The chatbot is project-customized through the server-side system prompt at:
+  backend/routes/chat.js
+
+You do NOT need to edit backend/routes/chat.js just to add your API key.
