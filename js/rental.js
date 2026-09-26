@@ -1,151 +1,183 @@
-function vehicleCard(v){
- const image=v.image||'';
- return `<article class="vehicle-card"><div class="vehicle-image" style="height:175px;overflow:hidden;background:#eaf1f8">
- <img style="width:100%;height:100%;object-fit:cover;display:block" src="${image}" alt="${v.name}" loading="lazy"
- onerror="this.onerror=null;this.src='data:image/svg+xml;charset=UTF-8,${encodeURIComponent('<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"800\" height=\"500\"><rect width=\"100%\" height=\"100%\" fill=\"#eaf1f8\"/><text x=\"50%\" y=\"50%\" text-anchor=\"middle\" dominant-baseline=\"middle\" font-family=\"Arial\" font-size=\"28\" fill=\"#64748b\">REVEX Vehicle</text></svg>')}';">
- </div><div class="card-body"><div class="card-top"><div><h3 class="card-title">${v.name}</h3><div class="card-meta">${v.type} · 📍 ${v.location}</div></div><span class="rating">★ ${v.rating||5}</span></div><span class="pill">● Available</span><p class="card-price">₹${v.price} <small>/ hour</small></p><div class="card-actions"><a class="btn btn-outline" href="vehicle-details.html?id=${v.id}">Details</a><a class="btn btn-primary" href="vehicle-details.html?id=${v.id}">Book now</a></div></div></article>`;
+let currentVehicle = null;
+let currentQuote = null;
+let quoteRequest = 0;
+
+function vehicleImageMarkup(vehicle, className = '') {
+  const image = assetUrl(vehicle.image || vehicle.vehiclePicture || '');
+  const fallback = `data:image/svg+xml;charset=UTF-8,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="800" height="480"><rect width="100%" height="100%" fill="#172c47"/><text x="50%" y="50%" text-anchor="middle" dominant-baseline="middle" font-family="Arial" font-size="28" fill="#cbd5e1">Vehicle Image Unavailable</text></svg>')}`;
+  return `<div class="vehicle-image ${className}"><img src="${escapeHtml(image)}" alt="${escapeHtml(vehicle.name || 'Vehicle')}" loading="lazy" onerror="this.onerror=null;this.src='${fallback}'"></div>`;
 }
-async function renderVehicles(filters={}){
- const box=document.getElementById('vehicleResults'); if(!box)return;
- box.innerHTML='<div class="empty">Loading vehicles...</div>';
- try{
-  const p=new URLSearchParams();
-  if(filters.location)p.set('location',filters.location);
-  if(filters.type)p.set('type',filters.type);
-  if(filters.maxPrice)p.set('maxPrice',filters.maxPrice);
-  const list=await api('/vehicles?'+p.toString());
-  box.innerHTML=list.length?list.map(vehicleCard).join(''):'<div class="empty">No vehicles match those filters.</div>';
- }catch(e){box.innerHTML=`<div class="empty">${e.message}</div>`}
+function vehicleCard(vehicle) {
+  const category = vehicle.category || vehicle.type || 'Other'; const unit = vehicle.priceUnit || 'hour';
+  return `<article class="vehicle-card">${vehicleImageMarkup(vehicle)}<div class="card-body"><div class="card-top"><div><div class="badge-row"><span class="badge badge-category">${escapeHtml(category.toUpperCase())}</span><span class="badge badge-fuel">${escapeHtml(vehicle.fuelType || 'Petrol').toUpperCase()}</span></div><h3 class="card-title">${escapeHtml(vehicle.name || 'Vehicle')}</h3><p class="card-meta">${escapeHtml([vehicle.brand, vehicle.model].filter(Boolean).join(' ') || vehicle.name)} · ${escapeHtml(vehicle.location || '-')}</p></div><span class="star-rating" title="Rating">★ ${Number(vehicle.rating || 5).toFixed(1)}</span></div><div class="vehicle-facts"><span>${escapeHtml(vehicle.transmission || 'Manual')}</span><span>${Number(vehicle.currentKm || 0).toLocaleString('en-IN')} km</span><span>${vehicle.availability === 'unavailable' ? 'Unavailable' : 'Available'}</span></div><p class="card-price">${formatMoney(vehicle.price)} <small>/ ${escapeHtml(unit)}</small>${vehicle.discountPercent ? `<small> · ${vehicle.discountPercent}% off</small>` : ''}</p><div class="card-actions"><a class="btn btn-outline" href="vehicle-details.html?id=${encodeURIComponent(vehicle.id)}">View details</a><a class="btn btn-primary" href="vehicle-details.html?id=${encodeURIComponent(vehicle.id)}">Book now</a></div></div></article>`;
 }
-function calculateRental(){
- const f=document.getElementById('rentalBooking'); if(!f)return;
- const start=new Date(f.startDate.value+'T'+f.startTime.value);
- const end=new Date(f.endDate.value+'T'+f.endTime.value);
- const price=+document.getElementById('hourlyPrice').value;
- const km=parseInt(f.estimatedKm?.value||'0',10);
- if(Number.isNaN(start.getTime())||Number.isNaN(end.getTime())||end<=start){
-   document.getElementById('rentalTotal').innerHTML='<span>Choose valid future times to see total</span>';
-   delete document.getElementById('rentalTotal').dataset.total;
-   return;
- }
- const hours=Math.max(1,Math.ceil((end-start)/36e5));
- const extraKm=hours>=24?Math.max(0,km-300):0;
- const total=hours*price+extraKm*10;
- document.getElementById('rentalTotal').innerHTML='<span>'+hours+' hour'+(hours>1?'s':'')+' × ₹'+price+(extraKm?' + extra km ₹'+(extraKm*10):'')+'</span><strong>₹'+total+'</strong>';
- document.getElementById('rentalTotal').dataset.total=total;
+async function renderVehicles(filters = {}) {
+  const box = document.getElementById('vehicleResults'); if (!box) return;
+  box.innerHTML = '<div class="empty">Loading vehicles…</div>';
+  try {
+    const params = new URLSearchParams();
+    Object.entries(filters).forEach(([key, value]) => { if (value !== undefined && value !== null && String(value).trim()) params.set(key, value.trim()); });
+    const vehicles = await api(`/vehicles?${params.toString()}`);
+    box.innerHTML = vehicles.length ? vehicles.map(vehicleCard).join('') : '<div class="empty">No approved vehicles match those filters.</div>';
+  } catch (error) { box.innerHTML = `<div class="empty">${escapeHtml(error.message)}</div>`; }
 }
-async function confirmRental(e){
- e.preventDefault();
- if(!requireLogin())return;
- calculateRental();
+function updateQuoteButton() {
+  const button = document.querySelector('#rentalBooking button[type="submit"]'); const consent = document.getElementById('agreementConsent');
+  if (button) button.disabled = !currentQuote || !consent?.checked;
+}
+function renderQuote(quote) {
+  const box = document.getElementById('rentalBreakdown'); if (!box) return;
+  if (!quote) { box.innerHTML = '<div class="empty">Choose valid future times to see the price breakdown.</div>'; updateQuoteButton(); return; }
+  box.innerHTML = `<div class="quote-heading"><strong>Rental Amount</strong><span>${escapeHtml(quote.durationLabel || `${quote.durationHours} hour(s)`)}</span></div>${quoteRows(quote)}`;
+  updateQuoteButton();
+}
+async function refreshQuote() {
+  const form = document.getElementById('rentalBooking'); if (!form || !currentVehicle) return;
+  const start = form.startDate?.value; const end = form.endDate?.value; const km = form.estimatedKm?.value || 0;
+  if (!start || !form.startTime?.value || !end || !form.endTime?.value) { currentQuote = null; renderQuote(null); return; }
+  const requestId = ++quoteRequest;
+  const params = new URLSearchParams({ startDate: `${start}T${form.startTime.value}`, endDate: `${end}T${form.endTime.value}`, estimatedKm: km });
+  try {
+    const quote = await api(`/vehicles/${encodeURIComponent(currentVehicle.id)}/quote?${params.toString()}`);
+    if (requestId !== quoteRequest) return;
+    currentQuote = quote; renderQuote(quote);
+  } catch (error) {
+    try { const quote = calculateClientQuote(currentVehicle, `${start}T${form.startTime.value}`, `${end}T${form.endTime.value}`, km); if (requestId === quoteRequest) { currentQuote = quote; renderQuote(quote); } } catch { currentQuote = null; renderQuote(null); }
+  }
+}
+function calculateRental() { refreshQuote(); }
+function setSafeBookingDefaults() {
+  const form = document.getElementById('rentalBooking'); if (!form) return;
+  const start = new Date(); start.setMinutes(Math.ceil((start.getMinutes() + 1) / 15) * 15, 0, 0); if (start <= new Date()) start.setHours(start.getHours() + 1);
+  const end = new Date(start.getTime() + 2 * 60 * 60 * 1000);
+  const date = value => `${value.getFullYear()}-${String(value.getMonth() + 1).padStart(2, '0')}-${String(value.getDate()).padStart(2, '0')}`;
+  const time = value => `${String(value.getHours()).padStart(2, '0')}:${String(value.getMinutes()).padStart(2, '0')}`;
+  if (form.startDate) { form.startDate.value = date(start); form.startDate.min = date(start); form.startTime.value = time(start); }
+  if (form.endDate) { form.endDate.value = date(end); form.endDate.value = date(end); form.endTime.value = time(end); }
+  refreshQuote();
+}
+function openPaymentModal(booking) {
+  const modal = document.getElementById('simplePaymentModal');
+  const amount = document.getElementById('simplePaymentAmount');
+  const pay = document.getElementById('simplePayNow');
+  const cancel = document.getElementById('simplePayCancel');
 
- const f=e.target;
- const total=+document.getElementById('rentalTotal').dataset.total;
- const vehicleId=f.dataset.vehicleId;
+  if (amount) amount.textContent = formatMoney(booking.quote?.grandTotal ?? booking.grandTotal ?? booking.totalAmount);
+  modal?.classList.add('show');
 
- if(!vehicleId){
-   alert('Vehicle information is missing. Please reopen the vehicle from Rent a Vehicle.');
-   return;
- }
- if(!total){
-   alert('Please select a valid future start and end time.');
-   return;
- }
+  const closeWithoutPayment = () => modal?.classList.remove('show');
 
- const button=f.querySelector('button[type="submit"]');
- if(button){button.disabled=true;button.textContent='Preparing payment...';}
+  cancel.onclick = closeWithoutPayment;
+  pay.onclick = async () => {
+    pay.disabled = true;
+    pay.textContent = 'Preparing secure checkout…';
 
- try{
-   const b=await api('/bookings',{
-     method:'POST',
-     body:JSON.stringify({
-       vehicleId,
-       startDate:f.startDate.value+'T'+f.startTime.value,
-       endDate:f.endDate.value+'T'+f.endTime.value,
-       estimatedKm:Number(f.estimatedKm.value)||0,
-       panNumber:f.panNumber.value.trim(),
-       drivingLicenseNumber:f.drivingLicenseNumber.value.trim()
-     })
-   });
+    try {
+      if (typeof window.Razorpay !== 'function') {
+        throw new Error('Razorpay Checkout failed to load. Check your internet connection and try again.');
+      }
 
-   const payment=document.getElementById('simplePaymentModal');
-   const amount=document.getElementById('simplePaymentAmount');
-   if(amount) amount.textContent='₹'+Number(b.totalAmount||total).toLocaleString('en-IN');
-   payment?.classList.add('show');
+      const order = await api(`/bookings/${encodeURIComponent(booking.id)}/payment-order`, { method: 'POST' });
+      if (!order?.order_id || !order?.amount || !order?.key_id) {
+        throw new Error('The payment order response is incomplete.');
+      }
 
-   const pay=document.getElementById('simplePayNow');
-   const cancel=document.getElementById('simplePayCancel');
+      modal?.classList.remove('show');
 
-   if(pay){
-     pay.onclick=async()=>{
-       pay.disabled=true;
-       pay.textContent='Processing...';
-       try{
-         const result=await api('/bookings/'+b.id+'/payment-demo',{method:'POST'});
-         payment?.classList.remove('show');
+      const options = {
+        key: order.key_id,
+        amount: order.amount,
+        currency: order.currency || 'INR',
+        name: 'REVEX',
+        description: 'Vehicle rental booking',
+        order_id: order.order_id,
+        prefill: {
+          name: getStoredUser()?.name || '',
+          email: getStoredUser()?.email || ''
+        },
+        theme: { color: '#0f766e' },
+        modal: {
+          ondismiss: () => {
+            showModal('Payment cancelled', 'The Razorpay checkout was closed. Your booking is still awaiting payment.');
+          }
+        },
+        handler: async (response) => {
+          try {
+            pay.disabled = true;
+            const result = await api(`/bookings/${encodeURIComponent(booking.id)}/verify-payment`, {
+              method: 'POST',
+              body: {
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_signature: response.razorpay_signature
+              }
+            });
 
-         const modal=document.getElementById('successModal');
-         modal?.querySelector('h2')?.replaceChildren(document.createTextNode('Booking Successful!'));
-         modal?.querySelector('p')?.replaceChildren(
-           document.createTextNode(`Payment successful. Agreement ID: ${result.agreement?.agreementId||'generated'}`)
-         );
+            showModal(
+              'Payment received',
+              `Booking ${result.booking.id} is paid and waiting for owner approval. Agreement: ${result.agreement?.agreementId || 'prepared'}.`
+            );
+            const download = document.getElementById('downloadAgreementBtn');
+            if (download) {
+              download.style.display = 'inline-flex';
+              download.onclick = () => downloadAgreement(booking.id);
+            }
+          } catch (error) {
+            showModal('Payment verification failed', error.message || 'We could not verify this payment.');
+          }
+        }
+      };
 
-         const dl=document.getElementById('downloadAgreementBtn');
-         if(dl){
-           dl.style.display='inline-flex';
-           dl.onclick=()=>downloadAgreement(b.id);
-         }
-         modal?.classList.add('show');
-       }catch(err){
-         alert(err.message);
-       }finally{
-         pay.disabled=false;
-         pay.textContent='Pay Now';
-         if(button){button.disabled=false;button.textContent='Proceed to payment';}
-       }
-     };
-   }
-
-   if(cancel){
-     cancel.onclick=async()=>{
-       payment?.classList.remove('show');
-       try{await api('/bookings/'+b.id+'/payment-failed',{method:'POST'})}catch{}
-       if(button){button.disabled=false;button.textContent='Proceed to payment';}
-     };
-   }
- }catch(err){
-   alert(err.message);
-   if(button){button.disabled=false;button.textContent='Proceed to payment';}
- }
+      const razorpay = new window.Razorpay(options);
+      razorpay.on('payment.failed', async (response) => {
+        const description = response?.error?.description || 'The payment could not be completed.';
+        try {
+          await api(`/bookings/${encodeURIComponent(booking.id)}/payment-failed`, { method: 'POST' });
+        } catch (syncError) {
+          console.warn('Could not sync failed payment state:', syncError);
+        }
+        showModal('Payment failed', description);
+      });
+      razorpay.open();
+    } catch (error) {
+      modal?.classList.add('show');
+      alert(error.message || 'Unable to start payment.');
+    } finally {
+      pay.disabled = false;
+      pay.textContent = 'Pay with Razorpay';
+    }
+  };
+}
+async function confirmRental(event) {
+  event.preventDefault();
+  if (!requireLogin()) return;
+  const form = event.target; const consent = document.getElementById('agreementConsent');
+  if (!consent?.checked) { alert('Please read and accept the Rental Agreement and Terms & Conditions.'); return; }
+  if (!currentVehicle?.id || !currentQuote) { await refreshQuote(); }
+  if (!currentQuote) { alert('Choose valid future booking times first.'); return; }
+  const button = form.querySelector('button[type="submit"]'); if (button) { button.disabled = true; button.textContent = 'Preparing booking…'; }
+  try {
+    const booking = await api('/bookings', { method: 'POST', body: { vehicleId: currentVehicle.id, startDate: `${form.startDate.value}T${form.startTime.value}`, endDate: `${form.endDate.value}T${form.endTime.value}`, estimatedKm: Number(form.estimatedKm.value) || 0, panNumber: form.panNumber.value.trim(), drivingLicenseNumber: form.drivingLicenseNumber.value.trim(), agreementAccepted: true, termsVersion: 'revex-v3' } });
+    currentQuote = booking.quote || booking.pricing || currentQuote; openPaymentModal(booking);
+  } catch (error) { alert(error.message); } finally { if (button) { button.disabled = !currentQuote || !consent.checked; button.textContent = 'Review agreement & continue'; } }
 }
 
-function setSafeBookingDefaults(){
- const f=document.getElementById('rentalBooking'); if(!f)return;
- const now=new Date();
- now.setMinutes(Math.ceil((now.getMinutes()+1)/15)*15,0,0);
- if(now<=new Date()) now.setHours(now.getHours()+1);
- const end=new Date(now.getTime()+2*60*60*1000);
- const fmtDate=d=>{const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),day=String(d.getDate()).padStart(2,'0');return `${y}-${m}-${day}`};
- const fmtTime=d=>`${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
- if(f.startDate){f.startDate.value=fmtDate(now);f.startDate.min=fmtDate(now);f.startTime.value=fmtTime(now);}
- if(f.endDate){f.endDate.value=fmtDate(end);f.endTime.value=fmtTime(end);}
- calculateRental();
-}
-document.addEventListener('DOMContentLoaded',async()=>{
- const form=document.getElementById('rentalSearch');
- if(form){await renderVehicles();form.addEventListener('submit',e=>{e.preventDefault();renderVehicles({location:form.location.value.trim(),type:form.type.value,maxPrice:form.maxPrice.value})});}
- const detail=document.getElementById('vehicleDetail');
- if(detail){
-  const id=new URLSearchParams(location.search).get('id');
-  if(!id){detail.innerHTML='<div class="empty">Vehicle ID is missing.</div>';return}
-  try{
-   const v=await api('/vehicles/'+encodeURIComponent(id));
-   detail.dataset.vehicleId=v.id;
-   const image=v.image||'';
-   detail.innerHTML=`<div class="detail-vehicle"><img style="width:100%;height:100%;object-fit:cover" src="${image}" alt="${v.name}" onerror="this.style.objectFit='contain'"></div><span class="pill">● ${v.verified?'Verified':'Pending verification'}</span><h1 class="section-title">${v.name}</h1><p>${v.type} · ${v.location} · Owner rating <span class="rating">★ ${v.rating||5}</span></p><hr><h3>Ready for your city journey</h3><p>Well maintained, verified and insured for a smooth ride. Pick up from the listed location and travel on your schedule.</p><div class="ride-details"><div><b>Price</b>₹${v.price}/hour</div><div><b>Fuel</b>Included</div><div><b>Minimum booking</b>1 hour</div><div><b>Cancellation</b>Free before payment</div></div>`;
-   document.getElementById('hourlyPrice').value=v.price;
-   document.getElementById('rentalBooking').dataset.vehicleId=v.id;
-   setSafeBookingDefaults();
-  }catch(e){detail.innerHTML=`<div class="empty">${e.message}</div>`}
- }
+document.addEventListener('DOMContentLoaded', async () => {
+  const search = document.getElementById('rentalSearch');
+  if (search) {
+    await renderVehicles();
+    search.addEventListener('submit', event => { event.preventDefault(); renderVehicles({ location: search.location.value, category: search.category?.value, fuelType: search.fuelType?.value, maxPrice: search.maxPrice.value }); });
+  }
+  const detail = document.getElementById('vehicleDetail');
+  if (!detail) return;
+  const id = new URLSearchParams(location.search).get('id');
+  if (!id) { detail.innerHTML = '<div class="empty">Vehicle ID is missing.</div>'; return; }
+  try {
+    currentVehicle = await api(`/vehicles/${encodeURIComponent(id)}`);
+    if (currentVehicle.status !== 'approved' || !currentVehicle.verified) throw new Error('This vehicle is not currently available for booking.');
+    const image = currentVehicle.image || currentVehicle.vehiclePicture || '';
+    detail.innerHTML = `${vehicleImageMarkup(currentVehicle, 'detail-image')}<div class="badge-row"><span class="badge badge-category">${escapeHtml((currentVehicle.category || currentVehicle.type || 'Other').toUpperCase())}</span><span class="badge badge-fuel">${escapeHtml(currentVehicle.fuelType || 'Petrol').toUpperCase()}</span><span class="pill">${currentVehicle.verified ? 'Approved' : 'Pending approval'}</span></div><h1 class="section-title">${escapeHtml(currentVehicle.name)}</h1><p class="detail-subtitle">${escapeHtml([currentVehicle.brand, currentVehicle.model].filter(Boolean).join(' ') || 'Verified vehicle')} · ${escapeHtml(currentVehicle.location || '-')}</p><div class="detail-facts"><div><b>Category</b>${escapeHtml(currentVehicle.category || currentVehicle.type || '-')}</div><div><b>Fuel</b>${escapeHtml(currentVehicle.fuelType || '-')}</div><div><b>Transmission</b>${escapeHtml(currentVehicle.transmission || 'Manual')}</div><div><b>Odometer</b>${Number(currentVehicle.currentKm || 0).toLocaleString('en-IN')} km</div><div><b>Rating</b><span class="star-rating">★ ${Number(currentVehicle.rating || 5).toFixed(1)}</span></div><div><b>Owner</b>${escapeHtml(currentVehicle.owner?.name || 'Vehicle owner')}</div></div><hr><h2 class="section-title small-title">Book with a transparent breakdown</h2><p>${escapeHtml(currentVehicle.description || 'Well maintained and verified for a smooth rental.')}</p>`;
+    const priceInput = document.getElementById('hourlyPrice'); if (priceInput) priceInput.value = currentVehicle.price;
+    const form = document.getElementById('rentalBooking'); if (form) { form.dataset.vehicleId = currentVehicle.id; form.addEventListener('input', refreshQuote); form.addEventListener('change', refreshQuote); document.getElementById('agreementConsent')?.addEventListener('change', updateQuoteButton); setSafeBookingDefaults(); }
+  } catch (error) { detail.innerHTML = `<div class="empty">${escapeHtml(error.message)}</div>`; document.getElementById('rentalBooking')?.querySelectorAll('input,select,button').forEach(control => { control.disabled = true; }); }
 });

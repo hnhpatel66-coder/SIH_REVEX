@@ -1,137 +1,160 @@
 <!doctype html>
-<html lang="en">
-
+<html lang="en" data-theme="light">
 <head>
-	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1">
-	<title>REVEX — Move Smart. Share More.</title>
-	<link rel="stylesheet" href="css/style.css">
-	<link rel="stylesheet" href="css/navbar.css">
-	<link rel="stylesheet" href="css/cards.css">
-	<link rel="stylesheet" href="css/responsive.css">
+    <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#0f766e">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <link rel="apple-touch-icon" href="/icons/icon-192.png">
+<meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>REVEX — Smarter city mobility</title>
+  <script>(function(){try{var k='revexTheme',s=localStorage.getItem(k);if(!s){s=window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}document.documentElement.setAttribute('data-theme',s);}catch(e){document.documentElement.setAttribute('data-theme','light');}})();</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&amp;family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/navbar.css">
+  <link rel="stylesheet" href="css/cards.css">
+  <link rel="stylesheet" href="css/responsive.css">
+  <link rel="stylesheet" href="css/theme.css">
+  <link rel="stylesheet" href="css/chatbot.css">
+  <link rel="stylesheet" href="css/install.css">
 </head>
-
 <body>
-	<header class="container">
-		<nav class="nav">
-			<a class="brand" href="index.html">REV<span>EX</span></a>
-			<button class="menu-btn" aria-label="Open navigation">☰</button>
-			<div class="nav-links">
-				<a class="active" href="index.html">Home</a>
-				<a href="find-ride.html">Find a Ride</a>
-				<a href="rental.html">Rent a Vehicle</a>
-				<a href="offer-ride.html">Offer a Ride</a>
-				<a href="bookings.html">My Bookings</a>
-				<a href="profile.html">Profile</a>
-			</div>
-			<div class="nav-actions" aria-label="Account actions"></div>
-		</nav>
-	</header>
+  <header class="container">
+    <nav class="nav">
+      <a class="brand" href="index.html">REV<span>EX</span></a>
+      <button class="menu-btn" aria-label="Open navigation">Menu</button>
+      <div class="nav-links">
+        <a class="active" href="index.html">Home</a>
+        <a href="find-ride.html">Find a Ride</a>
+        <a href="rental.html">Rent a Vehicle</a>
+        <a href="offer-ride.html" data-owner-only>Offer a Ride</a>
+        <a href="bookings.html">My Bookings</a>
+        <a href="profile.html">Profile</a>
+      </div>
+      <button id="revexInstallBtn" type="button" hidden aria-label="Install REVEX app">Install App</button>
+      <div class="nav-actions" aria-label="Account actions"></div>
+    </nav>
+  </header>
 
-	<main>
-		<section class="hero">
-			<div class="container">
-				<div>
-					<span class="eyebrow">SMART URBAN MOBILITY</span>
-					<h1>Move smarter.<br><em>Share more.</em></h1>
-					<p>Rent a vehicle for your plans or find a seat for your journey — one simple way to move around your city.</p>
-					<div class="hero-buttons">
-						<a class="btn btn-primary" href="find-ride.html">Find a ride →</a>
-						<a class="btn btn-dark" href="rental.html">Rent a vehicle</a>
-						<a class="btn btn-outline" href="offer-ride.html">Offer a ride</a>
-					</div>
-					<div class="hero-stats">
-						<div><strong>2,500+</strong><span>happy commuters</span></div>
-						<div><strong>4.9 ★</strong><span>community rating</span></div>
-						<div><strong>24/7</strong><span>on-the-go support</span></div>
-					</div>
-				</div>
-				<div class="hero-visual" aria-label="REVEX live mobility overview">
-					<div class="scooter">🛵</div>
-					<div class="float-card top">Verified rides <b>92% match</b></div>
-					<div class="float-card bottom">Your next trip <b>starts here</b></div>
-				</div>
-			</div>
-		</section>
+  <main>
+    <section class="hero">
+      <div class="container">
+        <div class="hero-copy">
+          <span class="eyebrow">CONNECTED CITY MOBILITY</span>
+          <h1><span class="hero-line">One platform for</span><em class="hero-line">everyday movement.</em></h1>
+          <p>Book a reliable vehicle or share a route with verified people. REVEX keeps urban travel simple, transparent and organized from one account.</p>
+          <div class="hero-buttons">
+            <a class="btn btn-primary" href="find-ride.html">Find a ride <span aria-hidden="true">→</span></a>
+            <a class="btn btn-dark" href="rental.html">Browse vehicles</a>
+            <a class="btn btn-outline" href="offer-ride.html" data-owner-only>Offer a ride</a>
+          </div>
+          <div class="hero-stats">
+            <div><strong>2,500+</strong><span>community members</span></div>
+            <div><strong>4.9 / 5</strong><span>average rating</span></div>
+            <div><strong>24 / 7</strong><span>platform access</span></div>
+          </div>
+        </div>
 
-		<section class="section container">
-			<span class="eyebrow">ONE PLATFORM, TWO WAYS TO GO</span>
-			<h2 class="section-title">Whatever your journey needs, we've got a route.</h2>
-			<div class="feature-grid">
-				<article class="feature-card rent">
-					<h3>Rent a vehicle</h3>
-					<p>Pick a bike, scooter or car that works for your time and your route.</p>
-					<a class="btn btn-primary" href="rental.html">Explore rentals →</a>
-					<span class="feature-icon">🛵</span>
-				</article>
-				<article class="feature-card ride">
-					<h3>Share a ride</h3>
-					<p>Find a seat with trusted people already heading your way.</p>
-					<a class="btn btn-dark" href="find-ride.html">Find your ride →</a>
-					<span class="feature-icon">🚗</span>
-				</article>
-			</div>
-		</section>
+        <div class="hero-visual" aria-label="REVEX mobility dashboard preview">
+          <div class="visual-shell">
+            <div class="visual-top">
+              <div class="visual-title"><span class="mini-logo">R</span><span>Mobility overview</span></div>
+              <span class="live-pill">Service active</span>
+            </div>
+            <div class="visual-content">
+              <div class="visual-map">
+                <div class="route-line"></div>
+                <span class="route-dot start"></span>
+                <span class="route-dot end"></span>
+                <div class="map-car" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M5 17h14l-1-5a2 2 0 0 0-2-1.5H8A2 2 0 0 0 6 12l-1 5Z"/>
+                    <path d="M7.5 10.5 9 7.5h6l1.5 3"/>
+                    <path d="M4 17v2M20 17v2"/>
+                    <circle cx="8" cy="17" r="1"/><circle cx="16" cy="17" r="1"/>
+                  </svg>
+                </div>
+              </div>
+              <div class="visual-side">
+                <div class="mini-card route"><small>Upcoming shared route</small><strong>Anand → Vadodara</strong><div class="mini-row"><span>Today · 5:30 PM</span><span>3 seats</span></div></div>
+                <div class="mini-card"><small>Vehicles available nearby</small><strong>12 options</strong><div class="mini-row"><span>From ₹299 / day</span><span class="mini-chip">View</span></div></div>
+                <div class="mini-card"><small>Verified community</small><strong>4.9 / 5 rating</strong><div class="mini-row"><span>Trusted profiles</span><span>2.5k+</span></div></div>
+              </div>
+            </div>
+          </div>
+          <div class="float-card top">Route compatibility <b>92% match</b></div>
+          <div class="float-card bottom">Unified experience <b>rent + share</b></div>
+        </div>
+      </div>
+    </section>
 
-		<section class="section" style="background:#f7faff">
-			<div class="container">
-				<span class="eyebrow">SIMPLE BY DESIGN</span>
-				<h2 class="section-title">Your city, without the friction.</h2>
-				<div class="steps">
-					<article class="step">
-						<div class="step-num">01</div>
-						<h3>Choose your way</h3>
-						<p>Need your own wheels? Rent. Have seats to spare? Share.</p>
-					</article>
-					<article class="step">
-						<div class="step-num">02</div>
-						<h3>Book in moments</h3>
-						<p>See transparent prices, verified details and instant availability.</p>
-					</article>
-					<article class="step">
-						<div class="step-num">03</div>
-						<h3>Travel better</h3>
-						<p>Move safely, save money and make every journey count.</p>
-					</article>
-				</div>
-			</div>
-		</section>
-	</main>
+    <section class="section container">
+      <span class="eyebrow">CHOOSE HOW YOU MOVE</span>
+      <h2 class="section-title">Two mobility services. One consistent experience.</h2>
+      <p class="section-intro">REVEX brings vehicle rental and ride sharing into a single, familiar workflow with clear information and verified profiles.</p>
+      <div class="feature-grid">
+        <article class="feature-card rent">
+          <span class="feature-kicker">Vehicle rental</span>
+          <h3>Your own vehicle, when you need it.</h3>
+          <p>Compare available cars, bikes and scooters, review details, and manage your booking from one place.</p>
+          <a class="btn btn-primary" href="rental.html">Explore rentals <span aria-hidden="true">→</span></a>
+          <span class="feature-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 15.5h16l-1.2-5a2 2 0 0 0-2-1.5H7.2a2 2 0 0 0-2 1.5L4 15.5Z"/>
+              <path d="M7.2 9 9 5.5h6L16.8 9"/>
+              <path d="M4 15.5V19M20 15.5V19"/>
+              <circle cx="8" cy="16" r="1.5"/><circle cx="16" cy="16" r="1.5"/>
+            </svg>
+          </span>
+        </article>
 
-	<footer class="footer">
-		<div class="container">
-			<div class="footer-grid">
-				<div>
-					<div class="footer-brand">REVEX</div>
-					<p>Move Smart. Share More. Built for a smoother, friendlier city.</p>
-				</div>
-				<div>
-					<h3>Contact</h3>
-					<p>📞 +91 98765 43210</p>
-					<p>✉️ info@revex.com</p>
-				</div>
-				<div>
-					<h3>Quick Links</h3>
-					<a href="find-ride.html">Find a Ride</a>
-					<a href="rental.html">Rent a Vehicle</a>
-					<a href="offer-ride.html">Offer a Ride</a>
-					<a href="bookings.html">My Bookings</a>
-				</div>
-			</div>
-			© 2026 REVEX • Urban mobility, reimagined.
-		</div>
-	</footer>
+        <article class="feature-card ride">
+          <span class="feature-kicker">Ride sharing</span>
+          <h3>Share a route with people going your way.</h3>
+          <p>Find compatible trips, view driver and vehicle details, and reserve a seat through a clear booking flow.</p>
+          <a class="btn btn-dark" href="find-ride.html">Find a ride <span aria-hidden="true">→</span></a>
+          <span class="feature-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="8" cy="8" r="2.5"/><circle cx="16.5" cy="9" r="2"/>
+              <path d="M3.5 18c.5-3.3 2.1-5 4.5-5s4 1.7 4.5 5"/>
+              <path d="M13.5 14c.8-1 1.8-1.5 3-1.5 2.1 0 3.4 1.4 4 4.2"/>
+            </svg>
+          </span>
+        </article>
+      </div>
+    </section>
 
-	<div class="modal" id="successModal">
-		<div class="modal-box">
-			<div class="modal-icon">✓</div>
-			<h2>Success</h2>
-			<p></p>
-			<button class="btn btn-primary" onclick="closeModal()">Done</button>
-		</div>
-	</div>
+    <section class="section section-band">
+      <div class="container">
+        <span class="eyebrow">BUILT AROUND CLARITY</span>
+        <h2 class="section-title">A simpler path from search to journey.</h2>
+        <div class="steps">
+          <article class="step"><div class="step-num">01</div><h3>Choose your service</h3><p>Search for a shared route or browse a vehicle that fits your plan.</p></article>
+          <article class="step"><div class="step-num">02</div><h3>Review the details</h3><p>See pricing, availability, vehicle information and account status before you book.</p></article>
+          <article class="step"><div class="step-num">03</div><h3>Manage everything</h3><p>Track bookings, ride activity and profile information from your REVEX account.</p></article>
+        </div>
+      </div>
+    </section>
+  </main>
 
-	<script src="js/main.js"></script>
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div><div class="footer-brand">REVEX</div><p>Smarter vehicle rental and ride sharing for everyday city travel.</p></div>
+        <div><h3>Contact</h3><p>Phone: +91 98765 43210</p><p>Email: info@revex.com</p></div>
+        <div><h3>Quick Links</h3><a href="find-ride.html">Find a Ride</a><a href="rental.html">Rent a Vehicle</a><a href="offer-ride.html" data-owner-only>Offer a Ride</a><a href="bookings.html">My Bookings</a></div>
+      </div>
+      <p>© 2026 REVEX · Urban mobility platform.</p>
+    </div>
+  </footer>
+
+  <div class="modal" id="successModal"><div class="modal-box"><div class="modal-icon">✓</div><h2>Success</h2><p></p><button class="btn btn-primary" data-close-modal type="button">Done</button></div></div>
+  <script src="js/theme.js"></script>
+  <script src="js/main.js"></script>
+  <script src="js/install.js"></script>
+  <script src="js/chatbot.js"></script>
 </body>
-
 </html>

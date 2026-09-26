@@ -1,3 +1,99 @@
-﻿<!doctype html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Log in | REVEX</title><link rel="stylesheet" href="css/style.css"><link rel="stylesheet" href="css/navbar.css"><link rel="stylesheet" href="css/cards.css"><link rel="stylesheet" href="css/responsive.css"></head><body><header class="container"><nav class="nav"><a class="brand" href="index.html">REV<span>EX</span></a></nav></header><main class="container" style="max-width:510px;padding:60px 0"><section class="booking-panel"><span class="eyebrow">WELCOME BACK</span><h1 class="section-title">Log in to REVEX</h1><p>Use your account details to continue.</p><form id="loginForm"><div class="field"><label for="userId">Email or User ID</label><input id="userId" name="userId" required autocomplete="username" placeholder="Your email or user ID"></div><div class="field"><label for="password">Password</label><input id="password" name="password" required type="password" autocomplete="current-password" placeholder="••••••••"></div><button class="btn btn-primary" style="width:100%;margin-top:20px">Log in</button></form><p><a href="forgot-password.html">Forgot password?</a></p><p>New here? <a style="color:#176bff;font-weight:bold" href="register.html">Create your account</a></p></section></main><div class="modal" id="successModal"><div class="modal-box"><div class="modal-icon">✓</div><h2>Welcome</h2><p></p><a class="btn btn-primary" href="index.html">Start exploring</a></div></div><script src="js/main.js"></script><script src="js/profile.js"></script><footer class="footer"><div class="container"><div class="footer-grid"><div><div class="footer-brand">REVEX</div><p>Move Smart. Share More.</p></div><div><h3>Contact</h3><p>Phone: +91 98765 43210</p><p>Email: info@revex.com</p></div><div><h3>Quick Links</h3><a href="index.html">Home</a> <a href="rental.html">Rent a Vehicle</a> <a href="find-ride.html">Find a Ride</a></div></div><p>2026 REVEX - Urban mobility, reimagined.</p></div></footer></body></html>
+﻿<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+    <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#0f766e">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <link rel="apple-touch-icon" href="/icons/icon-192.png">
+<meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Log in | REVEX</title>
+  <script>(function(){try{var k='revexTheme',s=localStorage.getItem(k);if(!s){s=window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}document.documentElement.setAttribute('data-theme',s);}catch(e){document.documentElement.setAttribute('data-theme','light');}})();</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&amp;family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/navbar.css">
+  <link rel="stylesheet" href="css/cards.css">
+  <link rel="stylesheet" href="css/responsive.css">
+  <link rel="stylesheet" href="css/theme.css">
+  <link rel="stylesheet" href="css/chatbot.css">
+  <link rel="stylesheet" href="css/install.css">
+</head>
+<body class="auth-page">
+  <header class="container">
+    <nav class="nav">
+      <a class="brand" href="index.html">REV<span>EX</span></a>
+      <button class="theme-toggle theme-name" type="button" aria-pressed="false" aria-label="Switch between dark and light mode">
+        <span class="track"><span class="thumb"></span></span><span class="icon"></span><span class="label"></span>
+      </button>
+    </nav>
+  </header>
 
+  <main class="container auth-shell">
+    <aside class="auth-visual" aria-label="REVEX platform overview">
+      <span class="eyebrow">WELCOME TO REVEX</span>
+      <h2>One account for every way you move.</h2>
+      <p>Book trusted rentals, find shared rides, and keep every trip in one clean dashboard.</p>
+      <div class="auth-points">
+        <div class="auth-point"><span>✓</span>Verified profiles</div>
+        <div class="auth-point"><span>↗</span>Simple booking flow</div>
+        <div class="auth-point"><span>⌁</span>One mobility dashboard</div>
+      </div>
+    </aside>
 
+    <section class="booking-panel auth-card">
+      <span class="eyebrow">WELCOME BACK</span>
+      <h1 class="section-title">Log in to REVEX</h1>
+      <p>Use your account details to continue.</p>
+      <div id="loginMessage" class="form-message" role="status"></div>
+      <form id="loginForm" novalidate>
+        <div class="field"><label for="loginEmail">Email</label><input id="loginEmail" name="email" required type="email" autocomplete="username" placeholder="you@example.com"></div>
+        <div class="field"><label for="loginPassword">Password</label><input id="loginPassword" name="password" required type="password" autocomplete="current-password" placeholder="Your password"></div>
+        <button class="btn btn-primary" type="submit" style="width:100%;margin-top:20px">Log in</button>
+      </form>
+      <p><a class="accent-link" href="forgot-password.html">Forgot password?</a></p>
+      <p>New here? <a class="accent-link" href="register.html">Create your account</a></p>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div><div class="footer-brand">REVEX</div><p>Smarter vehicle rental and ride sharing for everyday city travel.</p></div>
+        <div><h3>Quick Links</h3><a href="rental.html">Rent a Vehicle</a> <a href="find-ride.html">Find a Ride</a></div>
+      </div>
+      <p>© 2026 REVEX · Urban mobility platform.</p>
+    </div>
+  </footer>
+
+  <script src="js/theme.js"></script>
+  <script src="js/main.js"></script>
+  <script src="js/install.js"></script>
+  <script>
+    document.getElementById('loginForm')?.addEventListener('submit', async event => {
+      event.preventDefault();
+      const form = event.target;
+      const box = document.getElementById('loginMessage');
+      const submit = form.querySelector('button[type="submit"]');
+      const email = form.email.value.trim();
+      const password = form.password.value;
+      box.textContent = ''; box.className = 'form-message';
+      if (!email || !password) { box.textContent = 'Enter your email and password.'; box.className = 'form-message form-message-error'; return; }
+      submit.disabled = true; submit.textContent = 'Signing in…';
+      try {
+        const data = await api('/auth/login', { method: 'POST', body: { email, password } });
+        setSession(data);
+        const next = new URLSearchParams(location.search).get('next');
+        showModal('Welcome back!', 'Redirecting to your dashboard…');
+        setTimeout(() => { location.href = next || (data.user?.role === 'admin' ? 'admin.html' : data.user?.role === 'owner' ? 'list-vehicle.html' : 'index.html'); }, 700);
+      } catch (error) {
+        box.textContent = error.message; box.className = 'form-message form-message-error';
+        submit.disabled = false; submit.textContent = 'Log in';
+      }
+    });
+  </script>
+  <script src="js/chatbot.js"></script>
+</body>
+</html>

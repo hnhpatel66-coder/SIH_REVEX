@@ -1,121 +1,156 @@
-const escapeHtml=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
-function inr(n){return 'Rs.'+Number(n||0).toLocaleString('en-IN');}
+let ownerVehicles = [];
+let ownerSummary = null;
+let suggestionTimer = null;
 
-async function fileToDataUrl(file){
- if(!file)return '';
- if(file.size>4*1024*1024)throw new Error('Vehicle photo must be 4 MB or smaller.');
- return await new Promise((resolve,reject)=>{
-  const reader=new FileReader();
-  reader.onload=()=>resolve(reader.result);
-  reader.onerror=()=>reject(new Error('Could not read vehicle photo.'));
-  reader.readAsDataURL(file);
- });
+function inr(value) { return formatMoney(value); }
+
+// Upload budget: these limits keep the base64-encoded request comfortably under
+// the server's JSON body cap (12 MB). Base64 inflates binary data by ~33%.
+const UPLOAD_LIMITS = { photoMb: 2, documentMb: 0.8, maxDocuments: 6, totalMb: 7 };
+
+function fileToDataUrl(file, maxMb = UPLOAD_LIMITS.documentMb) {
+  return new Promise((resolve, reject) => {
+    if (!file) return resolve('');
+    if (file.size > maxMb * 1024 * 1024) return reject(new Error(`${file.name} must be smaller than ${maxMb} MB.`));
+    const reader = new FileReader(); reader.onload = () => resolve(reader.result); reader.onerror = () => reject(new Error(`Could not read ${file.name}.`)); reader.readAsDataURL(file);
+  });
 }
 
-function approvalBadge(v){
-  if(v.verified) return '<span class="pill">Approved</span>';
-  if(v.status==='unavailable') return '<span class="pill" style="background:rgba(251,113,133,.1);border-color:rgba(251,113,133,.3);color:#fda4af">Rejected</span>';
-  return '<span class="pill" style="background:rgba(251,191,36,.1);border-color:rgba(251,191,36,.3);color:#fcd34d">Pending Approval</span>';
-}
-
-async function renderOwnerVehicles(){
- const list=document.getElementById('ownerVehicleList');if(!list)return;
- if(!requireLogin())return;
- const current=getStoredUser();
- if(current && !['owner','admin'].includes(current.role)){
-   list.innerHTML='<div class="empty">Your account is a renter account. Use Profile to switch to an owner account.</div>';
-   return;
- }
- try{
-  const s=await api('/bookings/owner/summary');
-  const fleet=s.vehicles||[];
-  list.innerHTML=fleet.length?fleet.map(v=>`<article class="vehicle-card">
-    <div class="vehicle-image" style="height:175px;overflow:hidden"><img src="${v.image||''}" alt="${escapeHtml(v.name)}" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display='none'"></div>
-    <div class="card-body">${approvalBadge(v)}
-    <h3 class="card-title" style="margin-top:12px">${escapeHtml(v.name)}</h3>
-    <div class="card-meta">${escapeHtml(v.type||'')} - ${escapeHtml(v.location||'')}</div>
-    <div class="card-meta">Reg: <b>${escapeHtml(v.numberPlate||'-')}</b> - ${inr(v.price)}/hour</div>
-    <div class="card-meta">Availability: ${escapeHtml(v.status||'available')} - Rating: ${escapeHtml(v.rating||5)}</div>
-    <p class="card-price">${inr(v.earnings)} <small>total (${v.totalBookings||0} bookings, ${v.completedRentals||0} completed)</small></p>
-    <div class="card-actions">
-      <button class="btn btn-outline" type="button" data-edit-vehicle="${v.id}">Edit</button>
-      <button class="btn btn-outline" type="button" data-delete-vehicle="${v.id}">Remove</button>
-    </div></div></article>`).join(''):'<div class="empty">You have not listed any vehicles yet.</div>';
- }catch(e){list.innerHTML=`<div class="empty">${escapeHtml(e.message)}</div>`}
-}
-
-async function renderOwnerDashboard(){
- const box=document.getElementById('ownerDashboard');if(!box)return;
- const current=getStoredUser();
- if(!current || !['owner','admin'].includes(current.role)){box.innerHTML='';return;}
- try{
-  const s=await api('/bookings/owner/summary');
-  document.getElementById('ownerStats').innerHTML=[
-   ['Total vehicles',s.totalVehicles||0,'Listed on the platform'],
-   ['Approved vehicles',s.approvedVehicles||0,'Verified listings'],
-   ['Pending vehicles',s.pendingVehicles||0,'Awaiting verification'],
-   ['Total bookings',s.totalBookings||0,'All rental bookings'],
-   ['Completed rentals',s.completedRentals||0,'Finished trips'],
-   ['Total earnings',inr(s.totalEarnings),'90% share of paid bookings'],
-   ['Completed earnings',inr(s.completedEarnings),'From completed trips'],
-   ['Pending earnings',inr(s.pendingPayments),`${s.pendingPaymentCount||0} payment(s) awaiting`]
-  ].map(x=>`<article class="vehicle-card"><div class="card-body"><span class="eyebrow">${x[0]}</span><h2 style="font-size:2rem;margin:12px 0">${x[1]}</h2><p style="margin:0">${x[2]}</p></div></article>`).join('');
-
-  document.getElementById('ownerRevenue').innerHTML=s.revenuePerVehicle?.length
-   ? s.revenuePerVehicle.map(v=>`<p style="padding:12px 0;border-bottom:1px solid #e5ebf4;margin:0"><b>${escapeHtml(v.vehicleName)}</b><br><small>Total: ${v.totalBookings} booking(s) - Completed: ${v.completedRentals} - Cancelled: ${v.cancelledBookings} - Earnings: ${inr(v.earnings)}</small></p>`).join('')
-   : '<p>No paid bookings yet.</p>';
-
-  document.getElementById('ownerRecent').innerHTML=s.recent?.length
-   ? s.recent.map(b=>`<p style="padding:12px 0;border-bottom:1px solid #e5ebf4;margin:0"><b>${escapeHtml(b.vehicleId?.name||'Vehicle')}</b><br><small>${escapeHtml(b.userId?.name||'Renter')} - ${inr(b.totalAmount)} - ${escapeHtml(b.paymentStatus||b.status)}</small>${b.paymentStatus==='paid'?`<br><a class="btn btn-outline" style="margin-top:7px;padding:6px 10px" href="agreement.html?bookingId=${encodeURIComponent(b.id)}">Open agreement</a>`:''}</p>`).join('')
-   : '<p>No bookings yet.</p>';
- }catch(e){box.innerHTML=`<div class="empty">${escapeHtml(e.message)}</div>`}
-}
-
-document.addEventListener('DOMContentLoaded',()=>{
- const form=document.getElementById('vehicleListing');
- form?.addEventListener('submit',async event=>{
-  event.preventDefault(); if(!requireLogin())return;
-  const current=getStoredUser();
-  if(current && !['owner','admin'].includes(current.role)){alert('Please use an owner account to list a vehicle.');return;}
-  const f=event.target;
-  try{
-   const picture=await fileToDataUrl(f.vehiclePicture?.files[0]);
-   const item=await api('/vehicles',{method:'POST',body:JSON.stringify({
-    name:f.name.value.trim(),type:f.type.value,location:f.location.value.trim(),price:Number(f.price.value),
-    available:f.available.value,numberPlate:f.numberPlate?.value.trim()||'',
-    ownershipPaper:f.ownershipPaper?.files[0]?.name||'',
-    insurance:f.insurance?.files[0]?.name||'',
-    puc:f.puc?.files[0]?.name||'',
-    vehiclePicture:picture
-   })});
-   await renderOwnerVehicles();await renderOwnerDashboard();
-   showModal('Vehicle listed successfully!',`${item.name} was saved. It is pending verification.`);
-   f.reset();
-  }catch(e){alert(e.message)}
- });
- document.getElementById('ownerVehicleList')?.addEventListener('click',async event=>{
-  const del=event.target.closest('[data-delete-vehicle]');
-  const edit=event.target.closest('[data-edit-vehicle]');
-  if(del){
-    if(!confirm('Remove this vehicle? If it has booking history it will be deactivated instead of deleted.'))return;
-    try{
-      const r=await api('/vehicles/'+del.dataset.deleteVehicle,{method:'DELETE'});
-      await renderOwnerVehicles();await renderOwnerDashboard();
-      showModal('Done',r.message||'Vehicle updated.');
-    }catch(e){alert(e.message)}
-    return;
+// Fails fast with a precise message instead of an opaque server 413.
+function assertUploadBudget(files) {
+  const list = [...files].filter(Boolean);
+  if (list.length > UPLOAD_LIMITS.maxDocuments) throw new Error(`You can upload up to ${UPLOAD_LIMITS.maxDocuments} documents at a time.`);
+  const totalBytes = list.reduce((sum, file) => sum + (file?.size || 0), 0);
+  if (totalBytes > UPLOAD_LIMITS.totalMb * 1024 * 1024) {
+    throw new Error(`Combined upload size is too large. Please compress files so the total is under ${UPLOAD_LIMITS.totalMb} MB.`);
   }
-  if(edit){
-    const price=prompt('New hourly price (Rs.):');
-    if(price===null)return;
-    if(!Number(price)||Number(price)<1){alert('Enter a valid price.');return;}
-    const location=prompt('Pickup location:');
-    if(location===null)return;
-    try{
-      await api('/vehicles/'+edit.dataset.editVehicle,{method:'PUT',body:JSON.stringify({price:Number(price),location:String(location).trim()||undefined})});
-      await renderOwnerVehicles();
-    }catch(e){alert(e.message)}
+}
+function checkPlate(value) {
+  const hint = document.getElementById('plateHint'); if (!hint) return;
+  const normalized = String(value || '').replace(/[\s-]/g, '').toUpperCase();
+  hint.textContent = normalized.length >= 5 ? `Plate key: ${normalized}. Duplicate registration is checked securely when you save.` : 'Enter a valid registration number.';
+}
+async function documentsFromInputs(inputs) {
+  const documents = [];
+  for (const item of inputs) {
+    const file = item.input?.files?.[0]; if (!file) continue;
+    const dataUrl = await fileToDataUrl(file, 1.5);
+    documents.push({ type: item.type, label: item.label, fileName: file.name, mimeType: file.type, dataUrl, size: file.size });
   }
- });
- renderOwnerVehicles();renderOwnerDashboard();
+  return documents;
+}
+function updatePriceSuggestion() {
+  clearTimeout(suggestionTimer); suggestionTimer = setTimeout(async () => {
+    const form = document.getElementById('vehicleListing'); const box = document.getElementById('priceSuggestion'); if (!form || !box) return;
+    const category = form.category.value; const km = form.currentKm.value;
+    if (!category && !km) return;
+    try {
+      const query = new URLSearchParams({ kilometers: km || 0, category: category || 'Other', fuelType: form.fuelType.value || 'Petrol' });
+      const suggestion = await api(`/vehicles/price-suggestion?${query}`);
+      box.innerHTML = `<strong>Suggested Rental Price: ${formatMoney(suggestion.suggestedPrice)}/${escapeHtml(suggestion.priceUnit)}</strong><span>${escapeHtml(suggestion.formula)}</span><button class="btn btn-outline" id="acceptSuggestion" type="button">Accept suggestion</button>`;
+      document.getElementById('acceptSuggestion').onclick = () => { form.price.value = suggestion.suggestedPrice; form.priceUnit.value = suggestion.priceUnit; };
+    } catch { box.innerHTML = '<strong>Suggested Rental Price: ₹—/hour</strong><span>Enter valid details to calculate a suggestion.</span>'; }
+  }, 250);
+}
+function approvalBadge(vehicle) {
+  const status = vehicle.status || 'pending'; const label = vehicle.statusLabel || ({ pending: 'Pending Approval', approved: 'Approved', rejected: 'Rejected', removed: 'Removed (legacy)' })[status];
+  const className = status === 'approved' ? 'badge-approved' : status === 'rejected' ? 'badge-rejected' : status === 'removed' ? 'badge-removed' : 'badge-pending';
+  return `<span class="badge ${className}">${escapeHtml(label)}</span>`;
+}
+function vehicleOwnerCard(vehicle) {
+  const fallback = `data:image/svg+xml;charset=UTF-8,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="800" height="480"><rect width="100%" height="100%" fill="#172c47"/><text x="50%" y="50%" text-anchor="middle" dominant-baseline="middle" font-family="Arial" font-size="28" fill="#cbd5e1">REVEX Vehicle</text></svg>')}`;
+  const image = vehicle.image || vehicle.vehiclePicture || fallback;
+  return `<article class="vehicle-card owner-vehicle-card"><div class="vehicle-image"><img src="${escapeHtml(image)}" alt="${escapeHtml(vehicle.name)}" loading="lazy" onerror="this.onerror=null;this.src='${fallback}'"></div><div class="card-body">${approvalBadge(vehicle)}<h3 class="card-title">${escapeHtml(vehicle.name)}</h3><p class="card-meta">${escapeHtml(vehicle.category || vehicle.type || 'Other')} · ${escapeHtml(vehicle.fuelType || 'Petrol')} · ${escapeHtml(vehicle.location || '-')}</p><p class="card-meta">Registration: <b>${escapeHtml(vehicle.numberPlate || '-')}</b> · ${Number(vehicle.currentKm || 0).toLocaleString('en-IN')} km</p><p class="card-price">${inr(vehicle.price)} <small>/ ${escapeHtml(vehicle.priceUnit || 'hour')}</small>${vehicle.discountPercent ? `<small> · ${vehicle.discountPercent}% off</small>` : ''}</p><p class="card-meta">${vehicle.documents?.length || 0} document(s) uploaded · ${Number(vehicle.rating || 5).toFixed(1)} ★</p>${vehicle.rejectionReason ? `<p class="status-error">Reason: ${escapeHtml(vehicle.rejectionReason)}</p>` : ''}${vehicle.removalReason ? `<p class="status-error">Removal: ${escapeHtml(vehicle.removalReason)}</p>` : ''}<div class="card-actions"><a class="btn btn-outline" href="vehicle-details.html?id=${encodeURIComponent(vehicle.id)}">View</a><button class="btn btn-outline" type="button" data-edit-vehicle="${vehicle.id}">Edit</button><button class="btn btn-danger" type="button" data-delete-vehicle="${vehicle.id}" data-vehicle-name="${escapeHtml(vehicle.name || '')}">Delete</button></div></div></article>`;
+}
+async function renderOwnerVehicles() {
+  const list = document.getElementById('ownerVehicleList'); if (!list) return;
+  if (!requireRole('owner', 'admin')) return;
+  list.innerHTML = '<div class="empty">Loading your vehicles…</div>';
+  try { ownerVehicles = await api('/vehicles/mine'); list.innerHTML = ownerVehicles.length ? ownerVehicles.map(vehicleOwnerCard).join('') : '<div class="empty">You have not listed any vehicles yet.</div>'; }
+  catch (error) { list.innerHTML = `<div class="empty">${escapeHtml(error.message)}</div>`; }
+}
+async function renderOwnerDashboard() {
+  const box = document.getElementById('ownerStats'); if (!box || !requireRole('owner', 'admin')) return;
+  try {
+    ownerSummary = await api('/bookings/owner/summary');
+    const stats = [['Total vehicles', ownerSummary.totalVehicles || 0, 'All registered listings'], ['Approved vehicles', ownerSummary.approvedVehicles || 0, 'Visible to renters'], ['Pending vehicles', ownerSummary.pendingVehicles || 0, 'Awaiting verification'], ['Total bookings', ownerSummary.totalBookings || 0, 'All rental requests'], ['Active bookings', ownerSummary.activeBookings || 0, 'Confirmed or awaiting owner'], ['Completed rentals', ownerSummary.completedRentals || 0, 'Finished trips'], ['Total earnings', inr(ownerSummary.totalEarnings), '90% owner share'], ['Pending requests', ownerSummary.bookingRequests?.length || 0, 'Need your decision']];
+    box.innerHTML = stats.map(item => `<article class="stat-card"><span class="eyebrow">${item[0]}</span><strong>${item[1]}</strong><small>${item[2]}</small></article>`).join('');
+    const recent = document.getElementById('ownerRecent');
+    recent.innerHTML = ownerSummary.bookingRequests?.length ? ownerSummary.bookingRequests.slice(0, 5).map(item => `<div class="list-row"><div><strong>${escapeHtml(item.userId?.name || 'Renter')}</strong><small>${escapeHtml(item.vehicleId?.name || 'Vehicle')} · ${formatDateTime(item.startDate)}</small></div><span class="badge badge-pending">${escapeHtml(item.status)}</span></div>`).join('') : '<div class="empty">No pending booking requests.</div>';
+    const revenue = document.getElementById('ownerRevenue'); revenue.innerHTML = ownerSummary.revenuePerVehicle?.length ? ownerSummary.revenuePerVehicle.map(item => `<div class="list-row"><strong>${escapeHtml(item.vehicleName)}</strong><span>${inr(item.earnings)}</span></div>`).join('') : '<div class="empty">No paid rental earnings yet.</div>';
+    const earnings = document.getElementById('ownerEarnings'); earnings.innerHTML = `<div class="earnings-highlight"><div><span>Total earnings</span><strong>${inr(ownerSummary.totalEarnings)}</strong></div><div><span>Completed earnings</span><strong>${inr(ownerSummary.completedEarnings)}</strong></div><div><span>Pending payment value</span><strong>${inr(ownerSummary.pendingPayments)}</strong></div></div><p class="form-note">Earnings are calculated from paid, non-cancelled confirmed/completed bookings. The platform retains 10% and the owner receives 90%.</p>`;
+  } catch (error) { box.innerHTML = `<div class="empty">${escapeHtml(error.message)}</div>`; }
+}
+async function renderOwnerRequests() {
+  const box = document.getElementById('ownerRequests'); if (!box || !requireRole('owner', 'admin')) return;
+  box.innerHTML = '<div class="empty">Loading booking requests…</div>';
+  try {
+    const requests = await api('/bookings/owner/requests'); const admin = getStoredUser()?.role === 'admin';
+    box.innerHTML = requests.length ? requests.map(item => { const quote = item.quote || {}; const canDecide = item.status === 'pending_owner'; return `<article class="request-card"><div class="request-main"><div class="badge-row"><span class="badge badge-category">${escapeHtml(item.vehicleId?.category || item.vehicleId?.type || 'Vehicle')}</span><span class="badge ${item.status === 'confirmed' ? 'badge-approved' : item.status === 'rejected' ? 'badge-rejected' : 'badge-pending'}">${escapeHtml(item.status)}</span></div><h3>${escapeHtml(item.userId?.name || 'Renter')} · ${escapeHtml(item.vehicleId?.name || 'Vehicle')}</h3><p>${escapeHtml(item.userId?.email || '')} ${item.userId?.phone ? `· ${escapeHtml(item.userId.phone)}` : ''}</p><div class="request-facts"><span><b>Start</b>${formatDateTime(item.startDate)}</span><span><b>End</b>${formatDateTime(item.endDate)}</span><span><b>Rental Amount</b>${formatMoney(quote.baseRentalAmount || 0)}</span>${quote.extraKilometerCharges ? `<span><b>Extra KM</b>${formatMoney(quote.extraKilometerCharges)}</span>` : ''}${quote.additionalCharges ? `<span><b>Additional</b>${formatMoney(quote.additionalCharges)}</span>` : ''}${quote.discountAmount ? `<span><b>Discount (${quote.discountPercent || 0}%)</b>-${formatMoney(quote.discountAmount)}</span>` : ''}<span><b>Tax / Fees</b>${formatMoney(quote.taxFees || 0)}</span><span><b>Grand Total</b>${formatMoney(quote.grandTotal || item.totalAmount || 0)}</span><span><b>Payment</b>${escapeHtml(item.paymentStatus)}</span><span><b>Agreement</b>${item.agreement ? escapeHtml(item.agreement.agreementStatus || 'Prepared') : 'Preparing'}</span></div></div><div class="request-actions">${canDecide ? `<button class="btn btn-primary" type="button" data-decision="approve" data-booking="${item.id}">Approve</button><button class="btn btn-danger" type="button" data-decision="reject" data-booking="${item.id}">Reject</button>` : ''}<a class="btn btn-outline" href="agreement.html?bookingId=${encodeURIComponent(item.id)}">View agreement</a>${admin ? `<a class="btn btn-outline" href="bookings.html?bookingId=${encodeURIComponent(item.id)}">Booking details</a>` : ''}</div></article>`; }).join('') : '<div class="empty">No booking requests yet. New requests will appear here immediately.</div>';
+  } catch (error) { box.innerHTML = `<div class="empty">${escapeHtml(error.message)}</div>`; }
+}
+async function refreshOwnerPortal() { await Promise.all([renderOwnerDashboard(), renderOwnerVehicles(), renderOwnerRequests()]); }
+function openEditVehicle(id) {
+  const vehicle = ownerVehicles.find(item => item.id === id); if (!vehicle) return;
+  document.getElementById('editVehicleId').value = vehicle.id; document.getElementById('editName').value = vehicle.name || ''; document.getElementById('editCategory').value = vehicle.category || vehicle.type || 'Other'; document.getElementById('editFuel').value = vehicle.fuelType || 'Petrol'; document.getElementById('editKm').value = vehicle.currentKm || 0; document.getElementById('editLocation').value = vehicle.location || ''; document.getElementById('editPrice').value = vehicle.price || ''; document.getElementById('editDiscount').value = vehicle.discountPercent || 0; document.getElementById('editUnit').value = vehicle.priceUnit || 'hour'; document.getElementById('editTransmission').value = vehicle.transmission || 'Manual'; document.getElementById('editDescription').value = vehicle.description || ''; document.getElementById('editAvailable').value = vehicle.availableFrom ? new Date(vehicle.availableFrom).toISOString().slice(0, 10) : ''; document.getElementById('editPhoto').value = ''; document.getElementById('editDocuments').value = ''; document.getElementById('editFormMessage').textContent = ''; document.getElementById('editVehicleModal').classList.add('show');
+}
+async function submitVehicle(event) {
+  event.preventDefault(); if (!requireRole('owner', 'admin')) return;
+  const form = event.target; const submit = form.querySelector('button[type="submit"]'); const message = document.getElementById('vehicleFormMessage'); submit.disabled = true; message.textContent = 'Saving vehicle…'; message.className = 'form-message';
+  try {
+    assertUploadBudget([form.ownershipPaper.files[0], form.insurance.files[0], form.puc.files[0]]);
+    const documents = await documentsFromInputs([{ input: form.ownershipPaper, type: 'ownership', label: 'Ownership papers' }, { input: form.insurance, type: 'insurance', label: 'Insurance' }, { input: form.puc, type: 'puc', label: 'PUC certificate' }]);
+    const image = await fileToDataUrl(form.vehiclePicture.files[0], UPLOAD_LIMITS.photoMb);
+    const vehicle = await api('/vehicles', { method: 'POST', body: { name: form.name.value.trim(), category: form.category.value, brand: form.brand.value.trim(), model: form.model.value.trim(), location: form.location.value.trim(), fuelType: form.fuelType.value, transmission: form.transmission.value, currentKm: Number(form.currentKm.value), price: Number(form.price.value), priceUnit: form.priceUnit.value, includedKm: Number(form.includedKm.value), extraKmRate: Number(form.extraKmRate.value), additionalCharges: Number(form.additionalCharges.value), discountPercent: Number(form.discountPercent.value), taxPercent: Number(form.taxPercent.value), available: form.available.value, numberPlate: form.numberPlate.value.trim(), description: form.description.value.trim(), vehiclePicture: image, documents } });
+    message.textContent = ''; form.reset(); document.getElementById('vehicleKm').value = 0; await refreshOwnerPortal(); showModal('Vehicle listed successfully', `${vehicle.name} was saved. Status: Pending Approval.`); document.getElementById('fleet')?.scrollIntoView({ behavior: 'smooth' });
+  } catch (error) { message.textContent = error.message; message.className = 'form-message form-message-error'; } finally { submit.disabled = false; }
+}
+async function submitEditVehicle(event) {
+  event.preventDefault(); const id = document.getElementById('editVehicleId').value; const message = document.getElementById('editFormMessage'); const submit = event.target.querySelector('button[type="submit"]'); submit.disabled = true; message.textContent = 'Saving changes…'; message.className = 'form-message';
+  try {
+    const body = { name: document.getElementById('editName').value.trim(), category: document.getElementById('editCategory').value, fuelType: document.getElementById('editFuel').value, currentKm: Number(document.getElementById('editKm').value), location: document.getElementById('editLocation').value.trim(), price: Number(document.getElementById('editPrice').value), discountPercent: Number(document.getElementById('editDiscount').value), priceUnit: document.getElementById('editUnit').value, transmission: document.getElementById('editTransmission').value, description: document.getElementById('editDescription').value.trim(), availableFrom: document.getElementById('editAvailable').value };
+    const photo = document.getElementById('editPhoto').files[0];
+    const files = [...document.getElementById('editDocuments').files];
+    assertUploadBudget([...files, photo].filter(Boolean));
+    if (photo) body.vehiclePicture = await fileToDataUrl(photo, UPLOAD_LIMITS.photoMb);
+    if (files.length) body.documents = await Promise.all(files.map(async file => ({ type: 'other', label: file.name, fileName: file.name, mimeType: file.type, dataUrl: await fileToDataUrl(file, UPLOAD_LIMITS.documentMb), size: file.size })));
+    const result = await api(`/vehicles/${encodeURIComponent(id)}`, { method: 'PUT', body }); document.getElementById('editVehicleModal').classList.remove('show'); await refreshOwnerPortal(); showModal('Vehicle updated', result.message || 'Your changes were submitted for approval.'); message.textContent = '';
+  } catch (error) { message.textContent = error.message; message.className = 'form-message form-message-error'; } finally { submit.disabled = false; }
+}
+async function decideBooking(button) {
+  const decision = button.dataset.decision; const id = button.dataset.booking; let reason = '';
+  if (decision === 'reject') { reason = prompt('Enter a reason for rejecting this booking request:'); if (reason === null || !reason.trim()) return; }
+  if (decision === 'approve' && !confirm('Approve this booking request?')) return;
+  try { const result = await api(`/bookings/${encodeURIComponent(id)}/owner-decision`, { method: 'POST', body: { decision, reason } }); await refreshOwnerPortal(); showModal('Request updated', result.message); } catch (error) { alert(error.message); }
+}
+async function removeVehicle(id, name) {
+  const vehicle = ownerVehicles.find(v => v.id === id);
+  const ok = await confirmDelete({
+    title: 'Delete vehicle permanently',
+    lead: `${name || vehicle?.name || 'This vehicle'} will be removed from MongoDB and will no longer appear anywhere in REVEX.`,
+    impact: [
+      'The vehicle and its uploaded documents are deleted',
+      'Every booking, agreement, payment and review for this vehicle is deleted',
+      'The number plate becomes available for registration again'
+    ],
+    warning: 'This cannot be undone. Any booking history for this vehicle is permanently lost.',
+    confirmLabel: 'Delete vehicle',
+    onConfirm: async reason => {
+      const result = await api(`/vehicles/${encodeURIComponent(id)}`, { method: 'DELETE', body: { reason, confirm: true } });
+      await refreshOwnerPortal();
+      showModal('Vehicle deleted', result.message);
+      return true;
+    }
+  });
+  if (!ok) showModal('Deletion cancelled', 'No changes were made.');
+}
+document.addEventListener('DOMContentLoaded', () => {
+  if (!requireRole('owner', 'admin')) return;
+  const available = document.getElementById('vehicleAvailable'); if (available) available.min = new Date().toISOString().slice(0, 10);
+  document.getElementById('vehicleListing')?.addEventListener('submit', submitVehicle); document.getElementById('editVehicleForm')?.addEventListener('submit', submitEditVehicle);
+  document.getElementById('vehicleListing')?.querySelectorAll('[name="category"],[name="fuelType"],[name="currentKm"]').forEach(input => { input.addEventListener('input', updatePriceSuggestion); input.addEventListener('change', updatePriceSuggestion); });
+  document.getElementById('ownerVehicleList')?.addEventListener('click', event => { const edit = event.target.closest('[data-edit-vehicle]'); const remove = event.target.closest('[data-delete-vehicle]'); if (edit) openEditVehicle(edit.dataset.editVehicle); if (remove) removeVehicle(remove.dataset.deleteVehicle, remove.dataset.vehicleName); });
+  document.getElementById('ownerRequests')?.addEventListener('click', event => { const decision = event.target.closest('[data-decision]'); if (decision) decideBooking(decision); });
+  document.getElementById('closeEditVehicle')?.addEventListener('click', () => document.getElementById('editVehicleModal').classList.remove('show'));
+  document.getElementById('refreshOwner')?.addEventListener('click', refreshOwnerPortal); refreshOwnerPortal();
 });

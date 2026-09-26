@@ -1,21 +1,25 @@
-﻿<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Find a Ride | REVEX</title>
-  <link rel="stylesheet" href="css/style.css"><link rel="stylesheet" href="css/navbar.css"><link rel="stylesheet" href="css/cards.css"><link rel="stylesheet" href="css/responsive.css">
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#0f766e">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <link rel="apple-touch-icon" href="/icons/icon-192.png">
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <script>(function(){try{var k='revexTheme',s=localStorage.getItem(k);if(!s){s=window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}document.documentElement.setAttribute('data-theme',s);}catch(e){document.documentElement.setAttribute('data-theme','light');}})();</script><title>Find a Ride | REVEX</title>  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&amp;family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css"><link rel="stylesheet" href="css/navbar.css"><link rel="stylesheet" href="css/cards.css"><link rel="stylesheet" href="css/responsive.css">  <link rel="stylesheet" href="css/theme.css">
+  <link rel="stylesheet" href="css/chatbot.css">
+  <link rel="stylesheet" href="css/install.css">
 </head>
 <body>
-  <header class="container"><nav class="nav">
-    <a class="brand" href="index.html">REV<span>EX</span></a><button class="menu-btn" aria-label="Open navigation">Menu</button>
-    <div class="nav-links"><a href="index.html">Home</a><a class="active" href="find-ride.html">Find a Ride</a><a href="rental.html">Rent a Vehicle</a><a href="offer-ride.html">Offer a Ride</a><a href="bookings.html">My Bookings</a><a href="profile.html">Profile</a></div>
-    <div class="nav-actions" aria-label="Account actions"></div>
-  </nav></header>
-  <main><section class="page-hero"><div class="container">
-    <span class="eyebrow">SHARED JOURNEYS</span><h1>There is a seat with your name on it.</h1><p>Travel together, save on every trip and make the city feel closer.</p>
-    <form class="form-grid" id="rideSearch"><div class="field"><label>From</label><input name="from" placeholder="Surat"></div><div class="field"><label>To</label><input name="to" placeholder="Ahmedabad"></div><div class="field"><label>Date</label><input name="date" type="date"></div><button class="btn btn-primary">Search rides</button></form>
-  </div></section><section class="section container" style="padding-top:55px"><span class="eyebrow">MATCHES FOR YOU</span><h2 class="section-title">Available shared rides</h2><div class="ride-grid" id="rideResults"></div></section></main>
-  <script src="js/main.js"></script><script src="js/data.js"></script><script src="js/rides.js"></script>
-</body>
-</html>
-
+  <header class="container"><nav class="nav"><a class="brand" href="index.html">REV<span>EX</span></a><button class="menu-btn" aria-label="Open navigation">Menu</button><div class="nav-links"></div><button id="revexInstallBtn" type="button" hidden aria-label="Install REVEX app">Install App</button>
+      <div class="nav-actions"></div></nav></header>
+  <main><section class="page-hero"><div class="container"><span class="eyebrow">SHARED JOURNEYS</span><h1>There is a seat with your name on it.</h1><p>Travel together, save on every trip and make the city feel closer.</p><form class="form-grid" id="rideSearch"><div class="field"><label for="rideFrom">From</label><input id="rideFrom" name="from" placeholder="Surat"></div><div class="field"><label for="rideTo">To</label><input id="rideTo" name="to" placeholder="Ahmedabad"></div><div class="field"><label for="rideDate">Date</label><input id="rideDate" name="date" type="date"></div><div class="field"><label for="rideType">Vehicle</label><select id="rideType" name="vehicleType"><option value="">Any vehicle</option><option>Car</option><option>Bike</option><option>Scooter</option><option>Other</option></select></div><button class="btn btn-primary">Search rides</button></form></div></section><section class="section container"><span class="eyebrow">MATCHES FOR YOU</span><h2 class="section-title">Available shared rides</h2><div class="ride-grid" id="rideResults"></div></section></main>
+  <footer class="footer"><div class="container"><div class="footer-grid"><div><div class="footer-brand">REVEX</div><p>Move Smart. Share More.</p></div><div><h3>Quick Links</h3><a href="rental.html">Rent a Vehicle</a><a href="bookings.html">My Bookings</a></div></div><p>© 2026 REVEX · Urban mobility, reimagined.</p></div></footer>
+  <script src="js/theme.js"></script>
+  <script src="js/main.js"></script>
+  <script src="js/install.js"></script><script src="js/data.js"></script><script src="js/rides.js"></script>
+  <script src="js/chatbot.js"></script>
+</body></html>

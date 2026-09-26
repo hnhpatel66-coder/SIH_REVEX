@@ -1,14 +1,125 @@
-﻿<!doctype html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Join REVEX</title><link rel="stylesheet" href="css/style.css"><link rel="stylesheet" href="css/navbar.css"><link rel="stylesheet" href="css/cards.css"><link rel="stylesheet" href="css/responsive.css"></head><body><header class="container"><nav class="nav"><a class="brand" href="index.html">REV<span>EX</span></a></nav></header><main class="container" style="max-width:510px;padding:60px 0"><section class="booking-panel"><span class="eyebrow">MOVE WITH US</span><h1 class="section-title">Join REVEX</h1><p>Create your account and start moving smarter.</p><form id="registerForm"><div class="field"><label>Full name</label><input name="name" required placeholder="Your name"></div><div class="field"><label>Email</label><input name="email" required type="email" placeholder="you@example.com"></div><div class="field"><label>Phone</label><input name="phone" required type="tel" placeholder="Your phone number"></div><div class="field"><label>Password</label><input name="password" required type="password" placeholder="Choose a password"></div><div class="field"><label>Account type</label><select name="role"><option value="user">Rent / book vehicles</option><option value="owner">Vehicle owner — list & earn</option></select></div><button class="btn btn-primary" style="width:100%;margin-top:20px">Create account</button></form><p>Already a member? <a style="color:#176bff;font-weight:bold" href="login.html">Log in</a></p></section></main><div class="modal" id="successModal"><div class="modal-box"><div class="modal-icon">✓</div><h2>Welcome to REVEX</h2><p></p><a class="btn btn-primary" href="index.html">Start exploring</a></div></div><script src="js/main.js"></script><script>
-document.getElementById('registerForm')?.addEventListener('submit',async e=>{
- e.preventDefault();const f=e.target;
- try{
-  const data=await api('/auth/register',{method:'POST',body:JSON.stringify({
-    name:f.name.value.trim(),email:f.email.value.trim(),phone:f.phone.value.trim(),
-    password:f.password.value,role:f.role.value
-  })});
-  setSession(data);
-  showModal('Registration Successful!','Your REVEX account has been created successfully.');
-}catch(err){alert(err.message)}
-});
-</script><footer class="footer"><div class="container"><div class="footer-grid"><div><div class="footer-brand">REVEX</div><p>Move Smart. Share More.</p></div><div><h3>Contact</h3><p>Phone: +91 98765 43210</p><p>Email: info@revex.com</p></div><div><h3>Quick Links</h3><a href="index.html">Home</a> <a href="rental.html">Rent a Vehicle</a> <a href="find-ride.html">Find a Ride</a></div></div><p>2026 REVEX - Urban mobility, reimagined.</p></div></footer></body></html>
+﻿<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+    <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#0f766e">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <link rel="apple-touch-icon" href="/icons/icon-192.png">
+<meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Join REVEX</title>
+  <script>(function(){try{var k='revexTheme',s=localStorage.getItem(k);if(!s){s=window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}document.documentElement.setAttribute('data-theme',s);}catch(e){document.documentElement.setAttribute('data-theme','light');}})();</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&amp;family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/navbar.css">
+  <link rel="stylesheet" href="css/cards.css">
+  <link rel="stylesheet" href="css/responsive.css">
+  <link rel="stylesheet" href="css/theme.css">
+  <link rel="stylesheet" href="css/chatbot.css">
+  <link rel="stylesheet" href="css/install.css">
+</head>
+<body class="auth-page">
+  <header class="container">
+    <nav class="nav">
+      <a class="brand" href="index.html">REV<span>EX</span></a>
+      <button class="theme-toggle theme-name" type="button" aria-pressed="false" aria-label="Switch between dark and light mode">
+        <span class="track"><span class="thumb"></span></span><span class="icon"></span><span class="label"></span>
+      </button>
+    </nav>
+  </header>
 
+  <main class="container auth-shell">
+    <aside class="auth-visual" aria-label="REVEX platform overview">
+      <span class="eyebrow">MOVE SMARTER</span>
+      <h2>Your city. Your route. Your REVEX.</h2>
+      <p>Create an account to rent vehicles, share rides, manage bookings, and grow into an owner account anytime.</p>
+      <div class="auth-points">
+        <div class="auth-point"><span>✓</span>Verified profiles</div>
+        <div class="auth-point"><span>↗</span>Simple booking flow</div>
+        <div class="auth-point"><span>⌁</span>One mobility dashboard</div>
+      </div>
+    </aside>
+
+    <section class="booking-panel auth-card">
+      <span class="eyebrow">MOVE WITH US</span>
+      <h1 class="section-title">Join REVEX</h1>
+      <p>Create your account and start moving smarter.</p>
+      <div id="registerMessage" class="form-message" role="status"></div>
+      <form id="registerForm" novalidate>
+        <div class="field"><label for="regName">Full name</label><input id="regName" name="name" required autocomplete="name" placeholder="Your name"></div>
+        <div class="field"><label for="regEmail">Email</label><input id="regEmail" name="email" required type="email" autocomplete="email" placeholder="you@example.com"></div>
+        <div class="field"><label for="regPhone">Phone</label><input id="regPhone" name="phone" required type="tel" autocomplete="tel" placeholder="Your phone number"></div>
+        <div class="field"><label for="regPassword">Password</label><input id="regPassword" name="password" required type="password" minlength="8" autocomplete="new-password" placeholder="At least 8 characters"></div>
+        <div class="field"><label for="regConfirm">Confirm password</label><input id="regConfirm" name="confirmPassword" required type="password" minlength="8" autocomplete="new-password" placeholder="Repeat password"></div>
+        <div class="field">
+          <label for="regRole">Account type</label>
+          <select id="regRole" name="role">
+            <option value="user">Rent / book vehicles</option>
+            <option value="owner">Vehicle owner — list &amp; earn</option>
+          </select>
+        </div>
+        <button class="btn btn-primary" type="submit" style="width:100%;margin-top:20px">Create account</button>
+      </form>
+      <p>Already a member? <a class="accent-link" href="login.html">Log in</a></p>
+    </section>
+  </main>
+
+  <div class="modal" id="successModal">
+    <div class="modal-box">
+      <div class="modal-icon">✓</div>
+      <h2>Welcome to REVEX</h2>
+      <p></p>
+      <a class="btn btn-primary" href="index.html">Start exploring</a>
+    </div>
+  </div>
+
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div><div class="footer-brand">REVEX</div><p>Smarter vehicle rental and ride sharing for everyday city travel.</p></div>
+        <div><h3>Contact</h3><p>Phone: +91 98765 43210</p><p>Email: info@revex.com</p></div>
+        <div><h3>Quick Links</h3><a href="index.html">Home</a> <a href="rental.html">Rent a Vehicle</a> <a href="find-ride.html">Find a Ride</a></div>
+      </div>
+      <p>© 2026 REVEX · Urban mobility platform.</p>
+    </div>
+  </footer>
+
+  <script src="js/theme.js"></script>
+  <script src="js/main.js"></script>
+  <script src="js/install.js"></script>
+  <script>
+    document.getElementById('registerForm')?.addEventListener('submit', async event => {
+      event.preventDefault();
+      const form = event.target;
+      const box = document.getElementById('registerMessage');
+      const submit = form.querySelector('button[type="submit"]');
+      const name = form.name.value.trim();
+      const email = form.email.value.trim();
+      const phone = form.phone.value.trim();
+      const password = form.password.value;
+      const confirmPassword = form.confirmPassword.value;
+
+      const fail = message => { box.textContent = message; box.className = 'form-message form-message-error'; };
+      box.textContent = ''; box.className = 'form-message';
+
+      if (password !== confirmPassword) return fail('Passwords do not match.');
+      if (password.length < 8) return fail('Password must be at least 8 characters.');
+
+      submit.disabled = true; submit.textContent = 'Creating account…';
+      try {
+        const data = await api('/auth/register', { method: 'POST', body: { name, email, phone, password, confirmPassword, role: form.role.value } });
+        setSession(data);
+        showModal('Registration Successful!', `Your REVEX account is ready. Welcome, ${name}.`);
+      } catch (error) {
+        fail(error.message);
+      } finally {
+        submit.disabled = false; submit.textContent = 'Create account';
+      }
+    });
+  </script>
+  <script src="js/chatbot.js"></script>
+</body>
+</html>

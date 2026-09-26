@@ -1,17 +1,96 @@
-<!doctype html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Secure Admin Setup | REVEX</title><link rel="stylesheet" href="css/style.css"><link rel="stylesheet" href="css/navbar.css"></head><body><header class="container"><nav class="nav"><a class="brand" href="index.html">REV<span>EX</span></a></nav></header><main class="container" style="max-width:560px;padding:70px 0"><section class="booking-panel"><span class="eyebrow">ONE-TIME ADMIN SETUP</span><h1 class="section-title">Create the first admin</h1><p>The setup key is verified securely. It is never stored on this page.</p><div id="setupMessage" class="notice"></div><form id="adminSetupForm">
-<div class="field"><label>Setup key</label><input name="setupKey" type="password" required autocomplete="off"></div>
-<div class="field"><label>Admin name</label><input name="name" required></div>
-<div class="field"><label>Email</label><input name="email" type="email" required></div>
-<div class="field"><label>Phone</label><input name="phone"></div>
-<div class="field"><label>Password</label><input name="password" type="password" minlength="8" required></div>
-<button class="btn btn-primary" style="width:100%;margin-top:18px">Create admin account</button>
-</form></section></main><script src="js/main.js"></script><script>
-document.getElementById('adminSetupForm').addEventListener('submit',async e=>{
- e.preventDefault();const f=e.target,msg=document.getElementById('setupMessage');
- try{
-  const data=await api('/auth/setup-admin',{method:'POST',body:JSON.stringify({setupKey:f.setupKey.value,name:f.name.value.trim(),email:f.email.value.trim(),phone:f.phone.value.trim(),password:f.password.value})});
-  setSession(data);msg.textContent='Admin account created successfully. Opening dashboard...';msg.style.display='block';
-  setTimeout(()=>location.href='admin.html',600);
- }catch(err){msg.textContent=err.message;msg.style.display='block'}
-});
-</script></body></html>
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+    <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#0f766e">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <link rel="apple-touch-icon" href="/icons/icon-192.png">
+<meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Secure Admin Setup | REVEX</title>
+  <script>(function(){try{var k='revexTheme',s=localStorage.getItem(k);if(!s){s=window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}document.documentElement.setAttribute('data-theme',s);}catch(e){document.documentElement.setAttribute('data-theme','light');}})();</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&amp;family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/navbar.css">
+  <link rel="stylesheet" href="css/cards.css">
+  <link rel="stylesheet" href="css/responsive.css">
+  <link rel="stylesheet" href="css/theme.css">
+  <link rel="stylesheet" href="css/chatbot.css">
+  <link rel="stylesheet" href="css/install.css">
+</head>
+<body class="auth-page">
+  <header class="container">
+    <nav class="nav">
+      <a class="brand" href="index.html">REV<span>EX</span></a>
+      <button class="theme-toggle theme-name" type="button" aria-pressed="false" aria-label="Switch between dark and light mode">
+        <span class="track"><span class="thumb"></span></span><span class="icon"></span><span class="label"></span>
+      </button>
+    </nav>
+  </header>
+
+  <main class="container auth-shell">
+    <aside class="auth-visual" aria-label="Admin setup">
+      <span class="eyebrow">ONE-TIME SETUP</span>
+      <h2>Bootstrap the first administrator.</h2>
+      <p>The setup key is compared in constant time and is never stored in the browser. This page is only useful while no admin account exists.</p>
+      <div class="auth-points">
+        <div class="auth-point"><span>✓</span>Key verified server-side</div>
+        <div class="auth-point"><span>↗</span>Password stored hashed</div>
+        <div class="auth-point"><span>⌁</span>Rate limited</div>
+      </div>
+    </aside>
+
+    <section class="booking-panel auth-card">
+      <span class="eyebrow">ONE-TIME ADMIN SETUP</span>
+      <h1 class="section-title">Create the first admin</h1>
+      <p>The setup key is verified securely. It is never stored on this page.</p>
+      <div id="setupMessage" class="notice" role="status"></div>
+      <form id="adminSetupForm" novalidate>
+        <div class="field"><label for="setupKey">Setup key</label><input id="setupKey" name="setupKey" type="password" required autocomplete="off"></div>
+        <div class="field"><label for="setupName">Admin name</label><input id="setupName" name="name" required></div>
+        <div class="field"><label for="setupEmail">Admin email</label><input id="setupEmail" name="email" type="email" required autocomplete="username"></div>
+        <div class="field"><label for="setupPhone">Phone</label><input id="setupPhone" name="phone" type="tel" required autocomplete="tel"></div>
+        <div class="field"><label for="setupPassword">Password (min 8 chars)</label><input id="setupPassword" name="password" type="password" minlength="8" required autocomplete="new-password"></div>
+        <div class="field"><label for="setupConfirm">Confirm password</label><input id="setupConfirm" name="confirmPassword" type="password" minlength="8" required autocomplete="new-password"></div>
+        <button class="btn btn-primary" type="submit" style="width:100%;margin-top:20px">Create admin account</button>
+      </form>
+    </section>
+  </main>
+
+  <script src="js/theme.js"></script>
+  <script src="js/main.js"></script>
+  <script src="js/install.js"></script>
+  <script>
+    document.getElementById('adminSetupForm')?.addEventListener('submit', async event => {
+      event.preventDefault();
+      const form = event.target;
+      const msg = document.getElementById('setupMessage');
+      const submit = form.querySelector('button[type="submit"]');
+      const password = form.password.value;
+      const confirmPassword = form.confirmPassword.value;
+
+      const fail = message => { msg.textContent = message; msg.className = 'notice notice-error'; };
+      msg.className = 'notice'; msg.textContent = 'Creating admin…';
+      if (password !== confirmPassword) return fail('Passwords do not match.');
+      if (password.length < 8) return fail('Password must be at least 8 characters.');
+
+      submit.disabled = true;
+      try {
+        await api('/auth/setup-admin', { method: 'POST', body: {
+          setupKey: form.setupKey.value, name: form.name.value.trim(),
+          email: form.email.value.trim(), phone: form.phone.value.trim(), password, confirmPassword
+        } });
+        msg.textContent = 'Admin account created successfully. Opening dashboard…';
+        setTimeout(() => { location.href = 'admin.html'; }, 700);
+      } catch (error) {
+        fail(error.message);
+        submit.disabled = false;
+      }
+    });
+  </script>
+  <script src="js/chatbot.js"></script>
+</body>
+</html>

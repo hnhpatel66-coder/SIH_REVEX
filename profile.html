@@ -1,109 +1,48 @@
 <!doctype html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Profile | REVEX</title>
-<link rel="stylesheet" href="css/style.css">
-<link rel="stylesheet" href="css/navbar.css">
-<link rel="stylesheet" href="css/cards.css">
-<link rel="stylesheet" href="css/responsive.css">
+<html lang="en" data-theme="light">
+<head>  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#0f766e">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <link rel="apple-touch-icon" href="/icons/icon-192.png">
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <script>(function(){try{var k='revexTheme',s=localStorage.getItem(k);if(!s){s=window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}document.documentElement.setAttribute('data-theme',s);}catch(e){document.documentElement.setAttribute('data-theme','light');}})();</script><title>Profile | REVEX</title>  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&amp;family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css"><link rel="stylesheet" href="css/navbar.css"><link rel="stylesheet" href="css/cards.css"><link rel="stylesheet" href="css/responsive.css">  <link rel="stylesheet" href="css/theme.css">
+  <link rel="stylesheet" href="css/chatbot.css">
+  <link rel="stylesheet" href="css/install.css">
 </head>
 <body>
-<header class="container"><nav class="nav">
-<a class="brand" href="index.html">REV<span>EX</span></a>
-<button class="menu-btn">Menu</button>
-<div class="nav-links"><a href="index.html">Home</a><a href="find-ride.html">Find a Ride</a><a href="rental.html">Rent a Vehicle</a><a href="offer-ride.html">Offer a Ride</a><a href="bookings.html">My Bookings</a><a class="active" href="profile.html">Profile</a></div>
-<div class="nav-actions"><a href="login.html">Log in</a></div>
-</nav></header>
-<main class="container section">
-<span class="eyebrow">ACCOUNT</span>
-<div class="profile-head" style="margin:15px 0 35px"><div class="avatar" id="avatar">V</div>
-<div><h1 class="section-title" id="profileName" style="margin:0">REVEX User</h1><p id="profileMeta" style="margin:5px 0">Loading profile...</p></div></div>
-<div class="feature-grid">
-<article class="detail-panel"><h3>Profile details</h3>
-<p><b>Email</b><br><span id="profileEmail">-</span></p>
-<p><b>Phone</b><br><span id="profilePhone">-</span></p>
-<p><b>Role</b><br><span class="pill" id="profileRole">-</span></p>
-<div id="ownerFields" style="display:none">
-<p><b>Car approval status</b><br><span class="pill" id="profileCarStatus">-</span></p>
-<p><b>Total cars on rent</b><br><span id="profileCarsOnRent">-</span></p>
-<p><b>Total earnings (90% share)</b><br><span id="profileEarnings">-</span></p>
-<p><b>Rides shared / rentals / cancelled</b><br><span id="profileRideStats">-</span></p>
-</div>
-</article>
-<article class="detail-panel"><h3>Account actions</h3>
-<p>Your account is securely stored.</p>
-<form id="editProfileForm">
-<div class="field"><label>Full name</label><input name="name" id="editName" required></div>
-<div class="field"><label>Phone</label><input name="phone" id="editPhone"></div>
-<button class="btn btn-primary" style="width:100%;margin-top:12px">Save profile</button>
-</form>
-<hr>
-<div id="roleSwitchBox"></div>
-<button class="btn btn-outline" id="logoutBtn" style="width:100%;margin-top:12px">Log out</button>
-</article>
-</div>
-</main>
-<footer class="footer"><div class="container"><div class="footer-grid">
-<div><div class="footer-brand">REVEX</div><p>Move Smart. Share More.</p></div>
-<div><h3>Contact</h3><p>Phone: +91 98765 43210</p><p>Email: info@revex.com</p></div>
-<div><h3>Quick Links</h3><a href="index.html">Home</a> <a href="rental.html">Rent a Vehicle</a></div>
-</div><p>2026 REVEX - Urban mobility, reimagined.</p></div></footer>
-<div class="modal" id="successModal"><div class="modal-box"><div class="modal-icon">OK</div><h2>Success</h2><p></p><button class="btn btn-primary" onclick="closeModal()">Done</button></div></div>
-<script src="js/main.js"></script>
-<script>
-document.addEventListener("DOMContentLoaded",async()=>{
-  let u=getStoredUser();
-  if(!u){location.href="login.html";return;}
-  try{ const me=await api('/auth/me'); u=me.user; setSession({token:getToken(),user:u}); }catch(e){}
-  document.getElementById("profileName").textContent=u.name;
-  document.getElementById("profileEmail").textContent=u.email;
-  document.getElementById("profilePhone").textContent=u.phone||"-";
-  document.getElementById("profileRole").textContent=u.role;
-  document.getElementById("profileMeta").textContent=u.isVerified?"Verified account":"Account created";
-  document.getElementById("avatar").textContent=(u.name||"V").slice(0,2).toUpperCase();
-  document.getElementById("editName").value=u.name||"";
-  document.getElementById("editPhone").value=u.phone||"";
-  const box=document.getElementById("roleSwitchBox");
-  if(u.role==="admin"){ box.innerHTML="<p><a class='btn btn-outline' href='admin.html'>Open admin dashboard</a></p>"; }
-  else if(u.role==="user"){ box.innerHTML="<p>Want to list vehicles and earn?</p><button class='btn btn-primary' id='becomeOwner' style='width:100%'>Switch to owner account</button>"; }
-  else { box.innerHTML="<p>You are an owner. You can switch back to a renter account.</p><button class='btn btn-outline' id='becomeUser' style='width:100%'>Switch to user account</button>"; }
-  document.getElementById("becomeOwner")?.addEventListener("click",async()=>{
-    if(!confirm("Switch this account to owner?"))return;
-    try{ const d=await api('/auth/switch-role',{method:'POST',body:JSON.stringify({newRole:'owner'})}); setSession(d); location.reload(); }
-    catch(e){alert(e.message)}
-  });
-  document.getElementById("becomeUser")?.addEventListener("click",async()=>{
-    if(!confirm("Switch back to user account?"))return;
-    try{ const d=await api('/auth/switch-role',{method:'POST',body:JSON.stringify({newRole:'user'})}); setSession(d); location.reload(); }
-    catch(e){alert(e.message)}
-  });
-  if(u.role==="owner"){
-    document.getElementById("ownerFields").style.display="block";
-    try{
-      const s=await api('/bookings/owner/summary');
-      document.getElementById('profileCarStatus').textContent=s.carApprovalStatus||u.carApprovalStatus||'pending';
-      document.getElementById('profileCarsOnRent').textContent=s.totalCarsOnRent ?? 0;
-      document.getElementById('profileEarnings').textContent='Rs.'+Number(s.totalEarnings||0).toLocaleString('en-IN');
-      const my=await api('/bookings/my').catch(()=>[]);
-      const cancelled=my.filter(b=>b.status==='cancelled').length;
-      document.getElementById('profileRideStats').textContent=`Paid: ${s.paidBookings||0} - Active: ${s.activeBookings||0} - Cancelled rentals: ${cancelled}`;
-    }catch(e){
-      document.getElementById('profileCarStatus').textContent=u.carApprovalStatus||'pending';
-      document.getElementById('profileCarsOnRent').textContent=u.totalCarsOnRent||0;
-      document.getElementById('profileEarnings').textContent='Rs.'+Number(u.ownerEarnings||0).toLocaleString('en-IN');
-    }
+  <header class="container"><nav class="nav"><a class="brand" href="index.html">REV<span>EX</span></a><button class="menu-btn" aria-label="Open navigation">Menu</button><div class="nav-links"></div><button id="revexInstallBtn" type="button" hidden aria-label="Install REVEX app">Install App</button>
+      <div class="nav-actions"></div></nav></header>
+  <main class="container section"><span class="eyebrow">ACCOUNT</span><div class="profile-head" style="margin:15px 0 35px"><div class="avatar" id="avatar">R</div><div><h1 class="section-title" id="profileName" style="margin:0">REVEX User</h1><p id="profileMeta" style="margin:5px 0">Loading profile…</p></div></div><div id="profileNotice"></div><div class="feature-grid"><article class="detail-panel"><h3>Profile details</h3><p><b>Email</b><br><span id="profileEmail">-</span></p><p><b>Phone</b><br><span id="profilePhone">-</span></p><p><b>Role</b><br><span class="pill" id="profileRole">-</span></p><div id="ownerFields" style="display:none"><p><b>Vehicle approval status</b><br><span class="pill" id="profileCarStatus">-</span></p><p><b>Total vehicles</b><br><span id="profileCarsOnRent">-</span></p><p><b>Total earnings (90% share)</b><br><span id="profileEarnings">-</span></p><p><b>Rental activity</b><br><span id="profileRideStats">-</span></p></div></article><article class="detail-panel"><h3>Account actions</h3><p>Update your contact details or switch portal role.</p><form id="editProfileForm"><div class="field"><label for="editName">Full name</label><input id="editName" name="name" required></div><div class="field"><label for="editPhone">Phone</label><input id="editPhone" name="phone"></div><button class="btn btn-primary" style="width:100%;margin-top:12px">Save profile</button></form><hr><div id="roleSwitchBox"></div><h3 style="margin-top:18px">Appearance</h3><p>Choose how REVEX looks on this device. Your choice is saved and applied on every page.</p><div class="theme-choice" id="themeChoice" role="group" aria-label="Colour theme"><button type="button" data-theme-pick="light" aria-pressed="false"><span class="swatch light" aria-hidden="true">☀</span><span>Light<small>Bright, high contrast</small></span></button><button type="button" data-theme-pick="dark" aria-pressed="false"><span class="swatch dark" aria-hidden="true">☾</span><span>Dark<small>Easier on the eyes</small></span></button></div><button class="btn btn-outline" id="logoutBtn" style="width:100%;margin-top:12px">Log out</button></article></div><section class="detail-panel" id="notifications" style="margin-top:24px"><div class="panel-heading"><h3>Notifications</h3><button class="btn btn-outline btn-small" id="refreshNotifications" type="button">Refresh</button></div><div id="notificationList"><div class="empty">Loading notifications…</div></div></section></main>
+  <div class="modal" id="successModal"><div class="modal-box"><div class="modal-icon">✓</div><h2>Success</h2><p></p><button class="btn btn-primary" onclick="closeModal()">Done</button></div></div>
+  <footer class="footer"><div class="container"><p>© 2026 REVEX · Account</p></div></footer>
+  <script src="js/theme.js"></script>
+  <script src="js/main.js"></script>
+  <script src="js/install.js"></script><script>
+document.addEventListener('DOMContentLoaded',async()=>{
+  let user=getStoredUser(); if(!user){location.href='login.html';return;}
+  try{const me=await api('/auth/me');user=me.user;setSession({token:getToken(),user});}catch(error){return}
+  const notice=new URLSearchParams(location.search).get('notice'); const noticeBox=document.getElementById('profileNotice'); if(notice==='owner-only')noticeBox.innerHTML='<div class="form-message form-message-error">Vehicle and ride listing tools are available in the Owner portal. Use the role switch below to continue.</div>';
+  document.getElementById('profileName').textContent=user.name; document.getElementById('profileEmail').textContent=user.email; document.getElementById('profilePhone').textContent=user.phone||'-'; document.getElementById('profileRole').textContent=user.role; document.getElementById('profileMeta').textContent=user.isVerified?'Verified account':'Account created'; document.getElementById('avatar').textContent=(user.name||'R').slice(0,2).toUpperCase(); document.getElementById('editName').value=user.name||''; document.getElementById('editPhone').value=user.phone||'';
+  const box=document.getElementById('roleSwitchBox'); if(user.role==='admin')box.innerHTML='<p>You are signed in as an administrator.</p><a class="btn btn-outline" href="admin.html">Open admin dashboard</a>'; else if(user.role==='user')box.innerHTML='<p>Want to list vehicles and earn?</p><button class="btn btn-primary" id="becomeOwner" style="width:100%">Switch to owner account</button>'; else box.innerHTML='<p>You are an owner. You can switch back to a renter account.</p><button class="btn btn-outline" id="becomeUser" style="width:100%">Switch to user account</button>';
+  document.getElementById('becomeOwner')?.addEventListener('click',async()=>{if(!confirm('Switch this account to owner?'))return;try{const data=await api('/auth/switch-role',{method:'POST',body:{newRole:'owner'}});setSession(data);location.href='list-vehicle.html';}catch(error){alert(error.message)}}); document.getElementById('becomeUser')?.addEventListener('click',async()=>{if(!confirm('Switch back to user account?'))return;try{const data=await api('/auth/switch-role',{method:'POST',body:{newRole:'user'}});setSession(data);location.href='index.html';}catch(error){alert(error.message)}});
+  if(user.role==='owner'){document.getElementById('ownerFields').style.display='block';try{const summary=await api('/bookings/owner/summary');document.getElementById('profileCarStatus').textContent=summary.carApprovalStatus||user.carApprovalStatus||'pending';document.getElementById('profileCarsOnRent').textContent=summary.totalVehicles??0;document.getElementById('profileEarnings').textContent=formatMoney(summary.totalEarnings||0);document.getElementById('profileRideStats').textContent=`Paid: ${summary.paidBookings||0} · Active: ${summary.activeBookings||0} · Completed: ${summary.completedRentals||0}`;}catch(error){document.getElementById('profileCarStatus').textContent=user.carApprovalStatus||'pending';document.getElementById('profileCarsOnRent').textContent=user.totalCarsOnRent||0;document.getElementById('profileEarnings').textContent=formatMoney(user.ownerEarnings||0);}}
+  async function loadNotifications(){const list=document.getElementById('notificationList');try{const items=await api('/notifications');list.innerHTML=items.length?items.map(item=>`<div class="list-row"><div><strong>${escapeHtml(item.title)}</strong><small>${escapeHtml(item.message)} · ${formatDateTime(item.createdAt)}</small></div><button class="btn btn-outline btn-small" data-read-notification="${item.id}" type="button">${item.read?'Read':'Mark read'}</button></div>`).join(''):'<div class="empty">No notifications yet.</div>';list.onclick=async event=>{const button=event.target.closest('[data-read-notification]');if(!button)return;try{await api('/notifications/'+encodeURIComponent(button.dataset.readNotification)+'/read',{method:'PATCH'});await loadNotifications();}catch(error){alert(error.message)}};}catch(error){list.innerHTML=`<div class="empty">${escapeHtml(error.message)}</div>`;}}
+  document.getElementById('refreshNotifications').onclick=loadNotifications; loadNotifications();
+  document.getElementById('editProfileForm').addEventListener('submit',async event=>{event.preventDefault();try{const data=await api('/auth/edit-profile',{method:'POST',body:{name:document.getElementById('editName').value,phone:document.getElementById('editPhone').value}});setSession(data);showModal('Profile updated','Your contact details were saved.');document.getElementById('profileName').textContent=data.user.name;}catch(error){alert(error.message)}});
+  document.getElementById('logoutBtn').onclick=()=>{clearSession();location.href='index.html'};
+  // ---- appearance (dark / light) ----
+  const themeBox=document.getElementById('themeChoice');
+  if(themeBox && window.RevaxTheme){
+    const paint=theme=>themeBox.querySelectorAll('[data-theme-pick]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.themePick===theme)));
+    paint(window.RevaxTheme.get());
+    window.RevaxTheme.onChange(paint);
+    themeBox.addEventListener('click',event=>{const pick=event.target.closest('[data-theme-pick]');if(pick)window.RevaxTheme.set(pick.dataset.themePick);});
   }
-  document.getElementById("editProfileForm").addEventListener("submit",async(ev)=>{
-    ev.preventDefault();
-    try{
-      const d=await api('/auth/edit-profile',{method:'POST',body:JSON.stringify({name:document.getElementById("editName").value,phone:document.getElementById("editPhone").value})});
-      setSession(d); location.reload();
-    }catch(e){alert(e.message)}
-  });
-  document.getElementById("logoutBtn").onclick=()=>{clearSession();location.href="index.html"};
 });
 </script>
-</body>
-</html>
+  <script src="js/chatbot.js"></script>
+</body></html>
