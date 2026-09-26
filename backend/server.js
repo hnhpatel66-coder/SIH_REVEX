@@ -16,8 +16,13 @@ const bookingRoutes = require('./routes/bookings');
 const rideRoutes = require('./routes/rides');
 const adminRoutes = require('./routes/admin');
 const notificationRoutes = require('./routes/notifications');
+const chatRoutes = require('./routes/chat');
+const paymentRoutes = require('./routes/payments');
 const { corsMiddleware, blockPrivateStatic, jsonBodyFallback } = require('./utils/security');
 const { connectMongo: connectMongoShared } = require('./utils/db');
+const gateway = require('./utils/payments');
+const gatewayConfig = gateway.publicConfig();
+const chatProvider = require('./utils/chatProvider');
 
 try { dns.setServers(['1.1.1.1', '8.8.8.8']); } catch {}
 const app = express();
@@ -133,6 +138,70 @@ async function ensureAdmin() {
   return admin;
 }
 
+/**
+ * Reconciles `Ride.seatsBooked` against the live booking ledger on boot.
+ *
+ * `seatsBooked` is a denormalised counter used for a single guarded atomic
+ * update, which is what actually prevents overbooking. Reads always come from
+ * the ledger (see `bookedSeatsByRide` in routes/rides.js), so a drifted counter
+ * can never show a rider the wrong availability, but it is repaired here anyway
+ * so the counter and the ledger agree for reporting.
+ */
+async function reconcileSeatCounters() {
+  const Ride = require('./models/Ride');
+  const RideBooking = require('./models/RideBooking');
+  const { RIDE_BOOKING_ACTIVE_STATUSES } = require('./utils/statuses');
+  try {
+    const rows = await RideBooking.aggregate([
+      { $match: { status: { $in: RIDE_BOOKING_ACTIVE_STATUSES } } },
+      { $group: { _id: '$rideId', seats: { $sum: '$seats' } } }
+    ]);
+    const expected = new Map(rows.map(row => [String(row._id), row.seats || 0]));
+    const rides = await Ride.find({}).select('seats seatsBooked').lean();
+    let fixed = 0;
+    for (const ride of rides) {
+      const want = Math.min(ride.seats || 0, expected.get(String(ride._id)) || 0);
+      if ((ride.seatsBooked || 0) !== want) {
+        await Ride.updateOne({ _id: ride._id }, { $set: { seatsBooked: Math.max(0, want) } });
+        fixed += 1;
+      }
+    }
+    if (fixed) console.log(`[rides] reconciled seatsBooked on ${fixed} ride(s).`);
+  } catch (error) {
+    console.warn('[rides] seat reconciliation skipped:', error.message);
+  }
+}
+
+/**
+ * The partial unique index that prevents one rider from holding two live seat
+ * requests on the same ride cannot be built if the database already contains
+ * duplicates. The API blocks new duplicates either way; this only makes the
+ * repair path visible instead of failing silently.
+ */
+async function checkActiveRideBookingIndex() {
+  try {
+    const RideBooking = require('./models/RideBooking');
+    const [indexes, duplicates] = await Promise.all([
+      RideBooking.collection.indexes(),
+      RideBooking.aggregate([
+        { $match: { status: { $in: ['payment_pending', 'pending_owner', 'confirmed'] } } },
+        { $group: { _id: { rideId: '$rideId', userId: '$userId' }, count: { $sum: 1 }, ids: { $push: '$_id' } } },
+        { $match: { count: { $gt: 1 } } },
+        { $count: 'groups' }
+      ])
+    ]);
+    if (indexes.some(index => index.name === 'active_ride_booking_unique')) return;
+    if (!duplicates[0]) return;
+    console.warn(
+      `[rides] The database-level guard "active_ride_booking_unique" could not be created because `
+      + `${duplicates[0].groups} duplicate live ride booking pair(s) already exist. The API rejects new duplicates, `
+      + 'so no new double-booking is possible. To finish the repair run:  node scripts/fix-duplicate-ride-bookings.js'
+    );
+  } catch (error) {
+    console.warn('[rides] index check skipped:', error.message);
+  }
+}
+
 app.get('/api/health', (req, res) => res.json({ ok: true, database: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected', databaseName: mongoose.connection.name || null, mode: process.env.ACTIVE_MONGO_MODE || 'unknown' }));
 
 // Runtime configuration handed to the browser.
@@ -155,6 +224,8 @@ app.use('/api/bookings', bookingRoutes);
 app.use('/api/rides', rideRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/chat', chatRoutes);
+app.use('/api/payments', paymentRoutes);
 app.use((req, res) => res.status(404).json({ message: req.path.startsWith('/api/') ? 'API endpoint not found.' : 'Page not found.' }));
 app.use((error, req, res, next) => {
   if (res.headersSent) return next(error);
@@ -168,6 +239,7 @@ app.use((error, req, res, next) => {
  */
 function reportConfig() {
   const secret = String(process.env.JWT_SECRET || '');
+  const assistant = chatProvider.providerConfig();
   const lines = [
     `[config] PORT              = ${PORT}`,
     `[config] JWT_SECRET        = ${secret ? `configured (${secret.length} chars)` : 'MISSING'}`,
@@ -175,10 +247,36 @@ function reportConfig() {
     `[config] MONGODB_DB_NAME   = ${process.env.MONGODB_DB_NAME || 'vroomy (default)'}`,
     `[config] LOCAL FALLBACK    = ${String(process.env.ALLOW_LOCAL_MONGO_FALLBACK).toLowerCase() === 'true' ? 'ENABLED' : 'disabled'}`,
     `[config] ADMIN_EMAIL       = ${process.env.ADMIN_EMAIL || 'not set'}`,
-    `[config] SMTP (password reset) = ${process.env.SMTP_HOST ? 'configured' : 'not configured (demo reset only)'}`
+    `[config] SMTP (password reset) = ${process.env.SMTP_HOST ? 'configured' : 'not configured (demo reset only)'}`,
+    // "Keys are present" is NOT "Razorpay works". The line deliberately says
+    // `present`, and the live result is printed by reportGatewayHealth() below.
+    // Claiming "connected" here is what hid a rejected key pair for so long.
+    `[config] Razorpay          = ${gatewayConfig.enabled ? `keys present (${process.env.RAZORPAY_KEY_ID}), verifying…` : 'NOT configured (payments use a labelled test payment)'}`,
+    `[config] PLATFORM_FEE      = ${process.env.PLATFORM_FEE_PERCENT || '10'}%`,
+    `[config] Cancellation      = free for ${process.env.CANCEL_FREE_WINDOW_HOURS ?? '6'}h before start, then the per-actor fee in backend/.env`,
+    `[config] REVEX Assistant   = ${assistant.configured
+      ? `configured (${assistant.model}${assistant.derivedUrl ? ', endpoint derived from the key' : ''})`
+      : `NOT configured — ${assistant.problem}`}`
   ];
   if (secret && secret.length < 32) lines.push('[config] WARNING: JWT_SECRET is shorter than 32 characters.');
   lines.forEach(line => console.log(line));
+}
+
+/**
+ * Asks Razorpay whether it actually accepts the keys, and says so plainly.
+ * A revoked or mistyped key pair passes every "is it set?" test, so without
+ * this the only symptom is a payment that fails at checkout.
+ */
+async function reportGatewayHealth() {
+  if (!gatewayConfig.enabled) return;
+  const health = await gateway.checkHealth({ force: true });
+  if (health.usable) {
+    console.log('[gateway] Razorpay accepted the API keys. Real payments are enabled.');
+    return;
+  }
+  console.error(`[gateway] Razorpay is NOT usable (${health.state}).`);
+  console.error(`[gateway]   ${health.message}`);
+  console.error('[gateway]   Until this is fixed, payments use a labelled test payment and no real money moves.');
 }
 
 async function start() {
@@ -186,8 +284,12 @@ async function start() {
   reportConfig();
   await connectMongo();
   await ensureAdmin();
+  await reconcileSeatCounters();
+  await checkActiveRideBookingIndex();
   const server = app.listen(PORT, () => console.log(`REVEX running at http://localhost:${PORT}`));
   server.on('error', error => { console.error(error.code === 'EADDRINUSE' ? `Port ${PORT} is already in use.` : error.message); process.exit(1); });
+  // After listening, so a slow or unreachable gateway never delays startup.
+  reportGatewayHealth().catch(error => console.error('[gateway] health check failed:', error.message));
 }
 
 start().catch(error => { console.error('REVEX could not start:', error.message); process.exit(1); });

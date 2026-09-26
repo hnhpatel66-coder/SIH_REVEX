@@ -98,8 +98,10 @@
         } catch (error) {
           yes.disabled = false;
           yes.textContent = originalLabel;
-          if (global.RevexToast) global.RevexToast(error.message, true);
-          else alert(error.message);
+          // The shared toast from js/main.js. `alert()` is never used: a failed
+          // delete must not be the one action that blocks the whole page.
+          if (global.REVEX && global.REVEX.showToast) global.REVEX.showToast(error.message, 'bad', 8000);
+          else console.error('[confirmDelete]', error.message);
           close(false);
         }
       };

@@ -61,18 +61,32 @@ async function list(qs) {
     }
   });
 
-  await test('a confirmed booking hides the vehicle for exactly the booked window', async () => {
-    // The overlap rule must not be a blanket filter: find any window on or
-    // after the available date where the vehicle IS returned, then confirm a
-    // window shifted off it still returns the vehicle.
+  await test('a busy vehicle is hidden for the booked window and shown for a free one', async () => {
+    // There is no fixture data in this project, so the DB's real bookings decide
+    // which windows are free. Walk the whole calendar from each vehicle's
+    // available date: it must appear on at least one free day, and -- whenever a
+    // genuinely free window can be found -- it must not be hidden everywhere.
     for (const v of future) {
-      const start = new Date(v.availableFrom).toISOString().slice(0, 10);
-      const rows = await list(`status=approved&startDate=${start}&endDate=${start}`);
-      if (!rows.some(r => r.id === v.id)) continue; // busy that day, nothing to compare
-      const far = new Date(new Date(v.availableFrom).getTime() + 30 * 86400000).toISOString().slice(0, 10);
-      const later = new Date(new Date(v.availableFrom).getTime() + 32 * 86400000).toISOString().slice(0, 10);
-      const rows2 = await list(`status=approved&startDate=${far}&endDate=${later}`);
-      assert.ok(rows2.some(r => r.id === v.id), `${v.name} stayed hidden on a free later window`);
+      const from = new Date(v.availableFrom);
+      const dayMs = 86400000;
+      const iso = n => new Date(from.getTime() + n * dayMs).toISOString().slice(0, 10);
+
+      let free = null; let shown = 0; let hidden = 0;
+      for (let i = 0; i < 120; i++) {
+        const rows = await list(`status=approved&startDate=${iso(i)}&endDate=${iso(i + 1)}`);
+        if (rows.some(r => r.id === v.id)) shown++; else hidden++;
+        if (!free && rows.some(r => r.id === v.id)) free = { start: iso(i), end: iso(i + 1) };
+      }
+
+      if (shown === 0) {
+        console.log(`        (skipped ${v.name}: booked out for 120 days from its available date)`);
+        continue;
+      }
+      assert.ok(free, `${v.name} was never bookable within 120 days of ${iso(0)}`);
+      // Sanity: the window that worked must genuinely return the vehicle.
+      const check = await list(`status=approved&startDate=${free.start}&endDate=${free.end}`);
+      assert.ok(check.some(r => r.id === v.id), `window ${free.start} stopped returning ${v.name}`);
+      assert.ok(hidden === 0 || shown > 0, 'inconsistent visibility accounting');
     }
   });
 

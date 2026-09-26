@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <script>(function(){try{var s=localStorage.getItem('revexTheme');document.documentElement.setAttribute('data-theme',s==='dark'?'dark':'light');}catch(e){document.documentElement.setAttribute('data-theme','light');}})();</script><title>Assistant | REVEX</title>
+  <meta name="description" content="Ask the REVEX Assistant about finding a ride, renting a vehicle, payments, cancellations and refunds. Your conversation is stored against your own account.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&amp;family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css"><link rel="stylesheet" href="css/navbar.css"><link rel="stylesheet" href="css/cards.css"><link rel="stylesheet" href="css/responsive.css"><link rel="stylesheet" href="css/theme.css"><link rel="stylesheet" href="css/revex-ui.css"><link rel="stylesheet" href="css/chat.css">
+
+
+
+</head>
+<body data-no-chat-launcher="1">
+  <header class="container"><nav class="nav"><a class="brand" href="index.html">REV<span>EX</span></a><button class="menu-btn" aria-label="Open navigation" type="button">Menu</button><div class="nav-links"></div><div class="nav-actions"></div></nav></header>
+  <main class="container section">
+    <div class="rvx-page-head">
+      <div>
+        <span class="rvx-eyebrow">SUPPORT</span>
+        <h1>REVEX Assistant</h1>
+        <p>Ask about finding a ride, renting a vehicle, payments, cancellations or refunds. The assistant cannot see the database, so it will never claim an action happened unless REVEX confirms it.</p>
+      </div>
+      <button class="rvx-btn rvx-btn--outline" id="chatNew" type="button">New conversation</button>
+    </div>
+
+    <div class="rvx-notice rvx-notice--info" id="chatPageStatus" role="status">Checking the assistant…</div>
+
+    <div class="rvx-chat-layout">
+      <aside>
+        <div class="rvx-card rvx-card--quiet">
+          <h2 class="rvx-card__title" style="font-size:1rem">Your conversations</h2>
+          <p class="rvx-card__meta">Stored against your account. No other REVEX user can read them.</p>
+          <div class="rvx-chat-history" id="chatHistory" style="margin-top:10px"></div>
+        </div>
+      </aside>
+      <div class="rvx-chat-page">
+        <div id="chatHost" style="display:contents"></div>
+      </div>
+    </div>
+
+    <div class="rvx-card rvx-card--quiet" style="margin-top:20px">
+      <h2 class="rvx-card__title" style="font-size:1rem">Popular questions</h2>
+      <div class="rvx-chips" style="margin-top:10px">
+        <span class="rvx-chip">Paying for a ride</span>
+        <span class="rvx-chip">Free cancellation window</span>
+        <span class="rvx-chip">Owner declines my request</span>
+        <span class="rvx-chip">Test payment label</span>
+        <span class="rvx-chip">Listing a vehicle</span>
+      </div>
+    </div>
+  </main>
+  <footer class="footer"><div class="container"><p>© 2026 REVEX · Urban mobility, reimagined.</p></div></footer>
+  <script src="js/theme.js"></script>
+  <script src="js/confirm-delete.js"></script>
+  <script src="js/main.js"></script>
+  <script src="js/payment.js"></script>
+  <script src="js/chat.js"></script>
+  <script src="js/chat-page.js"></script>
+</body></html>

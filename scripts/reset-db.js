@@ -27,28 +27,67 @@ const APPLY = process.argv.includes('--apply');
 const BACKUP = process.argv.includes('--backup');
 const BACKUP_DIR = path.join(__dirname, '..', 'backups');
 
-// The three accounts to keep. Passwords are only used when the account is
-// created; an existing account of the same email is updated to match.
+/*
+ * The three accounts this script keeps.
+ *
+ * A password is only used when the account is CREATED; an existing account of the
+ * same email is updated to match. Every password can be overridden from the
+ * environment, and this script REFUSES to write the development defaults into a
+ * database that is not obviously a local one - a public "Admin@12345" sitting in
+ * a real deployment is a takeover waiting to happen.
+ */
+const DEMO_PASSWORDS = {
+  user: 'User@12345',
+  owner: 'Owner@12345',
+  admin: 'Admin@12345'
+};
+
+function passwordFor(key) {
+  return String(process.env[`DEMO_${key.toUpperCase()}_PASSWORD`] || DEMO_PASSWORDS[key] || '').trim();
+}
+
 const ACCOUNTS = [
   {
-    key: 'user', name: 'Demo User', email: 'user@revex.com', phone: '9800000001',
-    password: 'User@12345', role: 'user', isVerified: true
+    key: 'user', name: 'Demo User', email: process.env.DEMO_USER_EMAIL || 'user@revex.com',
+    phone: '9800000001', role: 'user', isVerified: true
   },
   {
-    key: 'owner', name: 'Demo Owner', email: 'owner@revex.com', phone: '9800000002',
-    password: 'Owner@12345', role: 'owner', isVerified: true
+    key: 'owner', name: 'Demo Owner', email: process.env.DEMO_OWNER_EMAIL || 'owner@revex.com',
+    phone: '9800000002', role: 'owner', isVerified: true
   },
   {
-    key: 'admin', name: 'REVEX Admin', email: 'admin@vroomy.com', phone: '9800000003',
-    password: 'Admin@12345', role: 'admin', isVerified: true
+    key: 'admin', name: 'REVEX Admin', email: process.env.ADMIN_EMAIL || 'admin@vroomy.com',
+    phone: '9800000003', role: 'admin', isVerified: true
   }
-];
+].map(account => ({ ...account, password: passwordFor(account.key) }));
+
+/** True when the URI points somewhere a demo password would be a real risk. */
+function looksRemote(uri) {
+  return /mongodb\+srv:\/\//i.test(uri) || !/127\.0\.0\.1|localhost|\[::1\]/i.test(uri);
+}
 
 (async () => {
   const uri = buildMongoUri(process.env.MONGODB_URI, process.env.MONGODB_DB_NAME || 'vroomy');
   await mongoose.connect(uri, { serverSelectionTimeoutMS: 15000, family: 4 });
   const db = mongoose.connection.db;
   console.log(`\nDatabase reset — ${mongoose.connection.name}\n`);
+
+  // A known demo password written into a remote database is a real risk, so the
+  // script stops rather than doing it silently.
+  const usingDefaults = ACCOUNTS.some(account => account.password === DEMO_PASSWORDS[account.key]);
+  if (APPLY && usingDefaults && looksRemote(uri)) {
+    console.error('  REFUSING TO RUN.\n');
+    console.error('  This database is not local, and the demo passwords are still the defaults');
+    console.error('  (User@12345 / Owner@12345 / Admin@12345), which are published in this\n');
+    console.error('  repository. Set them before seeding a shared or production database:\n');
+    console.error('    set DEMO_USER_PASSWORD=…   set DEMO_OWNER_PASSWORD=…   set DEMO_ADMIN_PASSWORD=…\n');
+    await mongoose.disconnect();
+    process.exit(1);
+  }
+  if (APPLY && usingDefaults) {
+    console.log('  WARNING: seeding local demo accounts with the published default passwords.');
+    console.log('  Never point this at a shared database.\n');
+  }
 
   // ------------------------------------------------------------- inventory
   const existing = await db.listCollections().toArray();

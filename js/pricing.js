@@ -1,3 +1,20 @@
+/* ============================================================================
+ * CLIENT-SIDE PRICING PREVIEW  (js/pricing.js)
+ *
+ * The renter-facing price preview. IMPORTANT: this is a PREVIEW only. The
+ * backend recomputes every amount from the stored vehicle and booking window in
+ * backend/utils/pricing.js, and that server value is what is charged, stored
+ * and displayed on the receipt. The preview exists so the renter sees the
+ * number change as they type, not to be trusted.
+ *
+ * Wrapped in an IIFE so its helpers cannot shadow the shared ones in main.js.
+ * ========================================================================== */
+(function (global) {
+  'use strict';
+
+  const REVEX = global.REVEX || {};
+  const formatMoney = REVEX.formatMoney || (value => `₹${Number(value || 0)}`);
+  const escapeHtml = REVEX.escapeHtml || (value => String(value ?? ''));
 function clientRoundMoney(value) { return Math.round((Number(value) + Number.EPSILON) * 100) / 100; }
 function clientNumber(value, fallback = 0) { const number = Number(value); return Number.isFinite(number) ? number : fallback; }
 function clientPriceUnit(value) { return ['hour', 'day', 'km'].includes(String(value)) ? String(value) : 'hour'; }
@@ -30,3 +47,7 @@ function quoteRows(quote) {
     <div class="quote-row muted"><span>Amount Already Paid</span><strong>${formatMoney(quote.paidAmount || 0)}</strong></div>
     <div class="quote-row muted"><span>Remaining Amount</span><strong>${formatMoney(quote.remainingAmount ?? quote.grandTotal)}</strong></div>`;
 }
+
+  /* Exposed for js/rental.js. The server value always wins. */
+  global.RevexPricing = { calculateClientQuote, quoteRows, clientNumber, clientRoundMoney, clientPriceUnit, clientCategory, clientFuel };
+})(window);

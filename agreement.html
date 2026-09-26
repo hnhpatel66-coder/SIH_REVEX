@@ -4,14 +4,17 @@
   <script>(function(){try{var s=localStorage.getItem('revexTheme');document.documentElement.setAttribute('data-theme',s==='dark'?'dark':'light');}catch(e){document.documentElement.setAttribute('data-theme','light');}})();</script><title>Rental Agreement | REVEX</title>  <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&amp;family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css"><link rel="stylesheet" href="css/navbar.css"><link rel="stylesheet" href="css/cards.css"><link rel="stylesheet" href="css/responsive.css">  <link rel="stylesheet" href="css/theme.css">
+  <link rel="stylesheet" href="css/style.css"><link rel="stylesheet" href="css/navbar.css"><link rel="stylesheet" href="css/cards.css"><link rel="stylesheet" href="css/responsive.css"><link rel="stylesheet" href="css/theme.css"><link rel="stylesheet" href="css/revex-ui.css"><link rel="stylesheet" href="css/chat.css">
+
+
+
+  <meta name="description" content="View, sign and download the REVEX rental agreement for your booking, including the pricing snapshot and the full terms.">
 </head>
 <body>
-  <header class="container"><nav class="nav"><a class="brand" href="index.html">REV<span>EX</span></a><button class="menu-btn" aria-label="Open navigation">Menu</button><div class="nav-links"></div><div class="nav-actions"></div></nav></header>
+  <header class="container"><nav class="nav"><a class="brand" href="index.html">REV<span>EX</span></a><button class="menu-btn" aria-label="Open navigation" type="button">Menu</button><div class="nav-links"></div><div class="nav-actions"></div></nav></header>
   <main class="container section"><span class="eyebrow">DIGITAL RENTAL AGREEMENT</span><h1 class="section-title">Your agreement, clearly recorded.</h1><div id="agreementBox" class="detail-panel"><div class="empty">Loading agreement…</div></div></main>
   <footer class="footer"><div class="container"><p>© 2026 REVEX · Digital rental records</p></div></footer>
-  <script src="js/theme.js"></script>
-  <script src="js/main.js"></script><script>
+<script>
 function esc(value){return String(value??'-').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function dt(value){try{return new Date(value).toLocaleString('en-IN')}catch{return esc(value)}}
 document.addEventListener('DOMContentLoaded',async()=>{
@@ -24,11 +27,16 @@ document.addEventListener('DOMContentLoaded',async()=>{
       'Responsible use: The renter is responsible for tolls, parking, fines, accidents and damage caused during the rental.',
       'Safe use: Follow traffic laws and never use the vehicle for illegal or unauthorized purposes.',
       'Return: Return the vehicle at the agreed time and location in the same condition, allowing for normal wear.',
-      'Cancellation: Paid demo payments are not automatically refunded; a real gateway follows its refund policy.'
+      'Cancellation and refund: cancelling inside the free-cancellation window is refunded in full; outside it the policy fee is retained and the balance is refunded. A declined owner request is refunded the same way. The booking record is never deleted.'
     ];
     box.innerHTML=`<div class="agree-hero"><div><span class="eyebrow">AGREEMENT ${esc(data.agreementId)}</span><h2>REVEX Rental Agreement</h2><p>Booking ${esc(data.bookingId)} · ${esc(data.agreementStatus||'pending')}</p></div><div class="agreement-statuses"><span class="badge ${data.acceptedByUser?'badge-approved':'badge-pending'}">Renter: ${data.acceptedByUser?'Accepted':'Pending'}</span><span class="badge ${data.acceptedByOwner?'badge-approved':'badge-pending'}">Owner: ${data.acceptedByOwner?'Accepted':'Pending'}</span></div></div><div class="agree-grid"><article class="agree-card"><h3>Booking details</h3><p><b>Created:</b> ${dt(booking.bookingDate)}</p><p><b>Rental start:</b> ${dt(booking.startDate)}</p><p><b>Return:</b> ${dt(booking.endDate)}</p><p><b>Duration:</b> ${esc(booking.hours)} hour(s)</p><p><b>Estimated distance:</b> ${esc(booking.estimatedKm)} km</p><p><b>Status:</b> ${esc(booking.status)}</p></article><article class="agree-card"><h3>Amount breakdown</h3><p><b>Rental Amount:</b> ${formatMoney(quote.baseRentalAmount||data.baseAmount||0)}</p><p><b>Additional Charges:</b> ${formatMoney(quote.additionalCharges||data.additionalCharges||0)}</p><p><b>Discount:</b> -${formatMoney(quote.discountAmount||data.discountAmount||0)} (${quote.discountPercent||data.discountPercent||0}%)</p><p><b>Extra Kilometer Charges:</b> ${formatMoney(quote.extraKilometerCharges||data.extraKilometerCharges||0)}</p><p><b>Tax / Fees:</b> ${formatMoney(quote.taxFees||data.taxFees||0)}</p><p class="grand-line"><b>Grand Total:</b> ${formatMoney(quote.grandTotal||data.grandTotal||data.rentalAmount||0)}</p><p><b>Payment status:</b> ${esc(booking.paymentStatus||data.paymentStatus)}</p></article><article class="agree-card"><h3>Renter details</h3><p><b>Name:</b> ${esc(renter.name||data.renterName)}</p><p><b>Email:</b> ${esc(renter.email)}</p><p><b>Phone:</b> ${esc(renter.phone||'-')}</p></article><article class="agree-card"><h3>Owner details</h3><p><b>Name:</b> ${esc(owner.name||data.ownerName)}</p><p><b>Email:</b> ${esc(owner.email)}</p><p><b>Phone:</b> ${esc(owner.phone||'-')}</p></article><article class="agree-card"><h3>Vehicle details</h3><p><b>Vehicle:</b> ${esc(vehicle.name||data.vehicleName)}</p><p><b>Category:</b> ${esc(vehicle.category||data.vehicleCategory||data.vehicleType)}</p><p><b>Fuel:</b> ${esc(vehicle.fuelType||data.vehicleFuelType||'-')}</p><p><b>Registration:</b> ${esc(vehicle.numberPlate||data.vehicleNumberPlate||'-')}</p><p><b>Location:</b> ${esc(vehicle.location||data.vehicleLocation||'-')}</p></article><article class="agree-card"><h3>Confirmation</h3><p>Renter acceptance: <b>${data.acceptedByUser?'Accepted':'Pending'}</b></p><p>Owner acceptance: <b>${data.acceptedByOwner?'Accepted':'Pending'}</b></p><div class="sign-box">${data.canUserSign?'<button class="btn btn-primary" id="userSign" type="button">Accept agreement</button>':''}${data.canOwnerAccept?'<button class="btn btn-primary" id="ownerAccept" type="button">Owner accept</button>':''}<button class="btn btn-outline" id="download" type="button">Download PDF</button></div></article></div><h2 class="section-title small-title">Rental rules and important responsibilities</h2><div class="terms-list">${terms.map((term,index)=>`<article class="rule"><span>${String(index+1).padStart(2,'0')}</span><p>${esc(term)}</p></article>`).join('')}</div>`;
-    document.getElementById('download').onclick=()=>downloadAgreement(id); document.getElementById('userSign')?.addEventListener('click',async()=>{try{await api('/bookings/'+encodeURIComponent(id)+'/agreement/user-sign',{method:'POST'});location.reload()}catch(error){alert(error.message)}}); document.getElementById('ownerAccept')?.addEventListener('click',async()=>{try{await api('/bookings/'+encodeURIComponent(id)+'/agreement/owner-accept',{method:'POST'});location.reload()}catch(error){alert(error.message)}});
+    document.getElementById('download').onclick=()=>downloadAgreement(id); document.getElementById('userSign')?.addEventListener('click',async()=>{try{await api('/bookings/'+encodeURIComponent(id)+'/agreement/user-sign',{method:'POST'});location.reload()}catch(error){showToast(error.message,'bad',8000)}}); document.getElementById('ownerAccept')?.addEventListener('click',async()=>{try{await api('/bookings/'+encodeURIComponent(id)+'/agreement/owner-accept',{method:'POST'});location.reload()}catch(error){showToast(error.message,'bad',8000)}});
   }catch(error){box.innerHTML=`<div class="empty">${esc(error.message)}</div>`}
 });
 </script>
+  <script src="js/theme.js"></script>
+  <script src="js/confirm-delete.js"></script>
+  <script src="js/main.js"></script>
+  <script src="js/payment.js"></script>
+  <script src="js/chat.js"></script>
 </body></html>

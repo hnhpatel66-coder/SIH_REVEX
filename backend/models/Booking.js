@@ -40,13 +40,42 @@ const bookingSchema = new mongoose.Schema({
   razorpaySignature: { type: String },
   status: {
     type: String,
-    enum: ['pending', 'payment_pending', 'pending_owner', 'confirmed', 'approved', 'rejected', 'cancelled', 'completed'],
+    // `cancelled` is the legacy umbrella value used before 1.3. It is still
+    // accepted so old records keep loading; new cancellations store who
+    // cancelled (cancelled_by_user | cancelled_by_owner | cancelled_by_admin)
+    // together with the `cancellation` audit sub-document.
+    enum: [
+      'pending', 'payment_pending', 'pending_owner', 'confirmed', 'approved', 'rejected',
+      'cancelled', 'cancelled_by_user', 'cancelled_by_owner', 'cancelled_by_admin', 'completed'
+    ],
     default: 'payment_pending'
   },
   paymentStatus: {
     type: String,
-    enum: ['pending', 'paid', 'failed', 'refunded'],
+    enum: ['pending', 'paid', 'failed', 'refunded', 'partially_refunded'],
     default: 'pending'
+  },
+  refund: {
+    id: { type: String, default: '' },
+    amount: { type: Number, default: 0, min: 0 },
+    status: { type: String, default: '' },
+    processedAt: { type: Date, default: null },
+    note: { type: String, default: '' }
+  },
+  cancellation: {
+    cancelledBy: { type: String, enum: ['user', 'owner', 'admin', ''], default: '' },
+    cancelledById: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+    reason: { type: String, trim: true, maxlength: 500, default: '' },
+    cancelledAt: { type: Date, default: null },
+    originalAmount: { type: Number, default: 0, min: 0 },
+    cancellationFee: { type: Number, default: 0, min: 0 },
+    cancellationFeePercent: { type: Number, default: 0, min: 0, max: 100 },
+    refundAmount: { type: Number, default: 0, min: 0 },
+    finalAmount: { type: Number, default: 0, min: 0 },
+    platformFee: { type: Number, default: 0, min: 0 },
+    withinFreeWindow: { type: Boolean, default: false },
+    policyVersion: { type: String, default: '' },
+    explanation: { type: String, default: '' }
   },
   agreementAcceptedAt: { type: Date, default: null },
   ownerDecision: {

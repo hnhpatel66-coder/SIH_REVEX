@@ -1,6 +1,61 @@
+/* ============================================================================
+ * VEHICLE RENTAL  (js/rental.js)
+ *
+ * The renter-facing screens: rental.html (search grid) and vehicle-details.html
+ * (book with a transparent breakdown).
+ *
+ * Wrapped in an IIFE so none of its helpers leak onto `window` and start
+ * shadowing the shared helpers in js/main.js. Everything it needs from
+ * main.js arrives through `window.REVEX`.
+ * ========================================================================== */
+(function (global) {
+  'use strict';
+
+  const REVEX = global.REVEX;
+  if (!REVEX) return;
+  const {
+    api, escapeHtml, formatMoney, formatDate, formatDateTime, assetUrl,
+    getStoredUser, requireLogin, showModal, showToast, imageOrInitials
+  } = REVEX;
+  // The client-side preview, exported by js/pricing.js. The server value always
+  // wins: the backend recomputes every amount from the stored vehicle.
+  //
+  // `quoteRows` MUST be destructured here too. It is what actually paints the
+  // breakdown. Leaving it out made `quoteRows(quote)` throw
+  // "ReferenceError: quoteRows is not defined" inside renderQuote(), and because
+  // renderQuote() assigns innerHTML as one expression, the throw happened BEFORE
+  // anything was written - so the box kept its original "Choose valid future
+  // times" message even though the server had just returned a perfect quote.
+  // refreshQuote() then caught it, the fallback path threw at the same line, and
+  // the user was shown a generic message about their dates while the real cause
+  // was a missing import. The submit button stayed disabled, so no booking could
+  // ever be made.
+  const { calculateClientQuote, quoteRows } = global.RevexPricing || {};
+  if (typeof quoteRows !== 'function') {
+    // Fail loudly in development rather than silently showing the wrong message.
+    console.error('[rental] js/pricing.js did not load, so the price breakdown cannot be rendered.');
+  }
 let currentVehicle = null;
 let currentQuote = null;
 let quoteRequest = 0;
+/*
+ * The exact window `currentQuote` was calculated for, as `start|end|km`.
+ *
+ * This exists to make one guarantee impossible to break:
+ *
+ *   A total is displayed, and the submit button is enabled, ONLY for the window
+ *   currently in the form.
+ *
+ * Without it, `refreshQuote()` dropped any response that arrived after a newer
+ * request had started (`if (requestId !== quoteRequest) return`). Editing the
+ * dates one field at a time - which is how every real person types - meant the
+ * last valid quote stayed on screen even though the form had moved on. The box
+ * kept showing the default 2-hour total (₹679) while the dates said 57 hours
+ * (₹19,078), and the button stayed enabled, so the renter confirmed one number
+ * and the server charged another. The server is the authority for the charge, so
+ * the displayed figure has to be pinned to the window it belongs to.
+ */
+let quoteFor = '';
 // The window the renter chose in the search grid, carried into the detail page
 // so the booking form is pre-filled instead of asking them to type it again.
 let selectedWindow = { startDate: '', endDate: '' };
@@ -13,9 +68,10 @@ function detailHref(id) {
 }
 
 function vehicleImageMarkup(vehicle, className = '') {
-  const image = assetUrl(vehicle.image || vehicle.vehiclePicture || '');
-  const fallback = `data:image/svg+xml;charset=UTF-8,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="800" height="480"><rect width="100%" height="100%" fill="#172c47"/><text x="50%" y="50%" text-anchor="middle" dominant-baseline="middle" font-family="Arial" font-size="28" fill="#cbd5e1">Vehicle Image Unavailable</text></svg>')}`;
-  return `<div class="vehicle-image ${className}"><img src="${escapeHtml(image)}" alt="${escapeHtml(vehicle.name || 'Vehicle')}" loading="lazy" onerror="this.onerror=null;this.src='${fallback}'"></div>`;
+  // The shared image helper falls back to the vehicle's initials, so a missing
+  // or broken photo shows those initials instead of a "Vehicle Image
+  // Unavailable" placeholder graphic that looked like a bug.
+  return `<div class="vehicle-image ${className}">${imageOrInitials(vehicle.image || vehicle.vehiclePicture, vehicle.name, { className: '', alt: vehicle.name || 'Vehicle' })}</div>`;
 }
 function vehicleCard(vehicle) {
   const category = vehicle.category || vehicle.type || 'Other'; const unit = vehicle.priceUnit || 'hour';
@@ -71,26 +127,114 @@ async function renderVehicles(filters = {}) {
 }
 function updateQuoteButton() {
   const button = document.querySelector('#rentalBooking button[type="submit"]'); const consent = document.getElementById('agreementConsent');
-  if (button) button.disabled = !currentQuote || !consent?.checked;
+  // The quote must belong to the window in the form RIGHT NOW. Checked here as
+  // well as in refreshQuote(), so no code path can leave a stale total actionable.
+  if (button) button.disabled = !currentQuote || !consent?.checked || quoteFor !== currentWindowKey();
 }
-function renderQuote(quote) {
-  const box = document.getElementById('rentalBreakdown'); if (!box) return;
-  if (!quote) { box.innerHTML = '<div class="empty">Choose valid future times to see the price breakdown.</div>'; updateQuoteButton(); return; }
-  box.innerHTML = `<div class="quote-heading"><strong>Rental Amount</strong><span>${escapeHtml(quote.durationLabel || `${quote.durationHours} hour(s)`)}</span></div>${quoteRows(quote)}`;
+/** `start|end|km` for the window currently in the form. */
+function currentWindowKey() {
+  const form = document.getElementById('rentalBooking');
+  if (!form || !form.startDate?.value || !form.startTime?.value || !form.endDate?.value || !form.endTime?.value) return '';
+  return windowKey(`${form.startDate.value}T${form.startTime.value}`, `${form.endDate.value}T${form.endTime.value}`, form.estimatedKm?.value || 0);
+}
+function windowKey(startIso, endIso, km) { return `${startIso}|${endIso}|${km}`; }
+function invalidateQuote() { currentQuote = null; quoteFor = ''; }
+/**
+ * Paints the price breakdown.
+ *
+ * `reason` distinguishes the three genuinely different empty states, because
+ * collapsing them into one message is what made this bug so hard to diagnose:
+ *
+ *   undefined -> no window has been entered yet          (neutral)
+ *   'window'  -> the window is empty, reversed or past    (the user's dates)
+ *   'error'   -> something else went wrong               (our fault, not theirs)
+ *
+ * A render failure is also reported rather than swallowed. Previously a throw
+ * from quoteRows() left the previous markup in place, so the box kept saying
+ * "choose valid future times" while the real fault was a missing import.
+ */
+function renderQuote(quote, reason) {
+  const box = document.getElementById('rentalBreakdown');
+  if (!box) return;
+  if (!quote) {
+    const message = reason === 'error'
+      ? 'The price could not be calculated just now. Please try again, and if it keeps happening tell the operator.'
+      : reason === 'calculating'
+        ? 'Working out the price for these dates…'
+        : 'Choose valid future times to see the price breakdown.';
+    box.innerHTML = `<div class="empty">${escapeHtml(message)}</div>`;
+    updateQuoteButton();
+    return;
+  }
+  let rows;
+  try {
+    rows = quoteRows(quote);
+  } catch (error) {
+    // Show the amount even if a single line item cannot be formatted, rather
+    // than dropping the whole breakdown and blaming the dates.
+    console.error('[rental] could not render the price breakdown:', error);
+    const total = quote.grandTotal ?? quote.totalAmount ?? quote.additionalCharge ?? 0;
+    box.innerHTML = `<div class="quote-heading"><strong>Rental Amount</strong><span>${escapeHtml(quote.durationLabel || '')}</span></div>`
+      + `<div class="quote-row"><span>Estimated total</span><b>${escapeHtml(formatMoney(total))}</b></div>`
+      + '<div class="empty">Some line items could not be shown. The server total is correct and is used for payment.</div>';
+    updateQuoteButton();
+    return;
+  }
+  // The heading used to read "Rental Amount", which is also the first row's
+  // label, so the box showed "Rental Amount" twice. The rows itemise the total,
+  // so the heading names the section instead.
+  box.innerHTML = `<div class="quote-heading"><strong>Price breakdown</strong><span>${escapeHtml(quote.durationLabel || `${quote.durationHours} hour(s)`)}</span></div>${rows}`;
   updateQuoteButton();
 }
 async function refreshQuote() {
   const form = document.getElementById('rentalBooking'); if (!form || !currentVehicle) return;
   const start = form.startDate?.value; const end = form.endDate?.value; const km = form.estimatedKm?.value || 0;
-  if (!start || !form.startTime?.value || !end || !form.endTime?.value) { currentQuote = null; renderQuote(null); return; }
+  if (!start || !form.startTime?.value || !end || !form.endTime?.value) { invalidateQuote(); renderQuote(null, 'window'); return; }
+  const startIso = `${start}T${form.startTime.value}`;
+  const endIso = `${end}T${form.endTime.value}`;
+  const key = windowKey(startIso, endIso, km);
+
+  /*
+   * The instant the window changes, the old total stops being true. Clear it and
+   * disable the button BEFORE awaiting anything, so there is no moment - not
+   * even on a slow connection - where a stale price is both visible and
+   * clickable. Before this, editing the dates one field at a time left the
+   * default 2-hour total on screen (₹679) while the form said 57 hours
+   * (₹19,078); the renter would have confirmed one number and been charged
+   * another, because the SERVER total is the one that is taken.
+   */
+  if (key !== quoteFor) {
+    invalidateQuote();
+    renderQuote(null, 'calculating');
+  }
+
   const requestId = ++quoteRequest;
-  const params = new URLSearchParams({ startDate: `${start}T${form.startTime.value}`, endDate: `${end}T${form.endTime.value}`, estimatedKm: km });
+  const params = new URLSearchParams({ startDate: startIso, endDate: endIso, estimatedKm: km });
   try {
     const quote = await api(`/vehicles/${encodeURIComponent(currentVehicle.id)}/quote?${params.toString()}`);
-    if (requestId !== quoteRequest) return;
-    currentQuote = quote; renderQuote(quote);
+    if (requestId !== quoteRequest) return;    // a newer edit already won
+    if (key !== currentWindowKey()) return;    // the form moved again mid-flight
+    currentQuote = quote; quoteFor = key;
+    renderQuote(quote);
   } catch (error) {
-    try { const quote = calculateClientQuote(currentVehicle, `${start}T${form.startTime.value}`, `${end}T${form.endTime.value}`, km); if (requestId === quoteRequest) { currentQuote = quote; renderQuote(quote); } } catch { currentQuote = null; renderQuote(null); }
+    if (requestId !== quoteRequest) return;
+    if (key !== currentWindowKey()) return;
+    /*
+     * The server refused the window (or was unreachable). Try the local preview
+     * so the renter still sees something, but only ever for the SAME window; if
+     * that also fails, say why instead of blaming the dates.
+     */
+    console.warn('[rental] the server quote failed:', error.message);
+    try {
+      const quote = calculateClientQuote(currentVehicle, startIso, endIso, km);
+      currentQuote = quote; quoteFor = key;
+      renderQuote(quote);
+    } catch {
+      invalidateQuote();
+      // The server's own message is the accurate one when it gave one.
+      const fromServer = /valid|required|past|before|after|date|time|future/i.test(error.message || '');
+      renderQuote(null, fromServer ? 'window' : 'error');
+    }
   }
 }
 function calculateRental() { refreshQuote(); }
@@ -125,33 +269,97 @@ function setSafeBookingDefaults() {
   if (form.endDate) { form.endDate.value = date(end); form.endDate.min = date(start); form.endTime.value = time(end); }
   refreshQuote();
 }
-function openPaymentModal(booking) {
-  const modal = document.getElementById('simplePaymentModal'); const amount = document.getElementById('simplePaymentAmount');
-  if (amount) amount.textContent = formatMoney(booking.quote?.grandTotal ?? booking.grandTotal ?? booking.totalAmount);
+/**
+ * The rental payment step.
+ *
+ * It now goes through the SAME shared client (js/payment.js) as the ride flow,
+ * so both screens:
+ *   - ask the server which method is available instead of assuming,
+ *   - open a real Razorpay checkout when keys are configured,
+ *   - offer a clearly labelled test payment when they are not,
+ *   - are protected by the same single-settlement latch, so a double click
+ *     cannot create two bookings for one payment.
+ */
+async function openPaymentModal(booking) {
+  const modal = document.getElementById('simplePaymentModal');
+  const amount = document.getElementById('simplePaymentAmount');
+  const total = booking.quote?.grandTotal ?? booking.grandTotal ?? booking.totalAmount ?? 0;
+  if (amount) amount.textContent = formatMoney(total);
+
+  const config = await window.RevexPay.getConfig();
+  const note = document.getElementById('simplePaymentNote');
+  if (note) {
+    note.className = `rvx-notice rvx-notice--${config.usable ? 'info' : 'warn'}`;
+    note.innerHTML = config.usable
+      ? '<div><strong>Razorpay checkout.</strong> Your booking is confirmed only after the server verifies the payment signature.</div>'
+      : `<div><strong>Test payment.</strong> ${escapeHtml(config.testModeLabel || 'No working payment gateway is configured on this server')}, so a labelled test payment is recorded instead. No real money moves.</div>`;
+  }
+
+  const pay = document.getElementById('simplePayNow');
+  if (pay) pay.textContent = config.usable ? `Pay ${formatMoney(total)}` : `Record test payment · ${formatMoney(total)}`;
   modal?.classList.add('show');
-  const pay = document.getElementById('simplePayNow'); const cancel = document.getElementById('simplePayCancel');
-  pay.onclick = async () => {
-    pay.disabled = true; pay.textContent = 'Processing…';
-    try {
-      const result = await api(`/bookings/${encodeURIComponent(booking.id)}/payment-demo`, { method: 'POST' });
-      modal.classList.remove('show'); showModal('Payment received', `Booking ${result.booking.id} is paid and waiting for owner approval. Agreement: ${result.agreement?.agreementId || 'prepared'}.`);
-      const download = document.getElementById('downloadAgreementBtn'); if (download) { download.style.display = 'inline-flex'; download.onclick = () => downloadAgreement(booking.id); }
-    } catch (error) { alert(error.message); } finally { pay.disabled = false; pay.textContent = 'Pay Now'; }
+
+  const close = () => modal?.classList.remove('show');
+  const onCancel = async () => {
+    close();
+    // Release the booking so the monthly slot is not held by an abandoned
+    // checkout. This is a real server-side state change.
+    try { await api(`/bookings/${encodeURIComponent(booking.id)}/payment-failed`, { method: 'POST', body: {} }); } catch { /* already released */ }
   };
-  cancel.onclick = async () => { modal.classList.remove('show'); try { await api(`/bookings/${encodeURIComponent(booking.id)}/payment-failed`, { method: 'POST' }); } catch {} };
+  if (pay) pay.onclick = async () => {
+    const result = await window.RevexPay.settle(pay, {
+      bookingId: booking.id,
+      orderPath: `/bookings/${encodeURIComponent(booking.id)}/payment-order`,
+      path: `/bookings/${encodeURIComponent(booking.id)}/verify-payment`,
+      testPath: `/bookings/${encodeURIComponent(booking.id)}/payment-test`,
+      releasePath: `/bookings/${encodeURIComponent(booking.id)}/payment-failed`,
+      name: getStoredUser()?.name,
+      email: getStoredUser()?.email,
+      description: `${currentVehicle?.name || 'REVEX vehicle'} rental`,
+      fallbackAmount: total
+    });
+    if (result?.status === 'paid') {
+      close();
+      showModal('Payment received', `${result.testMode ? 'Test payment recorded. ' : ''}Booking ${booking.id} is paid and waiting for owner approval. Agreement: ${booking.agreement?.agreementId || 'prepared'}.`);
+      const download = document.getElementById('downloadAgreementBtn');
+      if (download) { download.style.display = 'inline-flex'; download.onclick = () => downloadAgreement(booking.id); }
+    } else if (result?.status === 'dismissed') {
+      close();
+    } else {
+      close();
+    }
+  };
+  const cancel = document.getElementById('simplePayCancel');
+  if (cancel) cancel.onclick = onCancel;
+  modal?.addEventListener('click', event => { if (event.target === modal) onCancel(); });
 }
+
 async function confirmRental(event) {
   event.preventDefault();
   if (!requireLogin()) return;
   const form = event.target; const consent = document.getElementById('agreementConsent');
-  if (!consent?.checked) { alert('Please read and accept the Rental Agreement and Terms & Conditions.'); return; }
-  if (!currentVehicle?.id || !currentQuote) { await refreshQuote(); }
-  if (!currentQuote) { alert('Choose valid future booking times first.'); return; }
-  const button = form.querySelector('button[type="submit"]'); if (button) { button.disabled = true; button.textContent = 'Preparing booking…'; }
+  if (!consent?.checked) { showToast('Please read and accept the Rental Agreement and Terms & Conditions.', 'warn'); consent?.focus(); return; }
+  /*
+   * Re-validate at the moment of submission, not just at paint time. If the
+   * dates changed since the last quote landed, get a fresh one and make the
+   * renter confirm again, rather than charging the server's figure for a window
+   * they never saw priced.
+   */
+  if (!currentQuote || quoteFor !== currentWindowKey()) {
+    await refreshQuote();
+    if (!currentQuote || quoteFor !== currentWindowKey()) {
+      showToast('Choose valid future booking times so the price can be worked out.', 'warn');
+      return;
+    }
+  }
+  const button = form.querySelector('button[type="submit"]');
+  if (button) { button.disabled = true; button.textContent = 'Preparing booking…'; }
   try {
     const booking = await api('/bookings', { method: 'POST', body: { vehicleId: currentVehicle.id, startDate: `${form.startDate.value}T${form.startTime.value}`, endDate: `${form.endDate.value}T${form.endTime.value}`, estimatedKm: Number(form.estimatedKm.value) || 0, panNumber: form.panNumber.value.trim(), drivingLicenseNumber: form.drivingLicenseNumber.value.trim(), agreementAccepted: true, termsVersion: 'revex-v3' } });
-    currentQuote = booking.quote || booking.pricing || currentQuote; openPaymentModal(booking);
-  } catch (error) { alert(error.message); } finally { if (button) { button.disabled = !currentQuote || !consent.checked; button.textContent = 'Review agreement & continue'; } }
+    currentQuote = booking.quote || booking.pricing || currentQuote;
+    quoteFor = currentWindowKey();
+    await openPaymentModal(booking);
+  } catch (error) { showToast(error.message, 'bad', 8000); } finally { if (button) { button.disabled = !currentQuote || !consent.checked; button.textContent = 'Review agreement & continue'; } }
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -222,6 +430,21 @@ document.addEventListener('DOMContentLoaded', async () => {
     const image = currentVehicle.image || currentVehicle.vehiclePicture || '';
     detail.innerHTML = `${vehicleImageMarkup(currentVehicle, 'detail-image')}<div class="badge-row"><span class="badge badge-category">${escapeHtml((currentVehicle.category || currentVehicle.type || 'Other').toUpperCase())}</span><span class="badge badge-fuel">${escapeHtml(currentVehicle.fuelType || 'Petrol').toUpperCase()}</span><span class="pill">${currentVehicle.verified ? 'Approved' : 'Pending approval'}</span></div><h1 class="section-title">${escapeHtml(currentVehicle.name)}</h1><p class="detail-subtitle">${escapeHtml([currentVehicle.brand, currentVehicle.model].filter(Boolean).join(' ') || 'Verified vehicle')} · ${escapeHtml(currentVehicle.location || '-')}</p><div class="detail-facts"><div><b>Category</b>${escapeHtml(currentVehicle.category || currentVehicle.type || '-')}</div><div><b>Fuel</b>${escapeHtml(currentVehicle.fuelType || '-')}</div><div><b>Transmission</b>${escapeHtml(currentVehicle.transmission || 'Manual')}</div><div><b>Odometer</b>${Number(currentVehicle.currentKm || 0).toLocaleString('en-IN')} km</div><div><b>Rating</b><span class="star-rating">★ ${Number(currentVehicle.rating || 5).toFixed(1)}</span></div><div><b>Owner</b>${escapeHtml(currentVehicle.owner?.name || 'Vehicle owner')}</div><div><b>Available from</b>${currentVehicle.availableFrom ? escapeHtml(formatDate(currentVehicle.availableFrom)) : 'Any time'}</div></div><hr><h2 class="section-title small-title">Book with a transparent breakdown</h2><p>${escapeHtml(currentVehicle.description || 'Well maintained and verified for a smooth rental.')}</p>`;
     const priceInput = document.getElementById('hourlyPrice'); if (priceInput) priceInput.value = currentVehicle.price;
-    const form = document.getElementById('rentalBooking'); if (form) { form.dataset.vehicleId = currentVehicle.id; form.addEventListener('input', refreshQuote); form.addEventListener('change', refreshQuote); document.getElementById('agreementConsent')?.addEventListener('change', updateQuoteButton); setSafeBookingDefaults(); }
+    const form = document.getElementById('rentalBooking');
+    if (form) {
+      form.dataset.vehicleId = currentVehicle.id;
+      form.addEventListener('input', refreshQuote);
+      form.addEventListener('change', refreshQuote);
+      // Bound here, not with an inline onsubmit attribute in the markup:
+      // `confirmRental` is inside this IIFE and was never on `window`, so the
+      // inline handler threw, preventDefault() never ran, and the browser
+      // performed a default GET submit that leaked the PAN number and driving
+      // licence number into the URL. Always call preventDefault first.
+      form.addEventListener('submit', event => { event.preventDefault(); confirmRental(event); });
+      document.getElementById('agreementConsent')?.addEventListener('change', updateQuoteButton);
+      setSafeBookingDefaults();
+    }
   } catch (error) { detail.innerHTML = `<div class="empty">${escapeHtml(error.message)}</div>`; document.getElementById('rentalBooking')?.querySelectorAll('input,select,button').forEach(control => { control.disabled = true; }); }
 });
+
+})(window);

@@ -1,18 +1,98 @@
 ﻿<!doctype html>
 <html lang="en" data-theme="light">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-  <script>(function(){try{var s=localStorage.getItem('revexTheme');document.documentElement.setAttribute('data-theme',s==='dark'?'dark':'light');}catch(e){document.documentElement.setAttribute('data-theme','light');}})();</script><title>Offer a Ride | REVEX</title>  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <script>(function(){try{var s=localStorage.getItem('revexTheme');document.documentElement.setAttribute('data-theme',s==='dark'?'dark':'light');}catch(e){document.documentElement.setAttribute('data-theme','light');}})();</script><title>Offer a Ride | REVEX</title>
+  <meta name="description" content="Publish a REVEX ride offer. Pick one of your registered vehicles to reuse its photo, set the route, date, seats and price per seat, and an admin approves it before it goes live.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&amp;family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css"><link rel="stylesheet" href="css/navbar.css"><link rel="stylesheet" href="css/cards.css"><link rel="stylesheet" href="css/responsive.css">  <link rel="stylesheet" href="css/theme.css">
+  <link rel="stylesheet" href="css/style.css"><link rel="stylesheet" href="css/navbar.css"><link rel="stylesheet" href="css/cards.css"><link rel="stylesheet" href="css/responsive.css"><link rel="stylesheet" href="css/theme.css"><link rel="stylesheet" href="css/revex-ui.css"><link rel="stylesheet" href="css/chat.css">
+
+
+
 </head>
 <body>
-  <header class="container"><nav class="nav"><a class="brand" href="list-vehicle.html">REV<span>EX</span></a><button class="menu-btn" aria-label="Open navigation">Menu</button><div class="nav-links"></div><div class="nav-actions"></div></nav></header>
-  <main class="container detail-layout"><section><span class="eyebrow">OWNER TOOL</span><h1 class="section-title">Turn your trip into a shared journey.</h1><p>Offer a route to verified commuters. Your photo, vehicle details and number plate help riders make an informed decision.</p><div class="feature-card ride"><h3>Share the road. Split the cost.</h3><p>Only owner accounts can publish ride offers. New offers appear after admin verification.</p></div></section>
-    <aside class="booking-panel"><h3>Offer a ride</h3><form id="offerRide"><div class="form-two"><div class="field"><label for="offerFrom">From</label><input id="offerFrom" name="from" required placeholder="Surat"></div><div class="field"><label for="offerTo">To</label><input id="offerTo" name="to" required placeholder="Ahmedabad"></div></div><div class="form-two"><div class="field"><label for="offerDate">Date</label><input id="offerDate" name="date" required type="date"></div><div class="field"><label for="offerTime">Departure</label><input id="offerTime" name="time" required type="time"></div></div><div class="field"><label for="offerVehicle">Vehicle</label><input id="offerVehicle" name="vehicle" required placeholder="e.g. Hyundai Creta"></div><div class="form-two"><div class="field"><label for="offerVehicleType">Category</label><select id="offerVehicleType" name="vehicleType" required><option>Car</option><option>Bike</option><option>Scooter</option><option>Other</option></select></div><div class="field"><label for="offerFuel">Fuel</label><select id="offerFuel" name="fuelType"><option>Petrol</option><option>Diesel</option><option>Electric</option><option>CNG</option><option>Hybrid</option></select></div></div><div class="field"><label for="offerPlate">Number plate</label><input id="offerPlate" name="numberPlate" required placeholder="GJ05AB1234"></div><div class="field"><label for="offerPhone">Driver phone</label><input id="offerPhone" name="driverPhone" placeholder="Your contact number"></div><div class="field"><label for="offerImage">Vehicle photo</label><input id="offerImage" type="file" name="vehicleImage" accept="image/*"></div><div class="form-two"><div class="field"><label for="offerSeats">Available seats</label><input id="offerSeats" name="seats" required min="1" max="6" type="number" value="1"></div><div class="field"><label for="offerPrice">Cost per passenger</label><input id="offerPrice" name="price" required min="1" type="number" placeholder="₹"></div></div><button class="btn btn-primary" style="width:100%;margin-top:17px" type="submit">Publish ride</button></form></aside>
+  <header class="container"><nav class="nav"><a class="brand" href="list-vehicle.html">REV<span>EX</span></a><button class="menu-btn" aria-label="Open navigation" type="button">Menu</button><div class="nav-links"></div><div class="nav-actions"></div></nav></header>
+  <main class="container detail-layout">
+    <section>
+      <span class="eyebrow">OWNER TOOL</span>
+      <h1 class="section-title">Turn your trip into a shared journey.</h1>
+      <p>Offer a route to verified commuters. Pick one of your registered vehicles and REVEX reuses its photo and number plate, so Find a Ride shows exactly the vehicle you listed.</p>
+      <div class="feature-card ride"><h3>Share the road. Split the cost.</h3><p>Only owner accounts can publish ride offers. An admin approves the offer before it is visible to riders, and you separately approve each paid seat request.</p></div>
+      <div class="rvx-card rvx-card--quiet" style="margin-top:18px">
+        <h3 class="rvx-card__title">How a ride offer works</h3>
+        <ol style="margin:0;padding-left:20px;font-size:.88rem;color:var(--muted,#64748b);line-height:1.75">
+          <li>You publish the route, date, time, available seats and price per seat.</li>
+          <li>An admin reviews and approves the <b>offer</b>. It then appears on Find a Ride.</li>
+          <li>A rider picks seats and pays immediately with <b>Pay &amp; Book Ride</b>.</li>
+          <li>You receive the paid request and approve or decline each seat.</li>
+          <li>Declining refunds the rider under the REVEX cancellation policy.</li>
+        </ol>
+      </div>
+    </section>
+
+    <aside class="booking-panel">
+      <h3>Offer a ride</h3>
+      <form id="offerRide" class="rvx-form">
+        <div class="rvx-form--2" style="display:grid;gap:14px">
+          <div class="rvx-field"><label for="offerFrom">From *</label><input id="offerFrom" name="from" required placeholder="Surat"></div>
+          <div class="rvx-field"><label for="offerTo">To *</label><input id="offerTo" name="to" required placeholder="Ahmedabad"></div>
+        </div>
+
+        <div class="rvx-field" style="display:grid;gap:14px;grid-template-columns:1fr 1fr">
+          <div class="rvx-field"><label for="offerDate">Date *</label><input id="offerDate" name="date" required type="date"></div>
+          <div class="rvx-field"><label for="offerTime">Departure *</label><input id="offerTime" name="time" required type="time"></div>
+        </div>
+
+        <div class="rvx-field">
+          <label for="offerVehicleId">Registered vehicle</label>
+          <select id="offerVehicleId" name="vehicleId"></select>
+          <small id="offerVehicleHint">Pick a registered vehicle to reuse its photo.</small>
+        </div>
+        <div class="rvx-field rvx-field--row" id="offerManualPhoto">
+          <span id="offerVehiclePreview" class="rvx-card__meta">No vehicle selected.</span>
+        </div>
+
+        <div class="rvx-field"><label for="offerVehicle">Vehicle name *</label><input id="offerVehicle" name="vehicle" required placeholder="e.g. Hyundai Creta"></div>
+        <div style="display:grid;gap:14px;grid-template-columns:1fr 1fr">
+          <div class="rvx-field"><label for="offerVehicleType">Category *</label><select id="offerVehicleType" name="vehicleType" required><option>Car</option><option>Bike</option><option>Scooter</option><option>Other</option></select></div>
+          <div class="rvx-field"><label for="offerFuel">Fuel</label><select id="offerFuel" name="fuelType"><option>Petrol</option><option>Diesel</option><option>Electric</option><option>CNG</option><option>Hybrid</option></select></div>
+        </div>
+        <div class="rvx-field"><label for="offerPlate">Number plate *</label><input id="offerPlate" name="numberPlate" required placeholder="GJ05AB1234"></div>
+        <div class="rvx-field"><label for="offerPhone">Driver phone</label><input id="offerPhone" name="driverPhone" placeholder="Your contact number"></div>
+
+        <div class="rvx-field" id="offerManualPhotoWrap">
+          <label for="offerImage">Vehicle photo (only if you are not using a registered vehicle)</label>
+          <input id="offerImage" type="file" name="vehicleImage" accept="image/png,image/jpeg,image/webp">
+          <small>PNG, JPEG or WebP up to 3&nbsp;MB.</small>
+        </div>
+
+        <div style="display:grid;gap:14px;grid-template-columns:1fr 1fr">
+          <div class="rvx-field"><label for="offerSeats">Available seats *</label><input id="offerSeats" name="seats" required min="1" max="6" type="number" value="1"></div>
+          <div class="rvx-field"><label for="offerPrice">Price per seat (₹) *</label><input id="offerPrice" name="price" required min="1" type="number" placeholder="₹"></div>
+        </div>
+        <div style="display:grid;gap:14px;grid-template-columns:1fr 1fr">
+          <div class="rvx-field"><label for="offerExtras">Extra charges (₹)</label><input id="offerExtras" name="additionalCharges" min="0" type="number" value="0"><small>Tolls, pickup fee…</small></div>
+          <div class="rvx-field"><label for="offerDistance">Distance (km)</label><input id="offerDistance" name="distanceKm" min="0" type="number" value="0"></div>
+        </div>
+        <div class="rvx-field"><label for="offerDiscount">Discount (%)</label><input id="offerDiscount" name="discountPercent" min="0" max="100" type="number" value="0"></div>
+
+        <div class="rvx-field"><label for="offerPickup">Pickup point</label><input id="offerPickup" name="pickupPoint" placeholder="e.g. Adajan Circle, 6:30 sharp"></div>
+        <div class="rvx-field"><label for="offerNotes">Ride information</label><textarea id="offerNotes" name="notes" rows="3" maxlength="1000" placeholder="AC vehicle, non-smoking, luggage allowed…"></textarea></div>
+
+        <label class="rvx-field rvx-field--row" for="offerTerms"><input type="checkbox" name="termsAccepted" id="offerTerms" required><span>I accept the REVEX ride sharing terms and confirm the vehicle and route details are accurate.</span></label>
+
+        <button class="btn btn-primary" style="width:100%;min-height:48px" type="submit">Submit ride offer</button>
+        <p class="rvx-card__meta">An admin reviews every offer before riders can see it. You will be notified either way.</p>
+      </form>
+    </aside>
   </main>
-  <div class="modal" id="successModal"><div class="modal-box"><div class="modal-icon">✓</div><h2>Ride submitted</h2><p></p><a class="btn btn-primary" href="list-vehicle.html#requests">Open owner dashboard</a></div></div>
+  <div class="modal" id="successModal"><div class="modal-box"><div class="modal-icon">✓</div><h2>Ride submitted</h2><p></p><a class="btn btn-primary" href="ride-requests.html">Open ride requests</a></div></div>
   <footer class="footer"><div class="container"><div class="footer-grid"><div><div class="footer-brand">REVEX</div><p>Move Smart. Share More.</p></div></div><p>© 2026 REVEX · Urban mobility, reimagined.</p></div></footer>
   <script src="js/theme.js"></script>
-  <script src="js/main.js"></script><script src="js/data.js"></script><script src="js/rides.js"></script>
+  <script src="js/confirm-delete.js"></script>
+  <script src="js/main.js"></script>
+  <script src="js/payment.js"></script>
+  <script src="js/chat.js"></script>
+  <script src="js/rides.js"></script>
 </body></html>
