@@ -41,8 +41,18 @@ function buildMongoUri(uri, dbName) {
 
 function describeTarget(uri) {
   try {
-    const parsed = new URL(uri.replace(/^mongodb(\+srv)?:\/\//, 'http://'));
-    return `${parsed.host}/${String(uri).split('/').pop()}`;
+    const value = String(uri || '');
+    // Strip credentials so they never appear in logs.
+    const withoutCreds = value.replace(/^mongodb(\+srv)?:\/\/([^@]+)@/, 'mongodb$1://');
+    const queryIndex = withoutCreds.indexOf('?');
+    const base = queryIndex === -1 ? withoutCreds : withoutCreds.slice(0, queryIndex);
+    const schemeEnd = base.indexOf('://');
+    const afterScheme = schemeEnd === -1 ? base : base.slice(schemeEnd + 3);
+    const slash = afterScheme.indexOf('/');
+    const hosts = (slash === -1 ? afterScheme : afterScheme.slice(0, slash)).slice(0, 300);
+    const tail = slash === -1 ? '' : afterScheme.slice(slash + 1).replace(/\/+$/, '');
+    const dbPart = (tail || value.split('?')[0].split('/').pop() || '').slice(0, 60);
+    return `${hosts}/${dbPart}`;
   } catch {
     return '(unparseable uri)';
   }

@@ -1,13 +1,3 @@
-
-// REVEX PWA service worker
-if ("serviceWorker" in navigator) {
-  window.addEventListener("load", () => {
-    navigator.serviceWorker.register("/sw.js").catch((error) => {
-      console.error("REVEX PWA registration failed:", error);
-    });
-  });
-}
-
 /* ============================================================================
  * CENTRALISED API CONFIGURATION  (js/main.js is loaded by every page)
  *
@@ -39,13 +29,38 @@ const LOCAL_HOSTS = ['localhost', '127.0.0.1', '0.0.0.0', '::1', '[::1]'];
 function resolveApiBase() {
   const override = (document.querySelector('meta[name="revex-api-base"]') || {}).content || window.REVEX_API_BASE;
   if (override && String(override).trim()) return String(override).trim().replace(/\/+$/, '');
-  // No explicit port (proxied deployment) or a known API port => same-origin.
-  if (!location.port || REVEX_API_PORTS.includes(location.port)) return '/api';
+
+  // No explicit port (a proxied deployment such as Render or Vercel) => same-origin.
+  if (!location.port) return '/api';
+
+  // The backend serves BOTH the pages and the api on these ports, so the api is
+  // same-origin. This is the normal case and is never second-guessed.
+  if (REVEX_API_PORTS.includes(location.port)) return '/api';
+
   // A real deployment is proxied on a port we do not control. Never point it at
   // :5001 there, or every API call would fail in production.
   if (!LOCAL_HOSTS.includes(location.hostname)) return '/api';
-  // Only a LOCAL dev server on an unrelated port needs an absolute URL.
-  return `${location.protocol}//${location.hostname}:${REVEX_DEFAULT_API_PORT}/api`;
+
+  /*
+   * Only a known STATIC dev server - a separate frontend with no backend of its
+   * own - needs an absolute URL to reach the api on another port.
+   *
+   * This used to be "any port that is not 5000/5001", which silently broke a
+   * backend started with PORT=5002: it was serving the pages itself, but every
+   * request was sent to :5001, where nothing was listening, so login failed with
+   * a CORS error and a form that did nothing. Same-origin is correct for ANY port
+   * the backend chose; only these specific frontend-tool ports need the redirect.
+   *
+   * Anything else - a backend on 8080, 3001, 5002 - stays same-origin. If you run a
+   * separate static server on some other port, set the base explicitly with
+   * <meta name="revex-api-base" content="http://localhost:5001/api"> or
+   * window.REVEX_API_BASE, which is checked first and always wins.
+   */
+  const STATIC_DEV_PORTS = ['3000', '4200', '5173', '5500', '8000'];
+  if (STATIC_DEV_PORTS.includes(location.port)) {
+    return `${location.protocol}//${location.hostname}:${REVEX_DEFAULT_API_PORT}/api`;
+  }
+  return '/api';
 }
 const API_BASE = resolveApiBase();
 const BRAND = 'REVEX';
@@ -140,13 +155,128 @@ const NAV_CONFIG = {
     { href: 'index.html', label: 'Home' }, { href: 'find-ride.html', label: 'Find a Ride' }, { href: 'rental.html', label: 'Rent a Vehicle' }
   ],
   user: [
-    { href: 'index.html', label: 'Home' }, { href: 'rental.html', label: 'Find Vehicles' }, { href: 'find-ride.html', label: 'Find a Ride' }, { href: 'bookings.html', label: 'My Bookings' }, { href: 'profile.html', label: 'Profile' }
+    { href: 'index.html', label: 'Home' }, { href: 'rental.html', label: 'Find Vehicles' }, { href: 'find-ride.html', label: 'Find a Ride' }, { href: 'bookings.html', label: 'My Bookings' }, { href: 'chat.html', label: 'Assistant' }, { href: 'profile.html', label: 'Profile' }
   ],
   owner: [
-    { href: 'list-vehicle.html', label: 'Dashboard' }, { href: 'list-vehicle.html#fleet', label: 'My Vehicles' }, { href: 'list-vehicle.html#add', label: 'Add Vehicle' }, { href: 'list-vehicle.html#requests', label: 'Booking Requests' }, { href: 'offer-ride.html', label: 'Offer a Ride' }, { href: 'profile.html', label: 'Profile' }
+    { href: 'list-vehicle.html', label: 'Dashboard' }, { href: 'list-vehicle.html#fleet', label: 'My Vehicles' }, { href: 'list-vehicle.html#add', label: 'Add Vehicle' }, { href: 'list-vehicle.html#requests', label: 'Rental Requests' }, { href: 'offer-ride.html', label: 'Offer a Ride' }, { href: 'ride-requests.html', label: 'Ride Requests' }, { href: 'chat.html', label: 'Assistant' }, { href: 'profile.html', label: 'Profile' }
   ],
-  adminLite: [{ href: 'admin.html', label: 'Admin Dashboard' }, { href: 'profile.html', label: 'Profile' }]
+  adminLite: [{ href: 'admin.html', label: 'Admin Dashboard' }, { href: 'chat.html', label: 'Assistant' }, { href: 'profile.html', label: 'Profile' }]
 };
+
+/* -------------------------------------------------------------------------
+ * SHARED UI HELPERS
+ *
+ * These live in main.js because every page loads it, and having one copy is
+ * what stops the same control (a status badge, a toast, an image) from looking
+ * different depending on which page you are on.
+ * ---------------------------------------------------------------------- */
+
+/**
+ * One status vocabulary for the whole UI. The backend sends one of these values
+ * for every booking, ride, vehicle and payment; anything unrecognised is shown
+ * verbatim rather than silently mapped to "Unknown".
+ */
+const STATUS_TONE = {
+  // vehicles + rides
+  approved: 'ok', available: 'ok', completed: 'ok', confirmed: 'ok', paid: 'ok', verified: 'ok', active: 'ok',
+  // waiting on somebody
+  pending: 'warn', pending_owner: 'warn', payment_pending: 'warn', pending_approval: 'warn',
+  // negative but still a valid state
+  rejected: 'bad', removed: 'bad', cancelled: 'bad',
+  cancelled_by_user: 'bad', cancelled_by_owner: 'bad', cancelled_by_admin: 'bad',
+  failed: 'bad', deleted: 'bad', deactivated: 'bad', sold_out: 'bad',
+  // refunds
+  refunded: 'info', partially_refunded: 'info'
+};
+
+const STATUS_LABELS = {
+  available: 'Available', approved: 'Approved', pending: 'Pending', rejected: 'Rejected', removed: 'Removed',
+  cancelled: 'Cancelled', cancelled_by_user: 'Cancelled by user', cancelled_by_owner: 'Cancelled by owner',
+  cancelled_by_admin: 'Cancelled by admin', active: 'In progress', completed: 'Completed',
+  confirmed: 'Confirmed', pending_owner: 'Awaiting owner approval', payment_pending: 'Awaiting payment',
+  paid: 'Paid', failed: 'Failed', refunded: 'Refunded', partially_refunded: 'Partially refunded',
+  verified: 'Verified', deactivated: 'Deactivated'
+};
+
+function statusLabel(value) {
+  if (!value) return 'Unknown';
+  return STATUS_LABELS[String(value)] || String(value).replace(/_/g, ' ').replace(/^./, char => char.toUpperCase());
+}
+
+/** `<span class="rvx-badge rvx-badge--ok">Approved</span>` */
+function statusBadge(value, extra = '') {
+  const key = String(value || '').toLowerCase();
+  const tone = STATUS_TONE[key] || 'info';
+  const text = escapeHtml(statusLabel(value) + (extra ? ` · ${extra}` : ''));
+  return `<span class="rvx-badge rvx-badge--${tone}">${text}</span>`;
+}
+
+/**
+ * An `<img>` that falls back to initials instead of a broken-image icon.
+ * Vehicle photos, profile photos and documents all go through here, so a
+ * missing image never shows the browser's torn-picture glyph.
+ */
+function imageOrInitials(source, name, { className = 'rvx-thumb', alt = '' } = {}) {
+  const label = String(name || 'REVEX').trim();
+  const initial = escapeHtml((label[0] || 'R').toUpperCase());
+  const url = assetUrl(source);
+  if (!url) return `<span class="${escapeHtml(className)} rvx-thumb--empty" aria-hidden="true">${initial}</span>`;
+  return `<img class="${escapeHtml(className)}" src="${escapeHtml(url)}" alt="${escapeHtml(alt || label)}" loading="lazy" decoding="async" `
+    + `onerror="this.outerHTML='<span class=&quot;${escapeHtml(className)} rvx-thumb--empty&quot; aria-hidden=&quot;true&quot;>${initial}</span>'">`;
+}
+
+/** Non-blocking feedback. `alert()` is only used for genuinely blocking asks. */
+function showToast(message, tone = 'info', timeout = 4500) {
+  let host = document.querySelector('.rvx-toasts');
+  if (!host) {
+    host = document.createElement('div');
+    host.className = 'rvx-toasts';
+    host.setAttribute('role', 'status');
+    host.setAttribute('aria-live', 'polite');
+    document.body.appendChild(host);
+  }
+  const toast = document.createElement('div');
+  toast.className = `rvx-toast rvx-toast--${tone}`;
+  toast.textContent = String(message || '');
+  host.appendChild(toast);
+  // Trigger the entry animation on the next frame.
+  requestAnimationFrame(() => toast.classList.add('is-visible'));
+  setTimeout(() => {
+    toast.classList.remove('is-visible');
+    setTimeout(() => toast.remove(), 260);
+  }, timeout);
+  return toast;
+}
+
+/** Promise-based confirm that reads as part of the product, not a browser dialog. */
+function confirmAction({ title, message, confirmLabel = 'Confirm', cancelLabel = 'Cancel', tone = 'primary', reasonLabel = '', reasonRequired = false } = {}) {
+  return new Promise(resolve => {
+    const overlay = document.createElement('div');
+    overlay.className = 'rvx-confirm';
+    overlay.innerHTML = `
+      <div class="rvx-confirm__card" role="dialog" aria-modal="true" aria-labelledby="rvxConfirmTitle">
+        <h2 id="rvxConfirmTitle">${escapeHtml(title || 'Are you sure?')}</h2>
+        <p>${escapeHtml(message || '')}</p>
+        ${reasonLabel ? `<label class="rvx-field"><span>${escapeHtml(reasonLabel)}</span><textarea rows="3" data-reason placeholder="Explain what happened"></textarea></label>` : ''}
+        <div class="rvx-confirm__actions">
+          <button type="button" class="btn btn-outline" data-cancel>${escapeHtml(cancelLabel)}</button>
+          <button type="button" class="btn btn-${tone === 'danger' ? 'danger' : 'primary'}" data-confirm>${escapeHtml(confirmLabel)}</button>
+        </div>
+      </div>`;
+    document.body.appendChild(overlay);
+    const finish = value => { overlay.remove(); resolve(value); };
+    const reason = overlay.querySelector('[data-reason]');
+    overlay.querySelector('[data-cancel]').onclick = () => finish(null);
+    overlay.querySelector('[data-confirm]').onclick = () => {
+      const text = reason ? reason.value.trim() : '';
+      if (reasonRequired && !text) { reason?.focus(); showToast('Please enter a reason.', 'bad'); return; }
+      finish({ reason: text });
+    };
+    overlay.addEventListener('click', event => { if (event.target === overlay) finish(null); });
+    overlay.addEventListener('keydown', event => { if (event.key === 'Escape') finish(null); });
+    (reason || overlay.querySelector('[data-confirm]')).focus();
+  });
+}
 
 function showModal(title, message) {
   const modal = document.getElementById('successModal');
@@ -194,9 +324,11 @@ function buildNav(role, user) {
   }
   if (user) {
     const profile = document.createElement('a'); profile.href = role === 'admin' ? 'admin.html' : 'profile.html'; profile.className = 'user-nav';
-    const avatar = document.createElement('span'); avatar.className = 'user-avatar'; avatar.textContent = (user.name || 'R').slice(0, 1).toUpperCase();
+    // The same profile picture the owner uploaded, so the navbar, the profile
+    // page and the admin lists never disagree about who this is.
+    profile.insertAdjacentHTML('afterbegin', imageOrInitials(user.photo, user.name, { className: 'user-avatar', alt: '' }));
     const name = document.createElement('span'); name.className = 'user-nav-name'; name.textContent = user.name || 'Account';
-    profile.append(avatar, name); actions.appendChild(profile);
+    profile.appendChild(name); actions.appendChild(profile);
     if (role === 'user') { const owner = document.createElement('a'); owner.href = 'profile.html#owner'; owner.className = 'btn btn-outline'; owner.textContent = 'Become an Owner'; actions.appendChild(owner); }
     if (role === 'owner') { const userLink = document.createElement('a'); userLink.href = 'profile.html#switch'; userLink.className = 'btn btn-outline'; userLink.textContent = 'Switch to User'; actions.appendChild(userLink); }
     const logout = document.createElement('button'); logout.type = 'button'; logout.className = 'btn btn-primary'; logout.textContent = 'Logout'; logout.onclick = () => { clearSession(); location.href = 'index.html'; }; actions.appendChild(logout);
@@ -237,22 +369,60 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   if (publicSite) { document.querySelectorAll('[data-owner-only]').forEach(element => { element.hidden = true; }); buildNav('guest', null); bindMenu(); applyBrand(); return; }
   if (role === 'admin') {
-    // Admins may open the agreement viewer and the owner portal (the owner APIs
-    // explicitly accept the admin role), but must never be bounced out of
-    // admin.html itself.
-    if (page === 'profile.html' || page === 'agreement.html') { buildNav('adminLite', user); bindMenu(); applyBrand(); return; }
-    if (page === 'list-vehicle.html' || page === 'offer-ride.html') { buildNav('adminLite', user); bindMenu(); applyBrand(); loadNotifications(); return; }
+    // Admins may open the agreement viewer, the owner portal and the assistant
+    // (the owner APIs explicitly accept the admin role), but must never be
+    // bounced out of admin.html itself.
+    if (['profile.html', 'agreement.html', 'chat.html'].includes(page)) { buildNav('adminLite', user); bindMenu(); applyBrand(); return; }
+    if (['list-vehicle.html', 'offer-ride.html', 'ride-requests.html'].includes(page)) { buildNav('adminLite', user); bindMenu(); applyBrand(); loadNotifications(); return; }
     location.replace('admin.html'); return;
   }
-  if (['list-vehicle.html', 'offer-ride.html'].includes(page) && role !== 'owner') { location.replace(role === 'guest' ? `login.html?next=${encodeURIComponent(location.pathname + location.hash)}` : 'profile.html?notice=owner-only'); return; }
+  if (['list-vehicle.html', 'offer-ride.html', 'ride-requests.html'].includes(page) && role !== 'owner') { location.replace(role === 'guest' ? `login.html?next=${encodeURIComponent(location.pathname + location.hash)}` : 'profile.html?notice=owner-only'); return; }
   document.querySelectorAll('[data-owner-only]').forEach(element => { element.hidden = !['owner', 'admin'].includes(role); });
   buildNav(role, user); bindMenu(); applyBrand(); loadNotifications();
+  // The assistant launcher is available to every signed-in account (rider,
+  // owner and admin) on every page, so the full-screen chat page is optional.
+  // chat.js owns the widget; this only asks for the launcher variant.
+  if (user && !document.body.dataset.noChatLauncher) window.RevexChat?.mount({ launcher: true });
 });
+
+/**
+ * The shared namespace.
+ *
+ * Every page includes main.js, so the new modules (payment, chat, ride requests)
+ * and the pages can all reach the same helpers without each one re-declaring
+ * them. Exported as one object so nothing leaks into the global scope by
+ * accident.
+ */
+window.REVEX = {
+  API_BASE, BRAND, CURRENCY,
+  api, escapeHtml, formatMoney, formatDate, formatDateTime, assetUrl,
+  getToken, getStoredUser, setSession, clearSession, friendlyError,
+  requireLogin, requireRole, currentPage, roleHome,
+  showModal, closeModal, showToast, confirmAction,
+  statusBadge, statusLabel, imageOrInitials,
+  NAV_CONFIG, buildNav
+};
+
+/*
+ * The older page scripts (js/rental.js, js/owner.js, js/admin.js) were written
+ * before the namespace existed and reference these helpers as bare globals, the
+ * same way they already use `api()` and `escapeHtml()`. Rather than rewriting
+ * every one of them, the shared UI helpers are published globally here too.
+ * Anything defined AFTER this block wins, so a page script may still shadow a
+ * helper deliberately - and tests/no-duplicate-helpers.test.js fails if a page
+ * script does so accidentally, which is how the duplicate statusBadge() in
+ * js/booking.js was found.
+ */
+window.statusBadge = statusBadge;
+window.statusLabel = statusLabel;
+window.imageOrInitials = imageOrInitials;
+window.showToast = showToast;
+window.confirmAction = confirmAction;
 
 async function downloadAgreement(bookingId) {
   try {
     const response = await fetch(`${API_BASE}/bookings/${encodeURIComponent(bookingId)}/agreement`, { headers: { Authorization: `Bearer ${getToken()}` } });
     if (!response.ok) { let data = {}; try { data = await response.json(); } catch {} throw new Error(friendlyError(data.message, response.status)); }
     const url = URL.createObjectURL(await response.blob()); const link = document.createElement('a'); link.href = url; link.download = `REVEX-Agreement-${bookingId}.pdf`; document.body.appendChild(link); link.click(); link.remove(); URL.revokeObjectURL(url);
-  } catch (error) { alert(error.message); }
+  } catch (error) { showToast(error.message, 'bad'); }
 }

@@ -64,10 +64,29 @@ check('localhost on the API ports stays same-origin', () => {
   assert.equal(at('http:', 'localhost', ''), '/api');
 });
 
-check('a LOCAL dev server on another port still reaches the backend', () => {
+check('a LOCAL dev server on a frontend-tool port still reaches the backend', () => {
+  // 5500 = live-server, 5173 = Vite, 3000 = CRA. These serve ONLY static files,
+  // so the api genuinely lives on another port.
   assert.equal(at('http:', 'localhost', '5500'), 'http://localhost:5001/api');
   assert.equal(at('http:', '127.0.0.1', '5173'), 'http://127.0.0.1:5001/api');
-  assert.equal(at('http:', '0.0.0.0', '8080'), 'http://0.0.0.0:5001/api');
+  assert.equal(at('http:', 'localhost', '3000'), 'http://localhost:5001/api');
+});
+
+check('a backend serving its OWN pages on any other port is same-origin', () => {
+  // THE REGRESSION: the old rule was "any port that is not 5000/5001 means a
+  // separate dev server". Starting the backend with PORT=5002 made it serve the
+  // pages itself while every api call was sent to :5001, where nothing was
+  // listening. Login failed with a CORS error and a form that did nothing.
+  assert.equal(at('http:', 'localhost', '5002'), '/api', 'PORT=5002 stays same-origin');
+  assert.equal(at('http:', 'localhost', '3001'), '/api', 'PORT=3001 stays same-origin');
+  assert.equal(at('http:', '127.0.0.1', '8080'), '/api', 'PORT=8080 stays same-origin');
+  assert.equal(at('http:', '0.0.0.0', '5003'), '/api', 'and so does any other port');
+});
+
+check('no local port is rewritten to 5001 unless it is a known dev-server port', () => {
+  ['5002', '5003', '3001', '4000', '7000', '8081', '9999'].forEach(port => {
+    assert.equal(at('http:', 'localhost', port), '/api', `localhost:${port} is same-origin`);
+  });
 });
 
 check('an explicit override always wins', () => {

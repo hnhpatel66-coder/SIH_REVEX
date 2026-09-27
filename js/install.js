@@ -1,33 +1,28 @@
 (() => {
   let deferredPrompt = null;
+  const installButtons = () => [...document.querySelectorAll('[data-revex-install]')];
 
-  function setupInstallButton() {
-    const button = document.getElementById("revexInstallBtn");
-    if (!button) return;
+  window.addEventListener('beforeinstallprompt', event => {
+    event.preventDefault();
+    deferredPrompt = event;
+    installButtons().forEach(btn => btn.classList.add('is-visible'));
+  });
 
-    window.addEventListener("beforeinstallprompt", (event) => {
-      event.preventDefault();
-      deferredPrompt = event;
-      button.hidden = false;
-    });
+  window.addEventListener('appinstalled', () => {
+    deferredPrompt = null;
+    installButtons().forEach(btn => btn.classList.remove('is-visible'));
+  });
 
-    button.addEventListener("click", async () => {
-      if (!deferredPrompt) return;
-      deferredPrompt.prompt();
-      await deferredPrompt.userChoice;
-      deferredPrompt = null;
-      button.hidden = true;
-    });
+  document.addEventListener('click', async event => {
+    const btn = event.target.closest('[data-revex-install]');
+    if (!btn || !deferredPrompt) return;
+    deferredPrompt.prompt();
+    try { await deferredPrompt.userChoice; } catch {}
+    deferredPrompt = null;
+    installButtons().forEach(item => item.classList.remove('is-visible'));
+  });
 
-    window.addEventListener("appinstalled", () => {
-      button.hidden = true;
-      deferredPrompt = null;
-    });
-  }
-
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", setupInstallButton);
-  } else {
-    setupInstallButton();
+  if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+    window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));
   }
 })();

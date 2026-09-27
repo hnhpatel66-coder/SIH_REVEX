@@ -1,17 +1,7 @@
-
-/* REVEX Android download button */
-.revex-download-app {
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-  gap:8px;
-  margin:8px 10px;
-  padding:10px 14px;
-  border-radius:10px;
-  text-decoration:none;
-  font-weight:700;
-  background:#0f766e;
-  color:#fff !important;
-  border:0;
-}
-.revex-download-app:hover { opacity:.92; }
+/* REVEX Android/PWA install controls */
+.revex-app-tools{display:flex;align-items:center;gap:10px;margin:12px auto;max-width:1200px;padding:0 20px;flex-wrap:wrap}
+.revex-download-app{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:10px 16px;border-radius:999px;background:#0f766e;color:#fff;text-decoration:none;font-weight:700;border:1px solid #0f766e}
+.revex-download-app:hover{filter:brightness(.95)}
+.revex-install-app{display:none;align-items:center;justify-content:center;gap:8px;padding:10px 16px;border-radius:999px;background:#111827;color:#fff;text-decoration:none;font-weight:700;border:1px solid #111827;cursor:pointer}
+.revex-install-app.is-visible{display:inline-flex}
+@media(max-width:640px){.revex-app-tools{padding:0 12px}.revex-download-app,.revex-install-app{width:100%}}

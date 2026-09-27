@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <script>(function(){try{var s=localStorage.getItem('revexTheme');document.documentElement.setAttribute('data-theme',s==='dark'?'dark':'light');}catch(e){document.documentElement.setAttribute('data-theme','light');}})();</script><title>Ride Booking Requests | REVEX</title>
+  <meta name="description" content="Paid seat requests on the REVEX ride offers you published. Approve or decline each rider; declining refunds them under the cancellation policy.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&amp;family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css"><link rel="stylesheet" href="css/navbar.css"><link rel="stylesheet" href="css/cards.css"><link rel="stylesheet" href="css/responsive.css"><link rel="stylesheet" href="css/theme.css"><link rel="stylesheet" href="css/revex-ui.css"><link rel="stylesheet" href="css/chat.css">
+
+
+
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#0f766e">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="REVEX">
+  <link rel="stylesheet" href="/css/download-app.css">
+</head>
+<body>
+  <header class="container"><nav class="nav"><a class="brand" href="list-vehicle.html">REV<span>EX</span></a><button class="menu-btn" aria-label="Open navigation" type="button">Menu</button><div class="nav-links"></div><div class="nav-actions"></div></nav></header>
+  <main class="container section">
+    <div class="rvx-page-head">
+      <div>
+        <span class="rvx-eyebrow">OWNER TOOL</span>
+        <h1>Ride Booking Requests</h1>
+        <p>These are paid seat requests on the rides you published. A rider's payment is verified by the server before the request reaches you, and declining refunds them under the cancellation policy.</p>
+      </div>
+      <a class="rvx-btn rvx-btn--outline" href="offer-ride.html">Offer another ride</a>
+    </div>
+
+    <div class="rvx-subnav" aria-label="Owner sections">
+      <a href="list-vehicle.html" aria-current="page">Dashboard</a>
+      <a href="list-vehicle.html#fleet">My Vehicles</a>
+      <a href="list-vehicle.html#requests">Rental Requests</a>
+      <a href="ride-requests.html">Ride Requests</a>
+      <a href="offer-ride.html">Offer a Ride</a>
+    </div>
+
+    <section class="rvx-section" id="ownerRides">
+      <div class="rvx-section__head"><h2>Your ride offers</h2><p>Approval here is the owner's decision. The admin approves the offer itself, separately.</p></div>
+      <div id="rideOwnerRides"></div>
+    </section>
+
+    <section class="rvx-section">
+      <div class="rvx-section__head"><h2>Seat requests</h2><p>Only paid requests are listed.</p></div>
+      <div class="rvx-stats" id="rideRequestStats"></div>
+      <div class="rvx-btnrow" id="rideRequestFilter" style="margin-bottom:18px"></div>
+      <div class="rvx-grid rvx-grid--wide" id="rideRequestList"></div>
+    </section>
+  </main>
+  <div class="modal" id="successModal"><div class="modal-box"><div class="modal-icon">✓</div><h2>Done</h2><p></p></div></div>
+  <footer class="footer"><div class="container"><p>© 2026 REVEX · Owner portal</p></div></footer>
+  <script src="js/theme.js"></script>
+  <script src="js/confirm-delete.js"></script>
+  <script src="js/main.js"></script>
+  <script src="js/payment.js"></script>
+  <script src="js/chat.js"></script>
+  <script src="js/ride-requests.js"></script>
+<div class="revex-app-tools" role="region" aria-label="REVEX app options">
+  <a class="revex-download-app" href="/downloads/REVEX.apk" download="REVEX.apk">⬇️ Download Android App</a>
+  <button class="revex-install-app" type="button" data-revex-install>📲 Install REVEX</button>
+</div>
+  <script src="/js/install.js" defer></script>
+</body></html>

@@ -1,33 +1,30 @@
 <!doctype html>
 <html lang="en" data-theme="light">
 <head>
-    <link rel="manifest" href="/manifest.json">
-  <meta name="theme-color" content="#0f766e">
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <link rel="apple-touch-icon" href="/icons/icon-192.png">
-<meta charset="UTF-8">
+  <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>REVEX — Smarter city mobility</title>
-  <script>(function(){try{var k='revexTheme',s=localStorage.getItem(k);if(!s){s=window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}document.documentElement.setAttribute('data-theme',s);}catch(e){document.documentElement.setAttribute('data-theme','light');}})();</script>
+  <title>Home | REVEX</title>
+  <script>(function(){try{var s=localStorage.getItem('revexTheme');document.documentElement.setAttribute('data-theme',s==='dark'?'dark':'light');}catch(e){document.documentElement.setAttribute('data-theme','light');}})();</script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&amp;family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css">
-  <link rel="stylesheet" href="css/navbar.css">
-  <link rel="stylesheet" href="css/cards.css">
-  <link rel="stylesheet" href="css/responsive.css">
-  <link rel="stylesheet" href="css/theme.css">
-  <link rel="stylesheet" href="css/chatbot.css">
-  <link rel="stylesheet" href="css/install.css">
+  <link rel="stylesheet" href="css/style.css"><link rel="stylesheet" href="css/navbar.css"><link rel="stylesheet" href="css/cards.css"><link rel="stylesheet" href="css/responsive.css"><link rel="stylesheet" href="css/theme.css"><link rel="stylesheet" href="css/revex-ui.css"><link rel="stylesheet" href="css/chat.css">
+
+
+
+  <meta name="description" content="REVEX moves you smarter: rent a verified vehicle or share a ride with a local driver. One account for riding, lending and earning.">
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#0f766e">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="REVEX">
   <link rel="stylesheet" href="/css/download-app.css">
 </head>
 <body>
-<a class="revex-download-app" href="/downloads/REVEX.apk" download="REVEX.apk" aria-label="Download REVEX Android app">⬇️ Download Android App</a>
   <header class="container">
     <nav class="nav">
       <a class="brand" href="index.html">REV<span>EX</span></a>
-      <button class="menu-btn" aria-label="Open navigation">Menu</button>
+      <button class="menu-btn" aria-label="Open navigation" type="button">Menu</button>
       <div class="nav-links">
         <a class="active" href="index.html">Home</a>
         <a href="find-ride.html">Find a Ride</a>
@@ -36,12 +33,15 @@
         <a href="bookings.html">My Bookings</a>
         <a href="profile.html">Profile</a>
       </div>
-      <button id="revexInstallBtn" type="button" hidden aria-label="Install REVEX app">Install App</button>
       <div class="nav-actions" aria-label="Account actions"></div>
     </nav>
   </header>
 
-  <main>
+  <div class="revex-app-tools" role="region" aria-label="REVEX app options">
+  <a class="revex-download-app" href="/downloads/REVEX.apk" download="REVEX.apk">⬇️ Download Android App</a>
+  <button class="revex-install-app" type="button" data-revex-install>📲 Install REVEX</button>
+</div>
+<main>
     <section class="hero">
       <div class="container">
         <div class="hero-copy">
@@ -155,8 +155,10 @@
 
   <div class="modal" id="successModal"><div class="modal-box"><div class="modal-icon">✓</div><h2>Success</h2><p></p><button class="btn btn-primary" data-close-modal type="button">Done</button></div></div>
   <script src="js/theme.js"></script>
+  <script src="js/confirm-delete.js"></script>
   <script src="js/main.js"></script>
-  <script src="js/install.js"></script>
-  <script src="js/chatbot.js"></script>
+  <script src="js/payment.js"></script>
+  <script src="js/chat.js"></script>
+  <script src="/js/install.js" defer></script>
 </body>
 </html>

@@ -1,0 +1,14 @@
+REVEX final APK setup
+======================
+
+The Android Studio project is included under android-app/.
+The website has:
+- PWA manifest + service worker
+- Install REVEX button
+- Download Android App button
+
+Before the Download Android App button can serve a file, place the actual built APK at:
+downloads/REVEX.apk
+
+This ZIP intentionally excludes backend/.env to avoid exposing credentials.
+All other original project files from the uploaded ZIP are preserved.

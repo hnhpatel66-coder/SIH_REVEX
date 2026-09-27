@@ -1,3 +1,22 @@
+/* ============================================================================
+ * OWNER PORTAL  (js/owner.js)
+ *
+ * List a vehicle, review rental booking requests, see the ride offers you
+ * published, and track vehicle-wise earnings.
+ *
+ * Wrapped in an IIFE so none of its helpers leak onto `window` and start
+ * shadowing the shared helpers in js/main.js. Everything it needs from
+ * main.js arrives through `window.REVEX`.
+ * ========================================================================== */
+(function (global) {
+  'use strict';
+
+  const REVEX = global.REVEX;
+  if (!REVEX) return;
+  const {
+    api, escapeHtml, formatMoney, formatDate, formatDateTime, getStoredUser,
+    showModal, showToast, confirmAction, statusBadge, imageOrInitials
+  } = REVEX;
 let ownerVehicles = [];
 let ownerSummary = null;
 let suggestionTimer = null;
@@ -58,9 +77,16 @@ function approvalBadge(vehicle) {
   return `<span class="badge ${className}">${escapeHtml(label)}</span>`;
 }
 function vehicleOwnerCard(vehicle) {
-  const fallback = `data:image/svg+xml;charset=UTF-8,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="800" height="480"><rect width="100%" height="100%" fill="#172c47"/><text x="50%" y="50%" text-anchor="middle" dominant-baseline="middle" font-family="Arial" font-size="28" fill="#cbd5e1">REVEX Vehicle</text></svg>')}`;
-  const image = vehicle.image || vehicle.vehiclePicture || fallback;
-  return `<article class="vehicle-card owner-vehicle-card"><div class="vehicle-image"><img src="${escapeHtml(image)}" alt="${escapeHtml(vehicle.name)}" loading="lazy" onerror="this.onerror=null;this.src='${fallback}'"></div><div class="card-body">${approvalBadge(vehicle)}<h3 class="card-title">${escapeHtml(vehicle.name)}</h3><p class="card-meta">${escapeHtml(vehicle.category || vehicle.type || 'Other')} · ${escapeHtml(vehicle.fuelType || 'Petrol')} · ${escapeHtml(vehicle.location || '-')}</p><p class="card-meta">Registration: <b>${escapeHtml(vehicle.numberPlate || '-')}</b> · ${Number(vehicle.currentKm || 0).toLocaleString('en-IN')} km</p><p class="card-price">${inr(vehicle.price)} <small>/ ${escapeHtml(vehicle.priceUnit || 'hour')}</small>${vehicle.discountPercent ? `<small> · ${vehicle.discountPercent}% off</small>` : ''}</p><p class="card-meta">${vehicle.documents?.length || 0} document(s) uploaded · ${Number(vehicle.rating || 5).toFixed(1)} ★</p>${vehicle.rejectionReason ? `<p class="status-error">Reason: ${escapeHtml(vehicle.rejectionReason)}</p>` : ''}${vehicle.removalReason ? `<p class="status-error">Removal: ${escapeHtml(vehicle.removalReason)}</p>` : ''}<div class="card-actions"><a class="btn btn-outline" href="vehicle-details.html?id=${encodeURIComponent(vehicle.id)}">View</a><button class="btn btn-outline" type="button" data-edit-vehicle="${vehicle.id}">Edit</button><button class="btn btn-danger" type="button" data-delete-vehicle="${vehicle.id}" data-vehicle-name="${escapeHtml(vehicle.name || '')}">Delete</button></div></div></article>`;
+  // The shared image helper falls back to the vehicle's initials, so a missing
+  // or broken photo shows the owner's initials instead of a placeholder graphic.
+  const image = imageOrInitials(vehicle.image || vehicle.vehiclePicture, vehicle.name, { className: '', alt: vehicle.name });
+  // If the owner scheduled this vehicle for a later date, spell it out: renters
+  // can only book it on or after that day, so it looks "missing" otherwise.
+  const futureFrom = vehicle.availableFrom && new Date(vehicle.availableFrom) > new Date();
+  const visibilityNote = futureFrom
+    ? `<p class="notice">Not bookable by renters until ${escapeHtml(formatDate(vehicle.availableFrom))}. Edit the vehicle to make it available sooner.</p>`
+    : '';
+  return `<article class="vehicle-card owner-vehicle-card"><div class="vehicle-image">${image}</div><div class="card-body">${approvalBadge(vehicle)}<h3 class="card-title">${escapeHtml(vehicle.name)}</h3><p class="card-meta">${escapeHtml(vehicle.category || vehicle.type || 'Other')} · ${escapeHtml(vehicle.fuelType || 'Petrol')} · ${escapeHtml(vehicle.location || '-')}</p><p class="card-meta">Registration: <b>${escapeHtml(vehicle.numberPlate || '-')}</b> · ${Number(vehicle.currentKm || 0).toLocaleString('en-IN')} km</p><p class="card-price">${inr(vehicle.price)} <small>/ ${escapeHtml(vehicle.priceUnit || 'hour')}</small>${vehicle.discountPercent ? `<small> · ${vehicle.discountPercent}% off</small>` : ''}</p><p class="card-meta">${vehicle.documents?.length || 0} document(s) uploaded · ${Number(vehicle.rating || 5).toFixed(1)} ★</p>${visibilityNote}${vehicle.rejectionReason ? `<p class="status-error">Reason: ${escapeHtml(vehicle.rejectionReason)}</p>` : ''}${vehicle.removalReason ? `<p class="status-error">Removal: ${escapeHtml(vehicle.removalReason)}</p>` : ''}<div class="card-actions"><a class="btn btn-outline" href="vehicle-details.html?id=${encodeURIComponent(vehicle.id)}">View</a><button class="btn btn-outline" type="button" data-edit-vehicle="${escapeHtml(vehicle.id)}">Edit</button><button class="btn btn-danger" type="button" data-delete-vehicle="${escapeHtml(vehicle.id)}" data-vehicle-name="${escapeHtml(vehicle.name || '')}">Delete</button></div></div></article>`;
 }
 async function renderOwnerVehicles() {
   const list = document.getElementById('ownerVehicleList'); if (!list) return;
@@ -89,7 +115,7 @@ async function renderOwnerRequests() {
     box.innerHTML = requests.length ? requests.map(item => { const quote = item.quote || {}; const canDecide = item.status === 'pending_owner'; return `<article class="request-card"><div class="request-main"><div class="badge-row"><span class="badge badge-category">${escapeHtml(item.vehicleId?.category || item.vehicleId?.type || 'Vehicle')}</span><span class="badge ${item.status === 'confirmed' ? 'badge-approved' : item.status === 'rejected' ? 'badge-rejected' : 'badge-pending'}">${escapeHtml(item.status)}</span></div><h3>${escapeHtml(item.userId?.name || 'Renter')} · ${escapeHtml(item.vehicleId?.name || 'Vehicle')}</h3><p>${escapeHtml(item.userId?.email || '')} ${item.userId?.phone ? `· ${escapeHtml(item.userId.phone)}` : ''}</p><div class="request-facts"><span><b>Start</b>${formatDateTime(item.startDate)}</span><span><b>End</b>${formatDateTime(item.endDate)}</span><span><b>Rental Amount</b>${formatMoney(quote.baseRentalAmount || 0)}</span>${quote.extraKilometerCharges ? `<span><b>Extra KM</b>${formatMoney(quote.extraKilometerCharges)}</span>` : ''}${quote.additionalCharges ? `<span><b>Additional</b>${formatMoney(quote.additionalCharges)}</span>` : ''}${quote.discountAmount ? `<span><b>Discount (${quote.discountPercent || 0}%)</b>-${formatMoney(quote.discountAmount)}</span>` : ''}<span><b>Tax / Fees</b>${formatMoney(quote.taxFees || 0)}</span><span><b>Grand Total</b>${formatMoney(quote.grandTotal || item.totalAmount || 0)}</span><span><b>Payment</b>${escapeHtml(item.paymentStatus)}</span><span><b>Agreement</b>${item.agreement ? escapeHtml(item.agreement.agreementStatus || 'Prepared') : 'Preparing'}</span></div></div><div class="request-actions">${canDecide ? `<button class="btn btn-primary" type="button" data-decision="approve" data-booking="${item.id}">Approve</button><button class="btn btn-danger" type="button" data-decision="reject" data-booking="${item.id}">Reject</button>` : ''}<a class="btn btn-outline" href="agreement.html?bookingId=${encodeURIComponent(item.id)}">View agreement</a>${admin ? `<a class="btn btn-outline" href="bookings.html?bookingId=${encodeURIComponent(item.id)}">Booking details</a>` : ''}</div></article>`; }).join('') : '<div class="empty">No booking requests yet. New requests will appear here immediately.</div>';
   } catch (error) { box.innerHTML = `<div class="empty">${escapeHtml(error.message)}</div>`; }
 }
-async function refreshOwnerPortal() { await Promise.all([renderOwnerDashboard(), renderOwnerVehicles(), renderOwnerRequests()]); }
+async function refreshOwnerPortal() { await Promise.all([renderOwnerDashboard(), renderOwnerVehicles(), renderOwnerRequests(), renderOwnerRides()]); }
 function openEditVehicle(id) {
   const vehicle = ownerVehicles.find(item => item.id === id); if (!vehicle) return;
   document.getElementById('editVehicleId').value = vehicle.id; document.getElementById('editName').value = vehicle.name || ''; document.getElementById('editCategory').value = vehicle.category || vehicle.type || 'Other'; document.getElementById('editFuel').value = vehicle.fuelType || 'Petrol'; document.getElementById('editKm').value = vehicle.currentKm || 0; document.getElementById('editLocation').value = vehicle.location || ''; document.getElementById('editPrice').value = vehicle.price || ''; document.getElementById('editDiscount').value = vehicle.discountPercent || 0; document.getElementById('editUnit').value = vehicle.priceUnit || 'hour'; document.getElementById('editTransmission').value = vehicle.transmission || 'Manual'; document.getElementById('editDescription').value = vehicle.description || ''; document.getElementById('editAvailable').value = vehicle.availableFrom ? new Date(vehicle.availableFrom).toISOString().slice(0, 10) : ''; document.getElementById('editPhoto').value = ''; document.getElementById('editDocuments').value = ''; document.getElementById('editFormMessage').textContent = ''; document.getElementById('editVehicleModal').classList.add('show');
@@ -118,11 +144,126 @@ async function submitEditVehicle(event) {
   } catch (error) { message.textContent = error.message; message.className = 'form-message form-message-error'; } finally { submit.disabled = false; }
 }
 async function decideBooking(button) {
-  const decision = button.dataset.decision; const id = button.dataset.booking; let reason = '';
-  if (decision === 'reject') { reason = prompt('Enter a reason for rejecting this booking request:'); if (reason === null || !reason.trim()) return; }
-  if (decision === 'approve' && !confirm('Approve this booking request?')) return;
-  try { const result = await api(`/bookings/${encodeURIComponent(id)}/owner-decision`, { method: 'POST', body: { decision, reason } }); await refreshOwnerPortal(); showModal('Request updated', result.message); } catch (error) { alert(error.message); }
+  const decision = button.dataset.decision; const id = button.dataset.booking;
+  const answer = await confirmAction({
+    title: decision === 'approve' ? 'Approve this rental request?' : 'Decline this rental request?',
+    message: decision === 'approve'
+      ? 'The renter is notified and the booking becomes confirmed. The agreement is signed by you.'
+      : 'The renter has already paid, so declining refunds them under the REVEX cancellation policy (the policy fee is kept only if the free-cancellation window has passed).',
+    confirmLabel: decision === 'approve' ? 'Approve request' : 'Decline and refund',
+    tone: decision === 'approve' ? 'primary' : 'danger',
+    reasonLabel: decision === 'approve' ? 'Note (optional)' : 'Reason (the renter sees this)',
+    reasonRequired: decision !== 'approve'
+  });
+  if (!answer) return;
+  const original = button.innerHTML;
+  button.disabled = true;
+  button.innerHTML = '<span class="rvx-spinner" aria-hidden="true"></span>';
+  try {
+    const result = await api(`/bookings/${encodeURIComponent(id)}/owner-decision`, { method: 'POST', body: { decision, reason: answer.reason } });
+    await refreshOwnerPortal();
+    showModal('Request updated', result.message);
+    showToast(result.message, 'ok', 8000);
+    if (result.refund?.gatewayError) showToast(`Automatic refund failed: ${result.refund.gatewayError}`, 'bad', 12000);
+  } catch (error) {
+    showToast(error.message, 'bad', 8000);
+    button.disabled = false; button.innerHTML = original;
+  }
 }
+
+/**
+ * The owner's ride offers with their approval state, seat usage and earnings.
+ * Rides live on their own screen (ride-requests.html) for the seat REQUESTS;
+ * this is the summary of the offers themselves.
+ */
+async function renderOwnerRides() {
+  const box = document.getElementById('ownerRides');
+  if (!box || !requireRole('owner', 'admin')) return;
+  box.innerHTML = '<div class="empty">Loading your ride offers…</div>';
+  try {
+    const [rides, requests] = await Promise.all([
+      api('/rides/mine'),
+      api('/rides/requests?status=all').catch(() => [])
+    ]);
+    const byRide = new Map();
+    for (const request of requests) {
+      const key = String(request.rideId?._id || request.rideId || '');
+      if (!byRide.has(key)) byRide.set(key, []);
+      byRide.get(key).push(request);
+    }
+    const revenue = requests
+      .filter(item => item.paymentStatus === 'paid' && ['confirmed', 'completed'].includes(item.status))
+      .reduce((sum, item) => sum + (Number(item.totalAmount) || 0) * 0.9, 0);
+
+    if (!rides.length) {
+      box.innerHTML = `<div class="rvx-empty"><h3>No ride offers yet</h3><p>Publish a route and an admin will review it before riders can see it.</p><a class="rvx-btn rvx-btn--primary" href="offer-ride.html">Offer a ride</a></div>`;
+      return;
+    }
+
+    const buckets = {
+      Pending: rides.filter(r => r.status === 'pending').length,
+      Approved: rides.filter(r => ['approved', 'available'].includes(r.status)).length,
+      Rejected: rides.filter(r => r.status === 'rejected').length,
+      Cancelled: rides.filter(r => ['cancelled', 'removed'].includes(r.status)).length,
+      Completed: rides.filter(r => r.status === 'completed').length,
+      'In progress': rides.filter(r => r.status === 'active').length,
+      Upcoming: rides.filter(r => ['pending', 'approved', 'available'].includes(r.status) && new Date(r.date) >= new Date()).length
+    };
+    box.innerHTML = `
+      <div class="rvx-stats">
+        ${Object.entries(buckets).map(([label, value]) => `<div class="rvx-stat"><span class="rvx-stat__label">${escapeHtml(label)}</span><span class="rvx-stat__value">${value}</span></div>`).join('')}
+        <div class="rvx-stat rvx-stat--accent"><span class="rvx-stat__label">Ride earnings</span><span class="rvx-stat__value">${formatMoney(revenue)}</span><span class="rvx-stat__hint">90% of confirmed and completed seats</span></div>
+        <div class="rvx-stat"><span class="rvx-stat__label">Seat requests</span><span class="rvx-stat__value">${requests.length}</span><span class="rvx-stat__hint"><a href="ride-requests.html">Review</a></span></div>
+      </div>
+      <div class="rvx-table-wrap"><table class="rvx-table"><thead><tr><th>Ride</th><th>Vehicle</th><th>Date &amp; time</th><th class="num">Price / seat</th><th class="num">Seats</th><th class="num">Requests</th><th>Status</th><th>Actions</th></tr></thead><tbody>
+        ${rides.map(ride => {
+          const mine = byRide.get(String(ride.id)) || [];
+          const pending = mine.filter(item => item.status === 'pending_owner').length;
+          return `<tr>
+            <td><b>${escapeHtml(ride.from)} → ${escapeHtml(ride.to)}</b><br><small>ID ${escapeHtml(String(ride.id).slice(-8))}</small></td>
+            <td>${escapeHtml(ride.vehicle || '-')}<br><small>${escapeHtml(ride.numberPlate || '')}</small></td>
+            <td>${escapeHtml(formatDate(ride.date))}<br><small>${escapeHtml(ride.time || '')}</small></td>
+            <td class="num">${formatMoney(ride.price)}</td>
+            <td class="num">${ride.seatsBooked || 0}/${ride.seats}</td>
+            <td class="num">${mine.length}${pending ? `<br><small>${pending} awaiting you</small>` : ''}</td>
+            <td>${statusBadge(ride.status)}</td>
+            <td><div class="rvx-table__actions">
+              ${pending ? `<a class="btn btn-primary btn-small" href="ride-requests.html">Review ${pending}</a>` : ''}
+              <a class="btn btn-outline btn-small" href="ride-details.html?id=${encodeURIComponent(ride.id)}">View</a>
+              ${['pending', 'approved', 'available'].includes(ride.status) ? `<button class="btn btn-danger btn-small" type="button" data-cancel-ride-offer="${escapeHtml(ride.id)}" data-ride-route="${escapeHtml(ride.from)} → ${escapeHtml(ride.to)}">Cancel offer</button>` : ''}
+            </div></td>
+          </tr>`;
+        }).join('')}
+      </tbody></table></div>`;
+  } catch (error) {
+    box.innerHTML = `<div class="rvx-empty"><h3>Ride offers could not be loaded</h3><p>${escapeHtml(error.message)}</p></div>`;
+  }
+}
+
+/**
+ * Withdrawing an offer. Blocked while seats are held, because a paid rider has
+ * to be refunded by an admin rather than silently losing a seat.
+ */
+async function cancelRideOffer(button) {
+  const answer = await confirmAction({
+    title: `Cancel the ${button.dataset.rideRoute} offer?`,
+    message: 'The offer disappears from Find a Ride. Unpaid seat holds are released. If riders have already paid, an admin must remove the ride so those seats can be refunded.',
+    confirmLabel: 'Cancel offer', tone: 'danger',
+    reasonLabel: 'Reason (riders see this)', reasonRequired: true
+  });
+  if (!answer) return;
+  const original = button.innerHTML;
+  button.disabled = true; button.innerHTML = '<span class="rvx-spinner" aria-hidden="true"></span>';
+  try {
+    const result = await api(`/rides/${encodeURIComponent(button.dataset.cancelRideOffer)}/cancel`, { method: 'POST', body: { reason: answer.reason } });
+    showToast(result.message || 'Ride offer cancelled.', 'ok', 8000);
+    await renderOwnerRides();
+  } catch (error) {
+    showToast(error.message, 'bad', 9000);
+    button.disabled = false; button.innerHTML = original;
+  }
+}
+
 async function removeVehicle(id, name) {
   const vehicle = ownerVehicles.find(v => v.id === id);
   const ok = await confirmDelete({
@@ -149,8 +290,23 @@ document.addEventListener('DOMContentLoaded', () => {
   const available = document.getElementById('vehicleAvailable'); if (available) available.min = new Date().toISOString().slice(0, 10);
   document.getElementById('vehicleListing')?.addEventListener('submit', submitVehicle); document.getElementById('editVehicleForm')?.addEventListener('submit', submitEditVehicle);
   document.getElementById('vehicleListing')?.querySelectorAll('[name="category"],[name="fuelType"],[name="currentKm"]').forEach(input => { input.addEventListener('input', updatePriceSuggestion); input.addEventListener('change', updatePriceSuggestion); });
+  /*
+   * The number-plate availability check used to be wired with
+   * oninput="checkPlate(this.value)" in the markup. `checkPlate` lives inside
+   * this IIFE and is never put on `window`, so every keystroke in the plate
+   * field threw "ReferenceError: checkPlate is not defined" and the duplicate-
+   * plate warning never appeared. It is bound here instead, where it resolves.
+   */
+  const plateInput = document.getElementById('vehiclePlate');
+  if (plateInput) {
+    plateInput.addEventListener('input', () => checkPlate(plateInput.value));
+    plateInput.addEventListener('blur', () => checkPlate(plateInput.value));
+  }
   document.getElementById('ownerVehicleList')?.addEventListener('click', event => { const edit = event.target.closest('[data-edit-vehicle]'); const remove = event.target.closest('[data-delete-vehicle]'); if (edit) openEditVehicle(edit.dataset.editVehicle); if (remove) removeVehicle(remove.dataset.deleteVehicle, remove.dataset.vehicleName); });
   document.getElementById('ownerRequests')?.addEventListener('click', event => { const decision = event.target.closest('[data-decision]'); if (decision) decideBooking(decision); });
+  document.getElementById('ownerRides')?.addEventListener('click', event => { const cancel = event.target.closest('[data-cancel-ride-offer]'); if (cancel) cancelRideOffer(cancel); });
   document.getElementById('closeEditVehicle')?.addEventListener('click', () => document.getElementById('editVehicleModal').classList.remove('show'));
   document.getElementById('refreshOwner')?.addEventListener('click', refreshOwnerPortal); refreshOwnerPortal();
 });
+
+})(window);

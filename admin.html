@@ -1,37 +1,128 @@
 <!doctype html>
 <html lang="en" data-theme="light">
-<head>  <link rel="manifest" href="/manifest.json">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <script>(function(){try{var s=localStorage.getItem('revexTheme');document.documentElement.setAttribute('data-theme',s==='dark'?'dark':'light');}catch(e){document.documentElement.setAttribute('data-theme','light');}})();</script><title>Admin Control Centre | REVEX</title>
+  <meta name="description" content="REVEX admin control centre: platform overview, owner summary dashboard, vehicle moderation, ride approvals, rental and ride bookings, payments, reports and the assistant.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&amp;family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css"><link rel="stylesheet" href="css/navbar.css"><link rel="stylesheet" href="css/cards.css"><link rel="stylesheet" href="css/responsive.css"><link rel="stylesheet" href="css/theme.css"><link rel="stylesheet" href="css/revex-ui.css"><link rel="stylesheet" href="css/chat.css">
+
+
+
+  <link rel="manifest" href="/manifest.json">
   <meta name="theme-color" content="#0f766e">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <link rel="apple-touch-icon" href="/icons/icon-192.png">
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-  <script>(function(){try{var k='revexTheme',s=localStorage.getItem(k);if(!s){s=window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}document.documentElement.setAttribute('data-theme',s);}catch(e){document.documentElement.setAttribute('data-theme','light');}})();</script><title>Admin Control Centre | REVEX</title>  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&amp;family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css"><link rel="stylesheet" href="css/navbar.css"><link rel="stylesheet" href="css/cards.css"><link rel="stylesheet" href="css/responsive.css">  <link rel="stylesheet" href="css/theme.css">
-  <link rel="stylesheet" href="css/chatbot.css">
-  <link rel="stylesheet" href="css/install.css">
+  <meta name="apple-mobile-web-app-title" content="REVEX">
   <link rel="stylesheet" href="/css/download-app.css">
 </head>
 <body>
-<a class="revex-download-app" href="/downloads/REVEX.apk" download="REVEX.apk" aria-label="Download REVEX Android app">⬇️ Download Android App</a>
-  <div class="admin-topbar"><div class="container admin-topbar-inner"><a class="brand" href="admin.html">REV<span>EX</span></a><button class="menu-btn admin-menu" aria-label="Open admin navigation">Menu</button><nav class="admin-tabs" aria-label="Admin navigation"><button class="admin-tab active" data-tab="dashboard"><span>?</span> Dashboard</button><button class="admin-tab" data-tab="owners"><span>?</span> Owners</button><button class="admin-tab" data-tab="vehicles"><span>?</span> Vehicles</button><button class="admin-tab" data-tab="bookings"><span>?</span> Bookings</button><button class="admin-tab" data-tab="agreements"><span>?</span> Agreements</button><button class="admin-tab" data-tab="reports"><span>?</span> Reports / Earnings</button><button class="admin-tab" data-tab="users"><span>?</span> Users</button><button class="admin-tab" data-tab="settings"><span>?</span> Settings</button></nav><a class="btn btn-outline admin-view-site" href="index.html?viewSite=1" target="_blank" rel="noopener">View Site</a><button class="btn btn-primary" data-exit-admin type="button">Logout</button></div></div>
+  <div class="admin-topbar"><div class="container admin-topbar-inner"><a class="brand" href="admin.html">REV<span>EX</span></a><button class="menu-btn admin-menu" aria-label="Open admin navigation" type="button">Menu</button><nav class="admin-tabs" aria-label="Admin navigation">
+    <button class="admin-tab active" data-tab="dashboard" type="button">Dashboard</button>
+    <button class="admin-tab" data-tab="owners" type="button">Owners</button>
+    <button class="admin-tab" data-tab="vehicles" type="button">Vehicles</button>
+    <button class="admin-tab" data-tab="rideApprovals" type="button">Ride Approvals</button>
+    <button class="admin-tab" data-tab="bookings" type="button">Rental Bookings</button>
+    <button class="admin-tab" data-tab="rideBookings" type="button">Ride Bookings</button>
+    <button class="admin-tab" data-tab="payments" type="button">Payments</button>
+    <button class="admin-tab" data-tab="agreements" type="button">Agreements</button>
+    <button class="admin-tab" data-tab="reports" type="button">Reports</button>
+    <button class="admin-tab" data-tab="users" type="button">Users</button>
+    <button class="admin-tab" data-tab="chat" type="button">Chat</button>
+    <button class="admin-tab" data-tab="settings" type="button">Settings</button>
+  </nav><a class="btn btn-outline admin-view-site" href="index.html?viewSite=1" target="_blank" rel="noopener">View Site</a><button class="btn btn-primary" data-exit-admin type="button">Logout</button></div></div>
   <main class="container section admin-main"><div id="adminMessage" class="form-message" role="status"></div>
-    <section class="admin-panel active" id="panel-dashboard"><div class="section-heading"><div><span class="eyebrow">CONTROL CENTRE</span><h1 class="section-title">Platform overview</h1><p>Live, role-protected operational data.</p></div><button class="btn btn-outline" id="refreshAdmin" type="button">Refresh data</button></div><div class="vehicle-grid" id="adminStats"></div><div class="feature-grid" style="margin-top:24px"><article class="detail-panel"><div class="panel-heading"><h3>Vehicle approval queue</h3><button class="btn btn-outline btn-small" data-go-tab="vehicles" data-status-filter="pending" type="button">Open queue</button></div><div id="adminApprovalSummary"></div></article><article class="detail-panel"><div class="panel-heading"><h3>Recent activity</h3><button class="btn btn-outline btn-small" data-go-tab="bookings" type="button">View bookings</button></div><div id="adminActivity"></div></article></div></section>
-    <section class="admin-panel" id="panel-owners"><div class="section-heading"><div><span class="eyebrow">OWNER MANAGEMENT</span><h1 class="section-title">Owner summary</h1><p>Open an owner to inspect vehicles, bookings and vehicle-wise earnings.</p></div><button class="btn btn-outline" data-refresh="owners" type="button">Refresh</button></div><div class="detail-panel"><div id="adminOwners"><div class="empty">Loading owners�</div></div></div><div id="adminOwnerDetail"></div></section>
-    <section class="admin-panel" id="panel-vehicles"><div class="section-heading"><div><span class="eyebrow">VEHICLE MANAGEMENT</span><h1 class="section-title">Vehicle moderation</h1><p>Review documents and process vehicles continuously without leaving this page. Delete removes a vehicle and all of its bookings permanently.</p></div><button class="btn btn-outline" data-refresh="vehicles" type="button">Refresh</button></div><div class="filter-group admin-filters"><button class="filter-chip active" data-vehicle-filter="all" type="button">All</button><button class="filter-chip" data-vehicle-filter="pending" type="button">Pending</button><button class="filter-chip" data-vehicle-filter="approved" type="button">Approved</button><button class="filter-chip" data-vehicle-filter="rejected" type="button">Rejected</button><button class="filter-chip" data-vehicle-filter="removed" type="button">Removed</button></div><div class="detail-panel"><div id="adminVehicles"><div class="empty">Loading vehicles�</div></div></div></section>
-    <section class="admin-panel" id="panel-bookings"><div class="section-heading"><div><span class="eyebrow">BOOKING MANAGEMENT</span><h1 class="section-title">All bookings</h1><p>Review payment, agreement and owner decision states.</p></div><button class="btn btn-outline" data-refresh="bookings" type="button">Refresh</button></div><div class="detail-panel" id="adminBookings"><div class="empty">Loading bookings�</div></div></section>
-    <section class="admin-panel" id="panel-agreements"><div class="section-heading"><div><span class="eyebrow">AGREEMENT MANAGEMENT</span><h1 class="section-title">Rental agreements</h1><p>Review real agreement records connected to bookings. Older bookings without an agreement are listed separately.</p></div><button class="btn btn-outline" data-refresh="agreements" type="button">Refresh</button></div><div class="filter-group admin-filters"><input class="admin-search" id="agreementSearch" type="search" placeholder="Search agreement, renter, owner or vehicle"><button class="filter-chip active" data-agreement-filter="all" type="button">All</button><button class="filter-chip" data-agreement-filter="pending_user" type="button">Pending renter</button><button class="filter-chip" data-agreement-filter="pending_owner" type="button">Pending owner</button><button class="filter-chip" data-agreement-filter="approved" type="button">Approved</button><button class="filter-chip" data-agreement-filter="rejected" type="button">Rejected</button></div><div class="detail-panel" id="adminAgreements"><div class="empty">Loading agreements�</div></div><div id="adminMissingAgreements"></div></section>
-    <section class="admin-panel" id="panel-reports"><div class="section-heading"><div><span class="eyebrow">REPORTS / EARNINGS</span><h1 class="section-title">Platform earnings</h1><p>Revenue is calculated from paid, non-cancelled records.</p></div><button class="btn btn-outline" data-refresh="income" type="button">Refresh</button></div><div class="vehicle-grid" id="incomeCards"></div><div class="feature-grid" style="margin-top:24px"><article class="detail-panel"><h3>Revenue by vehicle</h3><div id="incomeByVehicle"></div></article><article class="detail-panel"><h3>Revenue by owner</h3><div id="incomeByOwner"></div></article></div><article class="detail-panel" style="margin-top:24px"><h3>Recent transactions</h3><div id="incomeRecent"></div></article></section>
-    <section class="admin-panel" id="panel-users"><div class="section-heading"><div><span class="eyebrow">USER MANAGEMENT</span><h1 class="section-title">Users and account access</h1><p>Deleting an account permanently removes the user and everything they created from the database. This cannot be undone.</p></div><button class="btn btn-outline" data-refresh="users" type="button">Refresh</button></div><div class="detail-panel" id="adminUsers"><div class="empty">Loading users�</div></div></section>
-    <section class="admin-panel" id="panel-settings"><div class="section-heading"><div><span class="eyebrow">SETTINGS</span><h1 class="section-title">Admin settings</h1><p>Create additional admins and review your account.</p></div></div><div class="feature-grid"><article class="detail-panel"><h3>Create admin</h3><div id="addAdminMsg" class="form-message"></div><form id="addAdminForm"><div class="field"><label>Full name</label><input name="name" required></div><div class="field"><label>Email</label><input name="email" type="email" required></div><div class="field"><label>Phone</label><input name="phone"></div><div class="field"><label>Password (min 8 characters)</label><input name="password" type="password" minlength="8" required></div><div class="field"><label>Confirm password</label><input name="confirmPassword" type="password" minlength="8" required></div><button class="btn btn-primary" style="width:100%" type="submit">Create admin</button></form></article><article class="detail-panel"><h3>Admin profile</h3><div id="adminProfile"><div class="empty">Loading profile�</div></div></article></div></section>
+
+    <section class="admin-panel active" id="panel-dashboard">
+      <div class="section-heading"><div><span class="eyebrow">CONTROL CENTRE</span><h1 class="section-title">Platform overview</h1><p>Live, role-protected operational data. Revenue is computed from paid, non-cancelled records only.</p></div><button class="btn btn-outline" id="refreshAdmin" type="button">Refresh data</button></div>
+      <div class="vehicle-grid" id="adminStats"></div>
+      <div class="feature-grid" style="margin-top:24px">
+        <article class="detail-panel"><div class="panel-heading"><h3>Approval queues</h3><button class="btn btn-outline btn-small" data-go-tab="vehicles" data-status-filter="pending" type="button">Vehicles</button><button class="btn btn-outline btn-small" data-go-tab="rideApprovals" type="button">Ride offers</button></div><div id="adminApprovalSummary"></div></article>
+        <article class="detail-panel"><div class="panel-heading"><h3>Recent activity</h3><button class="btn btn-outline btn-small" data-go-tab="bookings" type="button">Rental bookings</button><button class="btn btn-outline btn-small" data-go-tab="rideBookings" type="button">Ride bookings</button></div><div id="adminActivity"></div></article>
+      </div>
+    </section>
+
+    <section class="admin-panel" id="panel-owners">
+      <div class="section-heading"><div><span class="eyebrow">OWNER MANAGEMENT</span><h1 class="section-title">Owner summary</h1><p>Open an owner to inspect the full dashboard: vehicles, ride offers, rental and ride bookings, the revenue split, activity and documents.</p></div><button class="btn btn-outline" data-refresh="owners" type="button">Refresh</button></div>
+      <div class="filter-group admin-filters"><input class="admin-search" id="ownerSearch" type="search" placeholder="Search owner name, email or phone" aria-label="Search owners by name, email or phone"><button class="filter-chip active" data-owner-filter="all" type="button">All</button><button class="filter-chip" data-owner-filter="approved" type="button">Has vehicles</button><button class="filter-chip" data-owner-filter="attention" type="button">Needs attention</button></div>
+      <div class="detail-panel"><div id="adminOwners"><div class="empty">Loading owners…</div></div></div>
+      <div id="adminOwnerDetail"></div>
+    </section>
+
+    <section class="admin-panel" id="panel-vehicles">
+      <div class="section-heading"><div><span class="eyebrow">VEHICLE MANAGEMENT</span><h1 class="section-title">Vehicle moderation</h1><p>Review documents and approve, reject, disable or remove vehicles. Removing keeps the record; only the confirmed delete below erases it.</p></div><button class="btn btn-outline" data-refresh="vehicles" type="button">Refresh</button></div>
+      <div class="filter-group admin-filters"><button class="filter-chip active" data-vehicle-filter="all" type="button">All</button><button class="filter-chip" data-vehicle-filter="pending" type="button">Pending</button><button class="filter-chip" data-vehicle-filter="approved" type="button">Approved</button><button class="filter-chip" data-vehicle-filter="rejected" type="button">Rejected</button><button class="filter-chip" data-vehicle-filter="removed" type="button">Removed</button></div>
+      <div class="detail-panel"><div id="adminVehicles"><div class="empty">Loading vehicles…</div></div></div>
+      <div id="adminVehicleDetail"></div>
+    </section>
+
+    <section class="admin-panel" id="panel-rideApprovals">
+      <div class="section-heading"><div><span class="eyebrow">RIDE OFFER APPROVAL</span><h1 class="section-title">Ride approval requests</h1><p>Owner, vehicle, route, timing, seats, price and documents for every ride offer waiting on an admin decision.</p></div><button class="btn btn-outline" data-refresh="rideApprovals" type="button">Refresh</button></div>
+      <div class="filter-group admin-filters"><button class="filter-chip active" data-ride-filter="pending" type="button">Pending</button><button class="filter-chip" data-ride-filter="approved" type="button">Approved</button><button class="filter-chip" data-ride-filter="rejected" type="button">Rejected</button><button class="filter-chip" data-ride-filter="all" type="button">All</button></div>
+      <div class="detail-panel"><div id="adminRideApprovals"><div class="empty">Loading ride offers…</div></div></div>
+    </section>
+
+    <section class="admin-panel" id="panel-bookings">
+      <div class="section-heading"><div><span class="eyebrow">RENTAL BOOKING MANAGEMENT</span><h1 class="section-title">Rental bookings</h1><p>Review payment, agreement and owner decision states. Cancelling a paid booking runs the cancellation policy and issues a refund; the record is never deleted.</p></div><button class="btn btn-outline" data-refresh="bookings" type="button">Refresh</button></div>
+      <div class="filter-group admin-filters"><button class="filter-chip active" data-booking-filter="all" type="button">All</button><button class="filter-chip" data-booking-filter="pending_owner" type="button">Awaiting owner</button><button class="filter-chip" data-booking-filter="confirmed" type="button">Confirmed</button><button class="filter-chip" data-booking-filter="completed" type="button">Completed</button><button class="filter-chip" data-booking-filter="cancelled" type="button">Cancelled</button></div>
+      <div class="detail-panel" id="adminBookings"><div class="empty">Loading bookings…</div></div>
+    </section>
+
+    <section class="admin-panel" id="panel-rideBookings">
+      <div class="section-heading"><div><span class="eyebrow">RIDE BOOKING MANAGEMENT</span><h1 class="section-title">Ride bookings</h1><p>Paid seat requests across every ride. Confirm, complete, or cancel with an automatic refund.</p></div><button class="btn btn-outline" data-refresh="rideBookings" type="button">Refresh</button></div>
+      <div class="filter-group admin-filters"><button class="filter-chip active" data-ridebooking-filter="all" type="button">All</button><button class="filter-chip" data-ridebooking-filter="pending_owner" type="button">Awaiting driver</button><button class="filter-chip" data-ridebooking-filter="confirmed" type="button">Confirmed</button><button class="filter-chip" data-ridebooking-filter="completed" type="button">Completed</button><button class="filter-chip" data-ridebooking-filter="cancelled_by_admin" type="button">Cancelled by admin</button></div>
+      <div class="detail-panel" id="adminRideBookings"><div class="empty">Loading ride bookings…</div></div>
+    </section>
+
+    <section class="admin-panel" id="panel-payments">
+      <div class="section-heading"><div><span class="eyebrow">PAYMENTS</span><h1 class="section-title">Payment ledger</h1><p>Every recorded payment, its gateway reference and its refund state. Razorpay orders and payments are created and verified by the server.</p></div><button class="btn btn-outline" data-refresh="payments" type="button">Refresh</button></div>
+      <div class="filter-group admin-filters"><button class="filter-chip active" data-payment-filter="all" type="button">All</button><button class="filter-chip" data-payment-filter="rental" type="button">Rental</button><button class="filter-chip" data-payment-filter="ride" type="button">Ride</button><button class="filter-chip" data-payment-filter="demo" type="button">Test payments</button><button class="filter-chip" data-payment-filter="refunded" type="button">Refunded</button></div>
+      <div class="detail-panel" id="adminPayments"><div class="empty">Loading payments…</div></div>
+    </section>
+
+    <section class="admin-panel" id="panel-agreements">
+      <div class="section-heading"><div><span class="eyebrow">AGREEMENT MANAGEMENT</span><h1 class="section-title">Rental agreements</h1><p>Review real agreement records connected to bookings. Older bookings without an agreement are listed separately.</p></div><button class="btn btn-outline" data-refresh="agreements" type="button">Refresh</button></div>
+      <div class="filter-group admin-filters"><input class="admin-search" id="agreementSearch" type="search" placeholder="Search agreement, renter, owner or vehicle" aria-label="Search agreements by id, renter, owner or vehicle"><button class="filter-chip active" data-agreement-filter="all" type="button">All</button><button class="filter-chip" data-agreement-filter="pending_user" type="button">Pending renter</button><button class="filter-chip" data-agreement-filter="pending_owner" type="button">Pending owner</button><button class="filter-chip" data-agreement-filter="approved" type="button">Approved</button><button class="filter-chip" data-agreement-filter="rejected" type="button">Rejected</button></div>
+      <div class="detail-panel" id="adminAgreements"><div class="empty">Loading agreements…</div></div>
+      <div id="adminMissingAgreements"></div>
+    </section>
+
+    <section class="admin-panel" id="panel-reports">
+      <div class="section-heading"><div><span class="eyebrow">REPORTS</span><h1 class="section-title">Platform earnings</h1><p>Revenue is calculated from paid, non-cancelled records, split between the owner and the platform.</p></div><button class="btn btn-outline" data-refresh="income" type="button">Refresh</button></div>
+      <div class="vehicle-grid" id="incomeCards"></div>
+      <div class="feature-grid" style="margin-top:24px"><article class="detail-panel"><h3>Revenue by vehicle</h3><div id="incomeByVehicle"></div></article><article class="detail-panel"><h3>Revenue by owner</h3><div id="incomeByOwner"></div></article></div>
+      <article class="detail-panel" style="margin-top:24px"><h3>Revenue by booking</h3><div id="incomeByBooking"></div></article>
+      <article class="detail-panel" style="margin-top:24px"><h3>Recent transactions</h3><div id="incomeRecent"></div></article>
+    </section>
+
+    <section class="admin-panel" id="panel-users">
+      <div class="section-heading"><div><span class="eyebrow">USER MANAGEMENT</span><h1 class="section-title">Users and account access</h1><p>Deleting an account permanently removes the user and everything they created from the database. This cannot be undone.</p></div><button class="btn btn-outline" data-refresh="users" type="button">Refresh</button></div>
+      <div class="filter-group admin-filters"><button class="filter-chip active" data-user-filter="all" type="button">All</button><button class="filter-chip" data-user-filter="user" type="button">Riders</button><button class="filter-chip" data-user-filter="owner" type="button">Owners</button><button class="filter-chip" data-user-filter="admin" type="button">Admins</button></div>
+      <div class="detail-panel" id="adminUsers"><div class="empty">Loading users…</div></div>
+    </section>
+
+    <section class="admin-panel" id="panel-chat">
+      <div class="section-heading"><div><span class="eyebrow">REVEX ASSISTANT</span><h1 class="section-title">Assistant</h1><p>The same assistant every other account sees, with its own private conversation. Nothing here is shared with another user.</p></div><a class="btn btn-outline" href="chat.html">Open full page</a></div>
+      <div class="rvx-chat-page" id="adminChatHost"><div class="rvx-empty"><p class="rvx-spinner" style="display:inline-block"></p> Loading the assistant…</div></div>
+    </section>
+
+    <section class="admin-panel" id="panel-settings">
+      <div class="section-heading"><div><span class="eyebrow">SETTINGS</span><h1 class="section-title">Admin settings</h1><p>Create additional admins and review your account.</p></div></div>
+      <div class="feature-grid"><article class="detail-panel"><h3>Create admin</h3><div id="addAdminMsg" class="form-message"></div><form id="addAdminForm"><div class="field"><label>Full name</label><input name="name" required></div><div class="field"><label>Email</label><input name="email" type="email" required></div><div class="field"><label>Phone</label><input name="phone"></div><div class="field"><label>Password (min 8 characters)</label><input name="password" type="password" minlength="8" required></div><div class="field"><label>Confirm password</label><input name="confirmPassword" type="password" minlength="8" required></div><button class="btn btn-primary" style="width:100%" type="submit">Create admin</button></form></article><article class="detail-panel"><h3>Admin profile</h3><div id="adminProfile"><div class="empty">Loading profile…</div></div></article></div>
+    </section>
   </main>
-  <footer class="footer"><div class="container"><p>� 2026 REVEX � Admin control centre</p></div></footer>
+  <footer class="footer"><div class="container"><p>© 2026 REVEX · Admin control centre</p></div></footer>
   <script src="js/theme.js"></script>
   <script src="js/confirm-delete.js"></script>
   <script src="js/main.js"></script>
-  <script src="js/install.js"></script><script src="js/admin.js"></script>
-  <script src="js/chatbot.js"></script>
+  <script src="js/payment.js"></script>
+  <script src="js/chat.js"></script>
+  <script src="js/admin.js"></script>
+<div class="revex-app-tools" role="region" aria-label="REVEX app options">
+  <a class="revex-download-app" href="/downloads/REVEX.apk" download="REVEX.apk">⬇️ Download Android App</a>
+  <button class="revex-install-app" type="button" data-revex-install>📲 Install REVEX</button>
+</div>
+  <script src="/js/install.js" defer></script>
 </body>
 </html>

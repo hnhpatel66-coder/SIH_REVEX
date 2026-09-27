@@ -33,6 +33,9 @@ function publicUser(user) {
     name: user.name,
     email: user.email,
     phone: user.phone || '',
+    // The profile picture travels with the account so the navbar avatar, the
+    // profile page and the admin owner/user lists all show the same image.
+    photo: user.photo || '',
     role: user.role,
     isVerified: user.isVerified,
     ownerEarnings: user.ownerEarnings || 0,
@@ -101,12 +104,6 @@ router.post('/register', rateLimit(15 * 60 * 1000, 10), async (req, res) => {
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email).trim())) {
       trace('rejected', 'invalid email format');
       return res.status(400).json({ success: false, code: 'VALIDATION_ERROR', message: 'Enter a valid email address.' });
-    }
-    if (String(password).length < 8) {
-      return res.status(400).json({ message: 'Password must be at least 8 characters.' });
-    }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email).trim())) {
-      return res.status(400).json({ message: 'Enter a valid email address.' });
     }
 
     const normalizedEmail = email.toLowerCase().trim();
@@ -240,15 +237,34 @@ router.post('/switch-role', requireAuth, async (req, res) => {
   }
 });
 
-/* Edit profile - update name and phone, returns fresh user + token */
+/* Edit profile - update name, phone and the profile photo, returns fresh user + token */
 router.post('/edit-profile', requireAuth, async (req, res) => {
   try {
-    const { name, phone } = req.body;
+    const { name, phone, photo, removePhoto } = req.body || {};
     if (!name || !String(name).trim()) {
       return res.status(400).json({ message: 'Name is required.' });
     }
     if (phone !== undefined && phone !== '' && !/^[+\d][\d\s-]{5,18}$/.test(String(phone).trim())) {
       return res.status(400).json({ message: 'Enter a valid phone number.' });
+    }
+    // The profile picture follows the same rules as a vehicle picture: a raster
+    // data URL, an HTTP(S) URL or an uploads path, and never an SVG (which can
+    // carry script). Anything else is rejected with a specific message.
+    let nextPhoto = null;
+    if (removePhoto === true || removePhoto === 'true') {
+      nextPhoto = '';
+    } else if (photo !== undefined && photo !== null && String(photo).trim() !== '') {
+      const candidate = String(photo).trim();
+      if (candidate.length > 2 * 1024 * 1024) {
+        return res.status(400).json({ message: 'Profile photo must be smaller than 1.5 MB.' });
+      }
+      const valid = /^data:image\/(png|jpeg|jpg|webp|gif);base64,/i.test(candidate)
+        || /^https?:\/\//i.test(candidate)
+        || /^\/?(uploads|images|assets)\//i.test(candidate);
+      if (!valid) {
+        return res.status(400).json({ message: 'Profile photo must be a PNG, JPEG, WebP or GIF image, or an image URL.' });
+      }
+      nextPhoto = candidate;
     }
     const user = await User.findById(req.user._id);
     if (!user) {
@@ -256,10 +272,12 @@ router.post('/edit-profile', requireAuth, async (req, res) => {
     }
     user.name = String(name).trim();
     if (phone !== undefined) user.phone = String(phone).trim();
+    if (nextPhoto !== null) user.photo = nextPhoto;
     await user.save();
     res.json({ token: signToken(user), user: publicUser(user), message: 'Profile updated successfully.' });
   } catch (e) {
-    res.status(500).json({ message: 'Failed to update profile.' });
+    console.error('[auth] edit-profile failed:', e.message);
+    res.status(500).json({ message: 'Your profile could not be saved. Please try again.' });
   }
 });
 

@@ -10,10 +10,11 @@
   var STORAGE_KEY = 'revexTheme';
   var listeners = [];
 
-  function systemPrefersDark() {
-    try { return global.matchMedia && global.matchMedia('(prefers-color-scheme: dark)').matches; }
-    catch (e) { return false; }
-  }
+  // REVEX is a light-first design: the light theme is the default and the OS
+  // "prefers-color-scheme" is deliberately NOT consulted, so a visitor whose
+  // operating system is set to dark still lands on the light design. Dark mode
+  // is opt-in via the navbar toggle or the Appearance picker in Profile.
+  var DEFAULT_THEME = 'light';
 
   function stored() {
     try { return localStorage.getItem(STORAGE_KEY) || ''; } catch (e) { return ''; }
@@ -34,17 +35,6 @@
   function toggle() { return apply(current() === 'dark' ? 'light' : 'dark', true); }
 
   function onChange(fn) { if (typeof fn === 'function') listeners.push(fn); }
-
-  // Keep the toggle buttons in sync if the OS preference changes while the app
-  // is open and the user has not made an explicit choice.
-  try {
-    if (global.matchMedia) {
-      var mq = global.matchMedia('(prefers-color-scheme: dark)');
-      var onMq = function (e) { if (!stored()) apply(e.matches ? 'dark' : 'light', false); };
-      if (mq.addEventListener) mq.addEventListener('change', onMq);
-      else if (mq.addListener) mq.addListener(onMq);
-    }
-  } catch (e) { /* older browsers */ }
 
   function iconFor(theme) { return theme === 'dark' ? '\u2600' : '\u263D'; }
   function labelFor(theme) { return theme === 'dark' ? 'Light mode' : 'Dark mode'; }
@@ -79,15 +69,16 @@
 
       // The button has no handler of its own: a toggle injected elsewhere
       // (see main.js buildNav) owns the click. Instead, repaint whenever the
-      // theme changes from ANY source -- this toggle, the profile picker, or
-      // the OS preference listener -- so the label/icon never go stale.
+      // theme changes from ANY source -- this toggle or the profile picker --
+      // so the label/icon never go stale.
       onChange(paint);
     });
   }
 
   function setInitialTheme() {
+    // Only an explicit stored choice wins; otherwise light.
     var saved = stored();
-    apply(saved || (systemPrefersDark() ? 'dark' : 'light'), false);
+    apply(saved === 'dark' ? 'dark' : DEFAULT_THEME, false);
   }
 
   // One delegated handler covers every .theme-toggle on the page, whether it

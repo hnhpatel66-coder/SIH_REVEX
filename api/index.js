@@ -4,7 +4,6 @@ require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 
 const express = require('express');
 const mongoose = require('mongoose');
-const cors = require('cors');
 const bcrypt = require('bcryptjs');
 const User = require('../backend/models/User');
 const Vehicle = require('../backend/models/Vehicle');
@@ -17,12 +16,17 @@ const rideRoutes = require('../backend/routes/rides');
 const adminRoutes = require('../backend/routes/admin');
 const notificationRoutes = require('../backend/routes/notifications');
 const chatRoutes = require('../backend/routes/chat');
+const paymentRoutes = require('../backend/routes/payments');
 
-const { corsOptions, blockPrivateStatic, jsonBodyFallback } = require('../backend/utils/security');
+const { corsMiddleware, blockPrivateStatic, jsonBodyFallback } = require('../backend/utils/security');
 const { connectMongo: connectMongoShared } = require('../backend/utils/db');
 
 const app = express();
-app.use(cors(corsOptions()));
+// Vercel/Render sit behind a TLS-terminating proxy. One hop is trusted so
+// req.protocol and req.ip reflect the real client without trusting a forged
+// X-Forwarded-For chain.
+app.set('trust proxy', 1);
+app.use(corsMiddleware());
 const keepRawBody = (req, res, buf) => { if (buf && buf.length) req.rawBody = buf; };
 app.use(express.json({ limit: '12mb', verify: keepRawBody }));
 app.use(express.urlencoded({ extended: true, limit: '12mb' }));
@@ -158,6 +162,19 @@ app.get('/api/health', (req, res) => {
   res.json({ ok: true, database: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected', databaseName: mongoose.connection.name || null, mode: process.env.ACTIVE_MONGO_MODE || 'unknown', timestamp: new Date().toISOString() });
 });
 
+// Runtime configuration handed to the browser.
+//
+// The frontend cannot tell whether it was served by this Express process or by a
+// separate local dev server, and guessing is what broke registration before. So
+// the server states the answer: when these pages come from us, the API is always
+// same-origin. This must be registered before the `app.get('*')` catch-all,
+// otherwise `/rev-runtime.js` would be answered with index.html.
+app.get('/rev-runtime.js', (req, res) => {
+  res.type('application/javascript');
+  res.set('Cache-Control', 'no-store');
+  res.send(`window.REVEX_API_BASE = ${JSON.stringify('/api')};\nwindow.REVEX_SERVED_BY_API = true;\n`);
+});
+
 app.use('/api/auth', authRoutes);
 app.use('/api/vehicles', vehicleRoutes);
 app.use('/api/bookings', bookingRoutes);
@@ -165,6 +182,7 @@ app.use('/api/rides', rideRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/chat', chatRoutes);
+app.use('/api/payments', paymentRoutes);
 app.use('/api/*', (req, res) => res.status(404).json({ message: 'API endpoint not found.' }));
 app.use((error, req, res, next) => {
   if (res.headersSent) return next(error);

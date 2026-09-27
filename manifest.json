@@ -1,8 +1,7 @@
 {
-  "name": "REVEX — Smarter City Mobility",
+  "name": "REVEX \u2014 Smarter City Mobility",
   "short_name": "REVEX",
   "id": "/",
-  "prefer_related_applications": false,
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

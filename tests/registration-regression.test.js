@@ -182,10 +182,17 @@ check('the deleted cluster is absent from all executable files', () => {
   assert.deepEqual(offenders, [], `old cluster still referenced in: ${offenders.join(', ')}`);
 });
 
-check('the new cluster is the configured default', () => {
-  const text = fs.readFileSync(path.join(root0(), 'backend', '.env.example'), 'utf8');
-  assert.ok(text.includes('revex.r2zrw0p.mongodb.net'), 'new cluster missing from .env.example');
-  assert.ok(!text.includes('eazd3bx'), 'old cluster present in .env.example');
+check('.env.example documents variable names only', () => {
+  // A template is copied and edited by the next person, so it must NOT contain
+  // a cluster hostname: that hostname identifies somebody's database, and a
+  // stray copy-paste would point a new install at someone else's cluster.
+  for (const file of ['.env.example', 'backend/.env.example']) {
+    const text = fs.readFileSync(path.join(root0(), file), 'utf8');
+    assert.ok(text.includes('MONGODB_URI='), `${file} documents MONGODB_URI`);
+    assert.ok(!/mongodb\+srv:\/\//.test(text), `${file} contains no connection string`);
+    assert.ok(!/\.mongodb\.net/.test(text), `${file} names no cluster host`);
+    assert.ok(!text.includes('eazd3bx'), `old cluster absent from ${file}`);
+  }
 });
 function root0() { return path.join(__dirname, '..'); }
 

@@ -1,142 +1,181 @@
 const express = require('express');
+const mongoose = require('mongoose');
+const { requireAuth } = require('../middleware/auth');
+const ChatConversation = require('../models/ChatConversation');
+const { providerConfig, callProvider, describeStatus, userMessage, cleanText } = require('../utils/chatProvider');
 
 const router = express.Router();
 
-const REVEX_SYSTEM_PROMPT = `
-You are REVEX Assistant, the official in-app support assistant for REVEX, a transportation platform that combines vehicle rental and ride sharing.
+/**
+ * REVEX ASSISTANT
+ *
+ * The reference implementation kept the conversation in the browser's
+ * localStorage and accepted anonymous requests. That meant nothing loaded on a
+ * new device, and any hand-edited storage key could read another account's
+ * messages. Here:
+ *
+ *   - every endpoint requires a signed-in account,
+ *   - conversations are stored in MongoDB and always scoped to `userId`,
+ *   - the provider is chosen by the environment, so Gemini and any
+ *     OpenAI-compatible endpoint both work with no code change,
+ *   - a Google AI Studio key is enough on its own; the endpoint is derived,
+ *   - the API key only ever exists in the environment.
+ *
+ * All provider knowledge — prompt, URL derivation, request shape, error
+ * mapping — lives in utils/chatProvider.js. This file is only the HTTP surface.
+ */
 
-Your role:
-- Help users understand and use REVEX features.
-- Focus on REVEX ride sharing, vehicle rental, bookings, payments, account/profile, owners, agreements, feedback, and basic support.
-- Keep answers concise, friendly, practical, and easy to understand.
-- If the user writes in Gujarati, answer in Gujarati. If they write in Hindi, answer in Hindi. Otherwise answer in clear English.
-- Never claim a booking, payment, cancellation, refund, approval, or account change happened unless the application itself confirms it.
-- Never ask users to share passwords, OTPs, card PINs, CVVs, API keys, JWT secrets, or other secrets.
-- For payment problems, explain safe troubleshooting steps and tell the user to use the official REVEX payment flow. Do not request card details.
-- If a question is unrelated to REVEX, politely explain that you are the REVEX Assistant and can help with REVEX services.
+const HISTORY_TURNS = 8;
 
-REVEX project knowledge:
-1. Ride sharing
-   - Users can search available shared rides from Find Ride.
-   - Ride details can include source, destination, date/time, available seats, driver and vehicle information.
-   - Users choose seats, review the booking, and pay through the integrated Razorpay checkout when payment is required.
-   - A ride should be considered successfully paid only after backend payment-signature verification succeeds.
+/* ------------------------------------------------------------ conversations */
 
-2. Vehicle rental
-   - Users can browse available rental vehicles and open vehicle details.
-   - Rental booking includes dates/details, agreement acceptance, booking review, and Razorpay payment when applicable.
-   - Users can review their reservations from My Bookings.
-
-3. Razorpay payments
-   - REVEX uses Razorpay Standard Checkout.
-   - The backend creates the Razorpay order and verifies the payment signature.
-   - Users should never share OTP, CVV, PIN, passwords, or secret keys with REVEX Assistant.
-   - If the payment window is closed, the payment fails, or verification fails, advise the user to retry from the booking/payment screen and check My Bookings before paying again.
-
-4. Accounts and profiles
-   - Users can register, log in, view/edit supported profile information, change password, and log out.
-   - Forgot/reset password may be available depending on SMTP/deployment configuration.
-
-5. Owners
-   - Registered users may use owner-related features when their account/approval permits it.
-   - Owners can list vehicles and offer rides through the relevant REVEX pages.
-   - Listings/rides may require admin approval before becoming publicly available.
-
-6. Admin
-   - Admin features include reviewing platform activity and approval-related workflows.
-   - Do not reveal or guess admin credentials or private configuration.
-
-7. Agreement and feedback
-   - Users may be asked to accept an agreement/rules before completing a rental or ride workflow.
-   - Feedback is intended to help improve trust and service quality.
-
-Useful navigation hints:
-- Find a Ride: find-ride.html
-- Rent a Vehicle: rental.html
-- My Bookings: bookings.html
-- Offer a Ride: offer-ride.html
-- List a Vehicle: list-vehicle.html
-- Profile: profile.html
-
-When giving navigation help, mention the visible page/feature name rather than exposing implementation details unless the user specifically asks for technical help.
-`;
-
-function cleanMessage(value) {
-  return String(value || '').trim().replace(/\u0000/g, '').slice(0, 2000);
+async function latestConversation(userId) {
+  return ChatConversation.findOne({ userId }).sort({ lastMessageAt: -1 }).lean();
 }
 
-router.post('/', async (req, res) => {
-  const message = cleanMessage(req.body?.message);
-  if (!message) return res.status(400).json({ message: 'Please enter a message.' });
+function shapeConversation(conversation) {
+  return {
+    id: String(conversation._id),
+    title: conversation.title || 'REVEX Assistant',
+    role: conversation.role || 'user',
+    createdAt: conversation.createdAt,
+    lastMessageAt: conversation.lastMessageAt,
+    messages: (conversation.messages || []).map(message => ({ id: String(message._id), role: message.role, text: message.text, at: message.at }))
+  };
+}
 
-  const apiKey = String(process.env.GEMINI_API_KEY || '').trim();
-  if (!apiKey) {
+/** Is the assistant usable right now? Drives the UI's "not configured" state. */
+router.get('/status', requireAuth, (req, res) => {
+  res.json(describeStatus());
+});
+
+/** Recent conversations for the signed-in account. */
+router.get('/conversations', requireAuth, async (req, res) => {
+  try {
+    const rows = await ChatConversation.find({ userId: req.user._id })
+      .sort({ lastMessageAt: -1 }).limit(20).lean();
+    res.json(rows.map(shapeConversation));
+  } catch (error) {
+    console.error('[chat] conversations failed:', error.message);
+    res.status(500).json({ message: 'Your conversations could not be loaded.' });
+  }
+});
+
+/** One conversation, always scoped to the signed-in account. */
+router.get('/conversations/:id', requireAuth, async (req, res) => {
+  if (!mongoose.isValidObjectId(req.params.id)) return res.status(400).json({ message: 'Conversation not found.' });
+  try {
+    const conversation = await ChatConversation.findOne({ _id: req.params.id, userId: req.user._id }).lean();
+    if (!conversation) return res.status(404).json({ message: 'Conversation not found.' });
+    res.json(shapeConversation(conversation));
+  } catch (error) {
+    console.error('[chat] conversation failed:', error.message);
+    res.status(500).json({ message: 'This conversation could not be loaded.' });
+  }
+});
+
+router.post('/conversations', requireAuth, async (req, res) => {
+  try {
+    const conversation = await ChatConversation.create({
+      userId: req.user._id,
+      role: req.user.role || 'user',
+      title: cleanText(req.body?.title, 120) || 'REVEX Assistant',
+      messages: [],
+      lastMessageAt: new Date()
+    });
+    res.status(201).json(shapeConversation(conversation.toObject()));
+  } catch (error) {
+    console.error('[chat] create conversation failed:', error.message);
+    res.status(500).json({ message: 'A new conversation could not be started.' });
+  }
+});
+
+router.delete('/conversations/:id', requireAuth, async (req, res) => {
+  if (!mongoose.isValidObjectId(req.params.id)) return res.status(400).json({ message: 'Conversation not found.' });
+  try {
+    const result = await ChatConversation.deleteOne({ _id: req.params.id, userId: req.user._id });
+    if (!result.deletedCount) return res.status(404).json({ message: 'Conversation not found.' });
+    res.json({ success: true, message: 'Conversation deleted.' });
+  } catch (error) {
+    console.error('[chat] delete conversation failed:', error.message);
+    res.status(500).json({ message: 'The conversation could not be deleted.' });
+  }
+});
+
+/**
+ * Send a message.
+ *
+ * The message is persisted BEFORE the provider is called, so a provider outage
+ * never loses what the user typed, and the answer is appended afterwards.
+ */
+router.post('/', requireAuth, async (req, res) => {
+  const text = cleanText(req.body?.message);
+  if (!text) return res.status(400).json({ message: 'Type a message before sending.' });
+
+  const config = providerConfig();
+  if (!config.configured) {
     return res.status(503).json({
-      message: 'REVEX Assistant is not configured yet. Add GEMINI_API_KEY to the project .env file and restart the server.'
+      message: `${config.problem} Set the assistant key in the backend .env file, then restart the server.`,
+      code: 'CHAT_NOT_CONFIGURED'
     });
   }
 
-  const model = String(process.env.GEMINI_MODEL || 'gemini-2.5-flash').trim();
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 20000);
-
   try {
-    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`;
-    const response = await fetch(endpoint, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-goog-api-key': apiKey
-      },
-      body: JSON.stringify({
-        systemInstruction: {
-          parts: [{ text: REVEX_SYSTEM_PROMPT }]
-        },
-        contents: [
-          {
-            role: 'user',
-            parts: [{ text: message }]
-          }
-        ],
-        generationConfig: {
-          temperature: 0.35,
-          maxOutputTokens: 450
-        }
-      }),
-      signal: controller.signal
-    });
-
-    const data = await response.json().catch(() => ({}));
-
-    if (!response.ok) {
-      const upstreamMessage = data?.error?.message || 'Gemini request failed.';
-      console.error('[chat] Gemini error:', response.status, upstreamMessage);
-      const status = response.status === 401 || response.status === 403 ? 503 : 502;
-      return res.status(status).json({
-        message: response.status === 401 || response.status === 403
-          ? 'REVEX Assistant API key is invalid or not authorized. Please check GEMINI_API_KEY.'
-          : 'REVEX Assistant is temporarily unavailable. Please try again.'
+    let conversation = null;
+    if (req.body?.conversationId && mongoose.isValidObjectId(req.body.conversationId)) {
+      conversation = await ChatConversation.findOne({ _id: req.body.conversationId, userId: req.user._id });
+    }
+    if (!conversation) {
+      conversation = await ChatConversation.create({
+        userId: req.user._id,
+        role: req.user.role || 'user',
+        title: cleanText(text, 60) || 'REVEX Assistant',
+        messages: [],
+        lastMessageAt: new Date()
       });
     }
 
-    const reply = data?.candidates?.[0]?.content?.parts
-      ?.map(part => part?.text || '')
-      .join('\n')
-      .trim();
+    conversation.messages.push({ role: 'user', text, at: new Date() });
+    conversation.lastMessageAt = new Date();
+    await conversation.save();
 
-    if (!reply) {
-      return res.status(502).json({ message: 'REVEX Assistant did not return a response. Please try again.' });
+    const history = conversation.messages
+      .slice(-(HISTORY_TURNS * 2 + 1))
+      .filter(message => message.role === 'user' || message.role === 'assistant')
+      .map(message => ({ role: message.role, text: message.text }));
+
+    const result = await callProvider(config, history);
+    if (!result.ok) {
+      // `status` is already an HTTP status for THIS api (502/504), never the
+      // provider's raw code, so a bad assistant key can never be mistaken for an
+      // expired user session by the frontend. `kind` picks an accurate message:
+      // an exhausted quota, a short rate limit, a bad key and an outage each need
+      // a different thing from the reader, and calling them all "unavailable"
+      // is what made this impossible to diagnose.
+      console.error(`[chat] provider ${result.kind}:`, result.providerStatus || '-', result.detail);
+      if (result.retryAfter) console.error(`[chat] retry in ${result.retryAfter}s`);
+      if (result.retryAfter) res.set('Retry-After', String(result.retryAfter));
+      return res.status(result.status).json({
+        message: userMessage(result.kind, result.retryAfter),
+        kind: result.kind,
+        retryAfter: result.retryAfter || undefined,
+        conversation: shapeConversation(conversation.toObject())
+      });
     }
 
-    return res.json({ reply });
+    conversation.messages.push({ role: 'assistant', text: result.reply, at: new Date() });
+    conversation.lastMessageAt = new Date();
+    // Bound the stored history so one long session cannot grow without limit.
+    if (conversation.messages.length > 100) conversation.messages = conversation.messages.slice(-100);
+    await conversation.save();
+
+    res.json({ reply: result.reply, conversation: shapeConversation(conversation.toObject()) });
   } catch (error) {
     if (error.name === 'AbortError') {
-      return res.status(504).json({ message: 'REVEX Assistant took too long to respond. Please try again.' });
+      return res.status(504).json({ message: 'The REVEX Assistant took too long to respond. Please try again.' });
     }
-    console.error('[chat] Request failed:', error.message);
-    return res.status(500).json({ message: 'REVEX Assistant could not respond right now.' });
-  } finally {
-    clearTimeout(timeout);
+    console.error('[chat] send failed:', error.message);
+    res.status(500).json({ message: 'The REVEX Assistant could not respond right now.' });
   }
 });
 
