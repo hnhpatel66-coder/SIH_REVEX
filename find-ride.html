@@ -12,8 +12,10 @@
 <link rel="stylesheet" href="css/style.css"><link rel="stylesheet" href="css/navbar.css"><link rel="stylesheet" href="css/cards.css"><link rel="stylesheet" href="css/responsive.css">  <link rel="stylesheet" href="css/theme.css">
   <link rel="stylesheet" href="css/chatbot.css">
   <link rel="stylesheet" href="css/install.css">
+  <link rel="stylesheet" href="/css/download-app.css">
 </head>
 <body>
+<a class="revex-download-app" href="/downloads/REVEX.apk" download="REVEX.apk" aria-label="Download REVEX Android app">⬇️ Download Android App</a>
   <header class="container"><nav class="nav"><a class="brand" href="index.html">REV<span>EX</span></a><button class="menu-btn" aria-label="Open navigation">Menu</button><div class="nav-links"></div><button id="revexInstallBtn" type="button" hidden aria-label="Install REVEX app">Install App</button>
       <div class="nav-actions"></div></nav></header>
   <main><section class="page-hero"><div class="container"><span class="eyebrow">SHARED JOURNEYS</span><h1>There is a seat with your name on it.</h1><p>Travel together, save on every trip and make the city feel closer.</p><form class="form-grid" id="rideSearch"><div class="field"><label for="rideFrom">From</label><input id="rideFrom" name="from" placeholder="Surat"></div><div class="field"><label for="rideTo">To</label><input id="rideTo" name="to" placeholder="Ahmedabad"></div><div class="field"><label for="rideDate">Date</label><input id="rideDate" name="date" type="date"></div><div class="field"><label for="rideType">Vehicle</label><select id="rideType" name="vehicleType"><option value="">Any vehicle</option><option>Car</option><option>Bike</option><option>Scooter</option><option>Other</option></select></div><button class="btn btn-primary">Search rides</button></form></div></section><section class="section container"><span class="eyebrow">MATCHES FOR YOU</span><h2 class="section-title">Available shared rides</h2><div class="ride-grid" id="rideResults"></div></section></main>

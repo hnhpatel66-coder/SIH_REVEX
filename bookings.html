@@ -12,8 +12,10 @@
 <link rel="stylesheet" href="css/style.css"><link rel="stylesheet" href="css/navbar.css"><link rel="stylesheet" href="css/cards.css"><link rel="stylesheet" href="css/responsive.css">  <link rel="stylesheet" href="css/theme.css">
   <link rel="stylesheet" href="css/chatbot.css">
   <link rel="stylesheet" href="css/install.css">
+  <link rel="stylesheet" href="/css/download-app.css">
 </head>
 <body>
+<a class="revex-download-app" href="/downloads/REVEX.apk" download="REVEX.apk" aria-label="Download REVEX Android app">⬇️ Download Android App</a>
   <header class="container"><nav class="nav"><a class="brand" href="index.html">REV<span>EX</span></a><button class="menu-btn" aria-label="Open navigation">Menu</button><div class="nav-links"></div><button id="revexInstallBtn" type="button" hidden aria-label="Install REVEX app">Install App</button>
       <div class="nav-actions"></div></nav></header>
   <main class="container section"><span class="eyebrow">YOUR JOURNEYS</span><h1 class="section-title">My bookings</h1><p>Keep rental bookings and shared rides in one place.</p><div class="booking-toolbar"><div class="bookings-tabs"><button class="tab active" data-status="upcoming">Upcoming</button><button class="tab" data-status="completed">Completed</button><button class="tab" data-status="cancelled">Cancelled</button><button class="tab" data-status="rejected">Declined</button></div><div class="filter-group" id="categoryFilters" aria-label="Filter rentals by category"><span>Category</span><button class="filter-chip active" data-category="all">All</button><button class="filter-chip" data-category="Car">Cars</button><button class="filter-chip" data-category="Bike">Bikes</button><button class="filter-chip" data-category="Scooter">Scooters</button><button class="filter-chip" data-category="Other">Other</button></div></div><div id="bookingList"><div class="empty">Loading bookings…</div></div><section class="section" id="agreementsSection"><span class="eyebrow">CERTIFICATES</span><h2 class="section-title small-title">My agreements</h2><div id="agreementList"></div></section></main>
