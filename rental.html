@@ -12,20 +12,10 @@
 
 
   <meta name="description" content="Browse admin-approved REVEX vehicles with real photos and transparent hourly pricing, then book with an online payment and a digital rental agreement.">
-  <link rel="manifest" href="/manifest.json">
-  <meta name="theme-color" content="#0f766e">
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-title" content="REVEX">
-  <link rel="stylesheet" href="/css/download-app.css">
 </head>
 <body>
   <header class="container"><nav class="nav"><a class="brand" href="index.html">REV<span>EX</span></a><button class="menu-btn" aria-label="Open navigation" type="button">Menu</button><div class="nav-links"></div><div class="nav-actions"></div></nav></header>
-  <div class="revex-app-tools" role="region" aria-label="REVEX app options">
-  <a class="revex-download-app" href="/downloads/REVEX.apk" download="REVEX.apk">⬇️ Download Android App</a>
-  <button class="revex-install-app" type="button" data-revex-install>📲 Install REVEX</button>
-</div>
-<main>
+  <main>
     <section class="page-hero"><div class="container"><span class="eyebrow">FLEXIBLE RENTALS</span><h1>Your ride, on your time.</h1><p>Choose a trusted vehicle nearby and see the complete rental price before you book.</p>
       <form class="form-grid" id="rentalSearch">
         <div class="field"><label for="rentalStart">Pick-up date</label><input id="rentalStart" name="startDate" type="date"></div>
@@ -41,6 +31,21 @@
     </div></section>
     <section class="section container"><span class="eyebrow">AVAILABLE NEAR YOU</span><h2 class="section-title">Find your perfect ride</h2><div class="vehicle-grid" id="vehicleResults"></div></section>
   </main>
+
+  <section class="apk-download-strip" aria-label="Download REVEX Android app">
+    <div class="container apk-download-strip__inner">
+      <div class="apk-download-strip__copy">
+        <span class="apk-download-strip__eyebrow">REVEX FOR ANDROID</span>
+        <strong>Take REVEX with you.</strong>
+        <span>Install the Android APK and access REVEX directly from your phone.</span>
+      </div>
+      <a class="apk-download-strip__button" href="downloads/REVEX.apk" download="REVEX.apk" aria-label="Download REVEX Android APK">
+        <span class="apk-download-strip__icon" aria-hidden="true">↓</span>
+        <span><small>ANDROID APP</small>Download APK</span>
+      </a>
+    </div>
+  </section>
+
   <footer class="footer"><div class="container"><div class="footer-grid"><div><div class="footer-brand">REVEX</div><p>Move Smart. Share More.</p></div><div><h3>Quick Links</h3><a href="find-ride.html">Find a Ride</a><a href="bookings.html">My Bookings</a></div></div><p>&copy; 2026 REVEX &middot; Urban mobility, reimagined.</p></div></footer>
 <script src="js/pricing.js"></script>  <script src="js/theme.js"></script>
   <script src="js/confirm-delete.js"></script>
@@ -48,6 +53,5 @@
   <script src="js/payment.js"></script>
   <script src="js/chat.js"></script>
   <script src="js/rental.js"></script>
-  <script src="/js/install.js" defer></script>
 </body>
 </html>

@@ -14,10 +14,20 @@ backend/.env
 # Database backups (contain user records and password hashes - never commit)
 backups/
 
+# Local JSON database (contains live user records, password hashes, payments
+# and chat logs - never commit)
+database/
+
 # Build outputs
 dist/
 build/
 *.log
+
+# Android / Gradle build caches and machine-local config
+android-app/.gradle/
+android-app/local.properties
+android-app/build/
+android-app/app/build/
 
 # IDE
 .vscode/

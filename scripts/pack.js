@@ -59,7 +59,11 @@ const zlib = require('zlib');
 const ROOT = path.join(__dirname, '..');
 const DEFAULT_OUTPUT = path.join(os.homedir(), 'Downloads', 'revex_1_3.zip');
 const OUTPUT = path.resolve(process.argv[2] || DEFAULT_OUTPUT);
-const FOLDER = 'revex_1_3';
+// The archive's root folder follows the folder this script is run from, so a
+// copy of the project under a different name packs under that name too. It used
+// to be hardcoded, which meant extracting a renamed copy produced a folder the
+// user did not ask for and had to rename by hand.
+const FOLDER = path.basename(ROOT) || 'revex_1_3';
 
 /**
  * --include-env ships the real backend/.env.
@@ -84,7 +88,12 @@ if (INCLUDE_ENV && /\.(zip|7z|tar|tgz)$/i.test(OUTPUT) === false) {
 /** Directories never packed. */
 const EXCLUDED_DIRS = new Set([
   'node_modules', '.git', '.vercel', '.next', 'dist', 'build', 'coverage',
-  'uploads', 'backups', 'logs', '.vscode', '.idea'
+  'uploads', 'backups', 'logs', '.vscode', '.idea',
+  // `database/` is the JSON export made by scripts/export-database.js. It holds
+  // every user document, including password hashes, and shipping it would leak
+  // the one thing that excluding `.env` exists to protect. Regenerate it
+  // locally with `npm run db:export` instead.
+  'database'
 ]);
 
 /** Files never packed. `.env` carries real credentials. */

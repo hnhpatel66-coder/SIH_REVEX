@@ -42,6 +42,11 @@
   --rvx-warn: var(--warning, #b45309);
   --rvx-bad: var(--danger, #dc2626);
   --rvx-info: var(--brand, #0369a1);
+  /* The route's own colours. Declared here so the diagram, the Mapbox renderer
+     and the checkpoint chips all read the same two values, and a palette change
+     lands in one place instead of three. */
+  --rvx-route: var(--route, #1d4ed8);
+  --rvx-journey: var(--journey, #7c3aed);
   --rvx-ok-bg: color-mix(in srgb, var(--rvx-ok) 12%, transparent);
   --rvx-warn-bg: color-mix(in srgb, var(--rvx-warn) 14%, transparent);
   --rvx-bad-bg: color-mix(in srgb, var(--rvx-bad) 12%, transparent);
@@ -494,6 +499,444 @@
 .rvx-modal__card h2 { margin: 0; font-size: 1.24rem; }
 .rvx-modal__actions { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; }
 
+/* ----------------------------------------------------------------- the map */
+/*
+ * Two renderers share these classes, and both have to be legible in light AND
+ * dark, so every colour below is a theme token and never a literal. A hard-coded
+ * road colour is exactly the kind of thing that reads fine on the design mock and
+ * disappears into the background at 9pm.
+ */
+.rvx-map {
+  display: grid;
+  gap: 8px;
+}
+.rvx-map__surface {
+  position: relative;
+  width: 100%;
+  min-height: 180px;
+  border: 1px solid var(--line);
+  border-radius: var(--rvx-radius);
+  background: var(--surface-soft);
+  overflow: hidden;
+}
+.rvx-map__surface > * + * { margin-top: 0; }
+/* One host per renderer, both absolutely filling the surface.
+   The selectors are doubled in specificity on purpose: Mapbox adds its own
+   `mapboxgl-map` class to the container and ships `.mapboxgl-map{position:
+   relative}`, and its stylesheet is injected into <head> AFTER ours. At equal
+   specificity the later rule wins, so `position: relative` beat `absolute`
+   here and the host collapsed to zero height, taking the whole basemap with
+   it. `.rvx-map .rvx-map__gl` is (0,2,0) and cannot be outranked that way. */
+.rvx-map .rvx-map__gl[hidden],
+.rvx-map .rvx-map__diagram[hidden] { display: none; }
+.rvx-map .rvx-map__gl,
+.rvx-map .rvx-map__diagram {
+  position: absolute;
+  inset: 0;
+}
+.rvx-map .rvx-map__gl { z-index: 1; }
+.rvx-map__svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.rvx-map__svg--picking { cursor: crosshair; }
+.rvx-map__empty {
+  margin: 0;
+  padding: 22px 16px;
+  text-align: center;
+  color: var(--muted);
+  font-size: .86rem;
+}
+/* A faint grid so the keyless diagram still reads as a map rather than as a
+   stray line on a blank card. */
+.rvx-map__graticule {
+  fill: var(--surface-soft);
+  stroke: none;
+}
+
+/* Lines. The rider's own leg is the thickest and the only fully opaque one, so
+   it is the thing the eye lands on first - which is the whole feature.
+   The casing underneath is what a real navigation app draws, and the reason a
+   bare line over a busy basemap is hard to follow. */
+.rvx-map__line { stroke: var(--muted-strong); }
+.rvx-map__line--casing { stroke: var(--ink); stroke-opacity: .3; }
+.rvx-map__line--route { stroke: var(--rvx-route); stroke-opacity: .92; }
+.rvx-map__line--before,
+.rvx-map__line--after { stroke: var(--muted-strong); stroke-opacity: .8; }
+.rvx-map__line--rider { stroke: var(--brand); stroke-opacity: 1; }
+.rvx-map__line--journey { stroke: var(--rvx-journey); stroke-opacity: .8; }
+
+/* ---- SVG pins, towns and distance pills (the keyless diagram) --------------
+   These classes are shared with the HTML markers below, because the two
+   renderers must look identical. `fill` is ignored by an HTML element and
+   `background` is ignored by an SVG shape, so one rule can serve both. */
+.rvx-map__pin-halo {
+  fill: var(--surface);
+  fill-opacity: .85;
+  stroke: none;
+}
+.rvx-map__pin-dot {
+  fill: var(--ink);
+  stroke: var(--surface);
+  stroke-width: 2.5;
+}
+.rvx-map__pin-halo--start,
+.rvx-map__pin-dot--start { fill: var(--ink); }
+.rvx-map__pin-halo--end,
+.rvx-map__pin-dot--end { fill: var(--muted-strong); }
+.rvx-map__pin-halo--pickup,
+.rvx-map__pin-dot--pickup { fill: var(--brand); }
+.rvx-map__pin-halo--drop,
+.rvx-map__pin-dot--drop { fill: var(--danger); }
+.rvx-map__pin-letter {
+  fill: var(--surface);
+  font-size: 9px;
+  font-weight: 800;
+  text-anchor: middle;
+  stroke: none;
+}
+.rvx-map__pin-label,
+.rvx-map__town-name,
+.rvx-map__checkpoint-text {
+  fill: var(--ink);
+  font-size: 11px;
+  font-weight: 700;
+  /* A halo of the surface colour, so a label stays readable where it crosses a
+     road, a town boundary or a hillshade. */
+  paint-order: stroke;
+  stroke: var(--surface);
+  stroke-width: 3.5px;
+  stroke-linejoin: round;
+}
+.rvx-map__town-dot {
+  fill: var(--ink);
+  background: var(--ink);
+  stroke: var(--surface);
+  stroke-width: 1.5;
+}
+.rvx-map__town-halo { fill: var(--surface); fill-opacity: .7; stroke: none; }
+.rvx-map__checkpoint-dot {
+  /* --ink and --surface, not a fixed dark pair, so the chip inverts correctly
+     when the page flips to dark mode. */
+  fill: var(--ink);
+  background: var(--ink);
+  stroke: none;
+}
+.rvx-map__checkpoint-text { fill: var(--muted-strong); font-weight: 700; }
+.rvx-map__scalebar {
+  stroke: var(--muted-strong);
+  stroke-width: 2;
+  fill: none;
+}
+.rvx-map__scalebar-text {
+  fill: var(--muted-strong);
+  font-size: 10px;
+  font-weight: 700;
+  paint-order: stroke;
+  stroke: var(--surface);
+  stroke-width: 3px;
+  stroke-linejoin: round;
+}
+
+/* ---- HTML markers (the Mapbox basemap) ------------------------------------
+   Drawn as DOM rather than as Mapbox symbol layers on purpose: a symbol layer
+   needs a glyph endpoint, and a failed glyph request renders an empty box with
+   no error the page can see. Our own labels must not depend on that. */
+.rvx-map .mapboxgl-marker { z-index: 3; }
+.rvx-map__pin {
+  position: relative;
+  width: 0;
+  height: 0;
+}
+.rvx-map__pin-dot {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  margin: -11px 0 0 -11px;
+  border: 2.5px solid var(--surface);
+  border-radius: 50%;
+  background: var(--ink);
+  box-shadow: var(--rvx-shadow);
+  color: var(--surface);
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1;
+}
+.rvx-map__pin--start .rvx-map__pin-dot { background: var(--ink); }
+.rvx-map__pin--end .rvx-map__pin-dot { background: var(--muted-strong); }
+.rvx-map__pin--pickup .rvx-map__pin-dot { background: var(--brand); }
+.rvx-map__pin--drop .rvx-map__pin-dot { background: var(--danger); }
+.rvx-map__pin-label {
+  position: absolute;
+  left: 15px;
+  top: -10px;
+  padding: 2px 6px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface);
+  box-shadow: var(--rvx-shadow);
+  color: var(--ink);
+  font-size: 10.5px;
+  font-weight: 700;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+.rvx-map__town {
+  position: relative;
+  width: 0;
+  height: 0;
+}
+.rvx-map__town-dot {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 8px;
+  height: 8px;
+  margin: -4px 0 0 -4px;
+  border: 1.5px solid var(--surface);
+  border-radius: 50%;
+  background: var(--ink);
+  box-shadow: var(--rvx-shadow);
+}
+.rvx-map__town-name {
+  position: absolute;
+  left: 9px;
+  top: -9px;
+  padding: 1px 5px;
+  border-radius: 5px;
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  color: var(--ink);
+  font-size: 10.5px;
+  font-weight: 700;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+.rvx-map__town-km {
+  position: absolute;
+  left: 9px;
+  top: 3px;
+  color: var(--muted);
+  font-size: 9.5px;
+  font-weight: 600;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+.rvx-map__checkpoint {
+  position: absolute;
+  left: 0;
+  top: 0;
+  padding: 1px 5px;
+  margin: -9px 0 0 -14px;
+  border-radius: 999px;
+  background: var(--ink);
+  color: var(--surface);
+  font-size: 9.5px;
+  font-weight: 700;
+  line-height: 1.5;
+  white-space: nowrap;
+}
+/* At low zoom a 50 km pill every 50 km becomes noise, so they step aside and the
+   towns and the A/B/C/D pins keep the map readable. */
+.rvx-map--dense .rvx-map__checkpoint { display: none; }
+
+.rvx-map__status {
+  margin: 0;
+  color: var(--muted);
+  font-size: .76rem;
+  line-height: 1.5;
+}
+.rvx-map--pin .rvx-map__status { color: var(--brand); font-weight: 700; }
+
+/* ------------------------------------------------------- the stops between
+   "How many towns do I pass?" is the question a rider asks before booking half
+   of somebody else's road. The count is the headline and the list underneath is
+   its evidence, so the two are styled as one block rather than as two facts. */
+.rvx-stops {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--line);
+}
+.rvx-stops__head {
+  margin: 0;
+  color: var(--ink);
+  font-size: .8rem;
+  font-weight: 700;
+}
+.rvx-stops__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.rvx-stops__item {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 3px 9px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+}
+.rvx-stops__name {
+  color: var(--ink);
+  font-size: .76rem;
+  font-weight: 700;
+}
+.rvx-stops__km {
+  color: var(--muted);
+  font-size: .7rem;
+  font-weight: 600;
+}
+.rvx-stops__marks {
+  margin: 0;
+  color: var(--muted);
+  font-size: .72rem;
+}
+
+/* --------------------------------------------------------- smart search */
+.rvx-smart {
+  display: grid;
+  gap: 14px;
+  margin-top: 18px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--rvx-radius);
+  background: var(--surface-soft);
+}
+.rvx-smart__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px 14px;
+}
+.rvx-smart__title {
+  margin: 0;
+  font-size: 1.02rem;
+}
+.rvx-smart__map { min-width: 0; }
+.rvx-smart__points {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  align-items: end;
+}
+.rvx-smart__note {
+  margin: 0;
+  color: var(--muted);
+  font-size: .8rem;
+  line-height: 1.55;
+}
+.rvx-smart__rejected {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: var(--rvx-radius-sm);
+  background: var(--surface);
+  color: var(--muted);
+  font-size: .78rem;
+  line-height: 1.55;
+}
+
+/* The switch that turns Smart Route off, so the original text search is always
+   one click away. */
+.rvx-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  font-size: .84rem;
+  color: var(--ink);
+  cursor: pointer;
+}
+.rvx-toggle input { width: 17px; height: 17px; accent-color: var(--brand); }
+/* A button group that belongs to the right-hand side of a heading, and becomes
+   full width on a phone. */
+.rvx-btnrow--keep { margin-left: auto; }
+
+/* ------------------------------------------------------------ match block */
+.rvx-match {
+  display: grid;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--brand);
+  border-radius: var(--rvx-radius-sm);
+  background: var(--surface);
+}
+.rvx-match--full { border-left-color: var(--muted-strong); }
+.rvx-match__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px 12px;
+  justify-content: space-between;
+}
+.rvx-match__label {
+  margin: 0;
+  font-size: .86rem;
+  font-weight: 800;
+  color: var(--brand);
+}
+.rvx-match--full .rvx-match__label { color: var(--muted-strong); }
+.rvx-match__grid {
+  display: grid;
+  gap: 8px 16px;
+  grid-template-columns: repeat(auto-fit, minmax(112px, 1fr));
+  margin: 0;
+}
+.rvx-match__stat { display: grid; gap: 2px; }
+.rvx-match__stat dt {
+  margin: 0;
+  color: var(--muted);
+  font-size: .68rem;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+.rvx-match__stat dd {
+  margin: 0;
+  font-size: .9rem;
+  font-weight: 700;
+}
+.rvx-match__save { color: var(--success); }
+
+/* ------------------------------------------------------ join part of a ride */
+.rvx-join {
+  display: grid;
+  gap: 12px;
+  margin-top: 14px;
+  padding: 14px;
+  border: 1px dashed var(--border);
+  border-radius: var(--rvx-radius);
+  background: var(--surface);
+}
+.rvx-join__title {
+  margin: 0;
+  font-size: .92rem;
+  font-weight: 800;
+}
+.rvx-join__grid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+}
+.rvx-join__msg {
+  margin: 0;
+  font-size: .8rem;
+  line-height: 1.55;
+  color: var(--muted);
+}
+.rvx-join__msg--bad { color: var(--danger); font-weight: 700; }
+.rvx-join__msg--good { color: var(--success); font-weight: 700; }
+
 /* ------------------------------------------------------------ responsive */
 @media (max-width: 640px) {
   .rvx-shell { padding: 0 13px 60px; }
@@ -510,4 +953,82 @@
 
 @media (max-width: 900px) {
   .rvx-card--link:hover { transform: none; }
+}
+
+
+/* ------------------------------------------------ REVEX Android APK access */
+.apk-highlight-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  border: 1px solid rgba(15, 118, 110, .2);
+  background: linear-gradient(135deg, var(--brand), var(--brand-strong));
+  color: #fff;
+  box-shadow: 0 12px 28px rgba(15, 118, 110, .24), 0 0 0 4px rgba(15, 118, 110, .08);
+  font-weight: 800;
+}
+.apk-highlight-btn:hover {
+  color: #fff;
+  transform: translateY(-2px);
+  box-shadow: 0 16px 34px rgba(15, 118, 110, .3), 0 0 0 5px rgba(15, 118, 110, .1);
+}
+.apk-highlight-btn:focus-visible { outline: 3px solid rgba(15, 118, 110, .28); outline-offset: 3px; }
+.apk-highlight-btn__dot { width: 8px; height: 8px; flex: none; border-radius: 50%; background: #d1fae5; box-shadow: 0 0 0 4px rgba(209, 250, 229, .18); }
+.apk-highlight-btn__arrow { font-size: 1rem; line-height: 1; }
+
+.apk-download-strip {
+  padding: 18px 0;
+  border-top: 1px solid var(--border);
+  background: linear-gradient(135deg, var(--brand-soft), var(--surface));
+}
+.apk-download-strip__inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding-top: 0;
+  padding-bottom: 0;
+}
+.apk-download-strip__copy { min-width: 0; display: grid; gap: 3px; }
+.apk-download-strip__eyebrow { color: var(--brand); font-size: .68rem; font-weight: 800; letter-spacing: .12em; }
+.apk-download-strip__copy strong { color: var(--ink); font: 800 1rem/1.3 'Manrope', sans-serif; }
+.apk-download-strip__copy > span:last-child { color: var(--muted); font-size: .82rem; line-height: 1.5; }
+.apk-download-strip__button {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  flex: none;
+  min-height: 48px;
+  padding: 9px 16px;
+  border: 1px solid rgba(15, 118, 110, .22);
+  border-radius: 14px;
+  background: linear-gradient(135deg, var(--brand), var(--brand-strong));
+  color: #fff;
+  font-weight: 800;
+  text-decoration: none;
+  box-shadow: 0 10px 24px rgba(15, 118, 110, .18);
+  transition: transform .18s ease, box-shadow .18s ease;
+}
+.apk-download-strip__button:hover { color: #fff; transform: translateY(-1px); box-shadow: 0 13px 28px rgba(15, 118, 110, .24); }
+.apk-download-strip__button:focus-visible { outline: 3px solid rgba(15, 118, 110, .28); outline-offset: 3px; }
+.apk-download-strip__button small { display: block; margin-bottom: 1px; opacity: .8; font-size: .58rem; font-weight: 800; letter-spacing: .09em; line-height: 1.1; }
+.apk-download-strip__icon { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 9px; background: rgba(255,255,255,.14); font-size: 1.05rem; }
+[data-theme="dark"] .apk-highlight-btn,
+[data-theme="dark"] .apk-download-strip__button {
+  background: linear-gradient(135deg, #0f766e, #115e59);
+  border-color: rgba(94, 234, 212, .28);
+  color: #f8fffe;
+  box-shadow: 0 12px 30px rgba(0,0,0,.28), 0 0 0 1px rgba(45,212,191,.08);
+}
+[data-theme="dark"] .apk-download-strip {
+  border-top-color: var(--border);
+  background: linear-gradient(135deg, rgba(13,43,43,.8), var(--surface-soft));
+}
+@media (max-width: 640px) {
+  .apk-download-strip { padding: 16px 0; }
+  .apk-download-strip__inner { align-items: stretch; flex-direction: column; gap: 12px; }
+  .apk-download-strip__button { width: 100%; justify-content: center; }
+  .apk-highlight-btn { width: 100%; }
 }

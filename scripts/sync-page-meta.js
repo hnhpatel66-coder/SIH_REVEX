@@ -55,15 +55,15 @@ const META = {
   },
   'find-ride.html': {
     title: `Find a Ride | ${BRAND}`,
-    description: `Browse approved ${BRAND} ride offers. Compare vehicle photos, driver details, route, timing, available seats and the full total, then pay and book a seat instantly.`
+    description: `Search ${BRAND} rides by the road they actually drive. A rider from Rajkot finds a Junagadh to Ahmedabad offer that passes through, pins a pickup point on the map, and pays only for their part of the route.`
   },
   'ride-details.html': {
     title: `Ride Details | ${BRAND}`,
-    description: `See the full details of a ${BRAND} ride offer, choose your seats, and Pay & Book Ride with a total calculated by the server.`
+    description: `See a ${BRAND} ride's real driving route and the towns it passes, join it part-way from wherever you are picked up, and Pay & Book Ride with a distance-based total calculated by the server.`
   },
   'offer-ride.html': {
     title: `Offer a Ride | ${BRAND}`,
-    description: `Publish a ${BRAND} ride offer. Pick one of your registered vehicles to reuse its photo, set the route, date, seats and price per seat, and an admin approves it before it goes live.`
+    description: `Publish a ${BRAND} ride offer and preview the real road it will follow. Pick one of your registered vehicles to reuse its photo, set the route, date, seats and price per seat, and an admin approves it before it goes live.`
   },
   'ride-requests.html': {
     title: `Ride Booking Requests | ${BRAND}`,

@@ -22,6 +22,7 @@ const { connectMongo: connectMongoShared } = require('./utils/db');
 const gateway = require('./utils/payments');
 const gatewayConfig = gateway.publicConfig();
 const chatProvider = require('./utils/chatProvider');
+const mapbox = require('./utils/mapbox');
 
 const app = express();
 // Render / Railway / Fly.io inject PORT automatically. Honour it first so the
@@ -238,6 +239,7 @@ app.use((error, req, res, next) => {
 function reportConfig() {
   const secret = String(process.env.JWT_SECRET || '');
   const assistant = chatProvider.providerConfig();
+  const map = mapbox.describeStatus();
   const lines = [
     `[config] PORT              = ${PORT}`,
     `[config] JWT_SECRET        = ${secret ? `configured (${secret.length} chars)` : 'MISSING'}`,
@@ -254,7 +256,14 @@ function reportConfig() {
     `[config] Cancellation      = free for ${process.env.CANCEL_FREE_WINDOW_HOURS ?? '6'}h before start, then the per-actor fee in backend/.env`,
     `[config] REVEX Assistant   = ${assistant.configured
       ? `configured (${assistant.model}${assistant.derivedUrl ? ', endpoint derived from the key' : ''})`
-      : `NOT configured — ${assistant.problem}`}`
+      : `NOT configured — ${assistant.problem}`}`,
+    // Never the token itself, only its kind and what it can actually do. The
+    // route line is deliberately explicit about which of the three road-data
+    // tiers is live, so nobody has to guess why a route looks approximate.
+    `[config] Mapbox token      = ${map.tokenKind === 'none' ? 'NOT set' : `configured (${map.tokenKind}.…)`}`,
+    `[config] Mapbox GL JS map  = ${map.mapReady ? 'ENABLED in the browser' : 'not configured — the built-in route map is used'}`,
+    `[config] Smart Route roads = ${map.roadDataSource}${map.problem ? ` — ${map.problem}` : ''}`,
+    `[config] Smart Route match = within ${map.toleranceKm} km of a ride's road`
   ];
   if (secret && secret.length < 32) lines.push('[config] WARNING: JWT_SECRET is shorter than 32 characters.');
   lines.forEach(line => console.log(line));

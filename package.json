@@ -28,6 +28,8 @@
     "test:filters": "node tests/filters.test.js",
     "purge:legacy": "node scripts/purge-legacy.js",
     "db:audit": "node scripts/db-audit.js",
+    "db:export": "node scripts/export-database.js",
+    "db:import": "node scripts/import-database.js",
     "db:reset": "node scripts/reset-db.js",
     "db:reset-users": "node scripts/reset-to-demo-users.js",
     "db:reset-users:dry": "node scripts/reset-to-demo-users.js --dry-run",
@@ -35,6 +37,8 @@
     "db:drop-stale": "node scripts/drop-stale-databases.js",
     "db:inspect": "node scripts/inspect-db.js",
     "db:fix-duplicate-ride-bookings": "node scripts/fix-duplicate-ride-bookings.js",
+    "db:backfill-ride-routes": "node scripts/backfill-ride-routes.js",
+    "db:backfill-ride-routes:dry": "node scripts/backfill-ride-routes.js --dry-run",
     "cluster:verify": "node scripts/verify-cluster.js",
     "qa:cleanup": "node scripts/cleanup-qa.js"
   },

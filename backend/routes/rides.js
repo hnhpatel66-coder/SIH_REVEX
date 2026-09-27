@@ -12,6 +12,9 @@ const { normalizeMediaUrl } = require('../utils/media');
 const { calculateRideQuote, availableSeats, roundMoney } = require('../utils/ridePricing');
 const { computeCancellation, refundPlan } = require('../utils/cancellation');
 const gateway = require('../utils/payments');
+const mapbox = require('../utils/mapbox');
+const smartRoute = require('../utils/smartRoute');
+const geo = require('../utils/geo');
 const {
   RIDE_STATUS, RIDE_STATUS_LABELS, RIDE_BOOKING_STATUS, RIDE_BOOKING_STATUS_LABELS,
   RIDE_BOOKING_ACTIVE_STATUSES, CANCELLED_BY, cancelledStatusFor
@@ -94,6 +97,10 @@ async function serializeRides(rides, { includePrivate = false } = {}) {
       additionalCharges: num(value.additionalCharges, 0),
       discountPercent: num(value.discountPercent, 0)
     };
+    // The road geometry is deselected, so it must not be echoed into a listing
+    // payload even when a caller happened to load the full document.
+    delete result.routeGeometry;
+    attachRouteSummary(value, result);
     if (!includePrivate) { delete result.driverPhone; delete result.driverId; }
     return result;
   });
@@ -215,6 +222,119 @@ async function claimSeats(rideId, seats) {
   );
 }
 
+/* --------------------------------------------------------- smart route glue */
+
+/**
+ * Attaches the ride's road to a serialized ride for the public list.
+ *
+ * The polyline itself is NEVER sent in a listing: it is a few hundred coordinate
+ * pairs per ride, so including it would multiply the size of every Find Ride
+ * response for data the list view does not draw. The card only needs the summary
+ * line ("315 km, about 4 h, via Rajkot"), and the map fetches the full geometry
+ * from GET /api/rides/:id/route when a rider actually opens a ride.
+ */
+function attachRouteSummary(ride, payload) {
+  const hasRoute = (Array.isArray(ride.routeVia) && ride.routeVia.length > 0)
+    || (Number(ride.routeDistanceKm) > 0 && !ride.routeError);
+  payload.route = hasRoute ? {
+    from: String(ride.from || ''),
+    to: String(ride.to || ''),
+    distanceKm: num(ride.routeDistanceKm, 0),
+    durationMin: num(ride.routeDurationMin, 0),
+    via: (Array.isArray(ride.routeVia) ? ride.routeVia : [])
+      .map(entry => ({ name: String(entry?.name || '').slice(0, 120), alongKm: num(entry?.alongKm, 0) }))
+      .filter(entry => entry.name),
+    provider: String(ride.routeProvider || '').slice(0, 40),
+    estimated: ride.routeProvider === 'estimate' || !ride.routeProvider,
+    summary: smartRoute.describeRoute(ride),
+    error: String(ride.routeError || '').slice(0, 300)
+  } : null;
+  return payload;
+}
+
+/**
+ * Computes and stores a ride's road, without ever failing the request.
+ *
+ * The implementation is shared with scripts/backfill-ride-routes.js in
+ * backend/utils/rideRoute.js, so offers created by the API and offers repaired
+ * by the script end up with identical documents.
+ */
+const { computeAndStoreRoute } = require('../utils/rideRoute');
+
+/**
+ * Reads a ride with its (deselected) road geometry attached.
+ *
+ * Every Smart Route endpoint needs the polyline, and it is deselected in
+ * listings purely to keep list responses small - so the detail paths opt back in
+ * explicitly rather than accidentally.
+ *
+ * Returns the QUERY, not a promise of a document, so a caller can still chain
+ * `.lean()` onto it. Awaiting the query itself works too, because a Mongoose
+ * query is thenable.
+ */
+function findRideWithRoute(id) {
+  return Ride.findById(id).select('+routeGeometry');
+}
+
+/** Resolves a rider's search point from a query/body value. */
+async function readSearchPoint(value) {
+  if (value === undefined || value === null || value === '') return null;
+  if (typeof value === 'object') {
+    const lng = num(value.lng, NaN);
+    const lat = num(value.lat, NaN);
+    if (Number.isFinite(lng) && Number.isFinite(lat)) {
+      // Explicit coordinates win outright, and the name is only used to label
+      // them - see the note in the smart-search `pick` helper.
+      const label = await mapbox.reverseGeocode([lng, lat]);
+      return { name: label.name || 'Pinned point', coordinate: [lng, lat], pinned: true };
+    }
+  }
+  const result = await mapbox.geocode(String(value));
+  return result.found ? { name: result.name, coordinate: result.coordinate } : null;
+}
+
+/**
+ * Turns a request's rider points into a plan, or null when the request is a
+ * plain full-route one.
+ *
+ * Returning null (rather than a failed plan) for a request that simply carries no
+ * points is what keeps every existing caller working untouched: no points means
+ * the old full-route behaviour, byte for byte.
+ */
+async function planFromRequest(ride, source = {}) {
+  const pinnedPickup = source.pickupLng !== undefined && source.pickupLat !== undefined;
+  const pinnedDrop = source.dropLng !== undefined && source.dropLat !== undefined;
+  const hasText = Boolean(source.from || source.to);
+  if (!pinnedPickup && !hasText) return null;
+
+  /**
+   * The rider's drop, however they gave it: a pin, a typed name, or nothing.
+   *
+   * Returning null means "no drop stated", which the planner reads as the old
+   * behaviour of riding to the driver's own destination. Reading the TYPED drop
+   * here too matters as much as reading the pinned one - a rider who pinned
+   * their pickup and typed their drop was previously having the drop silently
+   * ignored, because the pinned branch returned before `to` was ever looked at.
+   */
+  const readDrop = async () => {
+    if (pinnedDrop) {
+      return readSearchPoint({ lng: num(source.dropLng, NaN), lat: num(source.dropLat, NaN), name: source.dropName });
+    }
+    if (source.to) return readSearchPoint(source.to);
+    return null;
+  };
+
+  if (pinnedPickup) {
+    const board = await readSearchPoint({ lng: num(source.pickupLng, NaN), lat: num(source.pickupLat, NaN), name: source.pickupName });
+    if (!board) return null;
+    return smartRoute.buildRoutePlan(ride, { from: board, to: await readDrop(), mode: 'pin' }, mapbox.providerConfig());
+  }
+  const from = await readSearchPoint(source.from);
+  const to = await readDrop();
+  if (!from || !to) return null;
+  return smartRoute.buildRoutePlan(ride, { from, to }, mapbox.providerConfig());
+}
+
 /* --------------------------------------------------------- public listings */
 
 router.get('/', optionalAuth, async (req, res) => {
@@ -311,6 +431,270 @@ router.get('/requests', requireAuth, requireRole('owner', 'admin'), async (req, 
 
 /* ------------------------------------------------------- owner ride offers */
 
+/* ------------------------------------------------------------ smart route api */
+
+/**
+ * What the browser is allowed to know about the map.
+ *
+ * Returns the Mapbox PUBLIC token and nothing else. The server-side secret token
+ * (sk.…) is never in this response, which is the whole reason the two tokens are
+ * separate environment variables.
+ *
+ * `enabled: false` is a supported, first-class answer, not an error: the client
+ * then uses its built-in route map, so the feature is never blocked by a
+ * missing key.
+ */
+router.get('/map-config', (req, res) => {
+  const status = mapbox.describeStatus();
+  res.json({
+    ...mapbox.publicConfig(),
+    /** Which of the three road-data tiers is in use, for an honest UI label. */
+    roadDataSource: status.roadDataSource,
+    roadDataSourceLabel: status.roadDataSource === 'mapbox'
+      ? 'Mapbox road routing'
+      : (status.roadDataSource === 'osrm'
+        ? 'Public OSRM road routing (no Mapbox key configured)'
+        : 'Straight-line estimate (no routing provider available)'),
+    notice: status.problem
+  });
+});
+
+/**
+ * SMART SEARCH.
+ *
+ * The rider's journey is matched against the actual ROAD of every live offer,
+ * not against the two text strings. That is what lets a rider searching
+ * "Rajkot to Ahmedabad" find an offer that says "Junagadh to Ahmedabad",
+ * because the Junagadh-Ahmedabad road physically drives through Rajkot.
+ *
+ * Every returned match carries:
+ *   - where the rider joins and leaves, in route-kilometres,
+ *   - the detour that costs the driver at each end,
+ *   - the price for the distance the rider actually travels.
+ *
+ * It is a separate endpoint rather than a flag on GET / so that the existing
+ * listing keeps exactly the behaviour, ordering and response shape it has always
+ * had. The Find Ride screen offers both, and the default is unchanged.
+ */
+router.get('/smart-search', optionalAuth, async (req, res) => {
+  try {
+    // A pinned end is the rider's own decision about where to be picked up, so
+    // the COORDINATE is the point of truth and the typed text is only ever a
+    // label. Reverse geocoding names the pin; it must never move it. Getting
+    // this backwards is silent and severe - a rider who pinned a spot on the
+    // highway would be matched, priced and boarded from wherever the text box
+    // still said, which is tens of kilometres away.
+    const pick = async (lng, lat, name) => {
+      if (lng !== undefined && lat !== undefined) {
+        const coordinate = geo.toCoordinate([num(lng, NaN), num(lat, NaN)]);
+        if (!coordinate) return null;
+        const label = await mapbox.reverseGeocode(coordinate);
+        return {
+          name: label.name || 'Pinned point',
+          coordinate,
+          pinned: true
+        };
+      }
+      return readSearchPoint(name);
+    };
+
+    const from = await pick(req.query.fromLng, req.query.fromLat, req.query.from);
+    if (!from) return res.status(400).json({ message: 'Enter a pickup point, or drop a pin on the map.' });
+    const to = await pick(req.query.toLng, req.query.toLat, req.query.to);
+    if (!to) return res.status(400).json({ message: 'Enter a drop point to search for rides.' });
+
+    const seats = Math.max(1, Math.min(6, num(req.query.seats, 1)));
+    const config = mapbox.providerConfig();
+    const search = { from, to };
+
+    // The rider's OWN road, drawn on the map above the rides.
+    const ownRoute = await mapbox.directions(from.coordinate, to.coordinate, { fromName: from.name, toName: to.name });
+
+    const query = {
+      status: { $in: [RIDE_STATUS.APPROVED, 'available'] },
+      verified: true
+    };
+    if (req.query.date) {
+      const date = new Date(req.query.date);
+      if (!Number.isNaN(date.getTime())) {
+        const next = new Date(date);
+        next.setDate(next.getDate() + 1);
+        query.date = { $gte: date, $lt: next };
+      }
+    } else {
+      query.date = { $gte: startOfToday() };
+    }
+    if (req.query.vehicleType) query.vehicleType = String(req.query.vehicleType);
+
+    // The geometry has to be loaded for every candidate: the match is made
+    // against the road, so there is no cheap text or distance shortcut that
+    // gives the right answer. A Junagadh-Ahmedabad road is 47 km from the
+    // straight Junagadh-Ahmedabad line at Rajkot, precisely because it goes the
+    // long way round through it, so a "close enough endpoints" pre-filter would
+    // throw away the exact case this feature exists for. The candidate set is
+    // therefore simply bounded.
+    const limit = Math.max(1, Math.min(50, num(req.query.limit, 12)));
+    const candidates = await Ride.find(query).select('+routeGeometry').sort({ date: 1, time: 1 }).limit(300).lean();
+
+    const matched = [];
+    const rejected = [];
+    for (const ride of candidates) {
+      const plan = smartRoute.buildRoutePlan(ride, search, config);
+      if (!plan.ok) {
+        if (rejected.length < 8) {
+          rejected.push({
+            id: idOf(ride._id),
+            from: ride.from,
+            to: ride.to,
+            reason: plan.reason,
+            message: plan.message
+          });
+        }
+        continue;
+      }
+      matched.push({ ride, plan });
+    }
+
+    // Serialised in ONE batch, not per candidate: serializeRides resolves booked
+    // seats and driver profiles, and doing that per ride would be two extra
+    // queries for every candidate in the list.
+    const payloads = await serializeRides(matched.map(entry => entry.ride), { includePrivate: false });
+    const matches = matched.map((entry, index) => ({
+      ...payloads[index],
+      match: smartRoute.summarisePlan(entry.plan),
+      quote: smartRoute.planQuote(entry.ride, seats, entry.plan)
+    }));
+
+    // Best match first: the offer covering the largest share of the rider's own
+    // journey, then the earliest departure. `serializeRides` has already priced
+    // each match for the requested seat count, so the card can show the real
+    // number rather than a re-derived guess.
+    matches.sort((a, b) => (b.match.fraction - a.match.fraction)
+      || (new Date(a.date || 0) - new Date(b.date || 0)));
+
+    res.json({
+      seats,
+      search: {
+        from: from.name,
+        to: to.name,
+        fromCoordinate: from.coordinate,
+        toCoordinate: to.coordinate,
+        // Which ends the rider pinned, so the UI can say so rather than the
+        // rider wondering why the card names a town they never typed.
+        pinned: { from: Boolean(from.pinned), to: Boolean(to.pinned) }
+      },
+      route: {
+        geometry: ownRoute.ok ? ownRoute.coordinates : [],
+        distanceKm: ownRoute.ok ? Math.round(ownRoute.distanceKm * 10) / 10 : 0,
+        durationMin: ownRoute.ok ? ownRoute.durationMin : 0,
+        provider: ownRoute.provider || 'estimate',
+        estimated: ownRoute.provider !== 'mapbox',
+        note: ownRoute.note || '',
+        from: from.name,
+        to: to.name,
+        // The same towns-and-marks shape every other route response returns, so
+        // the search map labels the rider's OWN road - answering "how many towns
+        // do I pass" before any offer has even been picked.
+        checkpoints: {
+          towns: (ownRoute.via || [])
+            .filter(entry => entry && entry.name)
+            .map(entry => ({ name: String(entry.name).slice(0, 120), fromBoardKm: Number(entry.alongKm) || 0, coordinate: entry.coordinate || null })),
+          townsBetween: null,
+          distances: ownRoute.ok ? geo.distanceCheckpoints(ownRoute.coordinates, { everyKm: 50 }) : []
+        }
+      },
+      matches: matches.slice(0, limit),
+      matchCount: matches.length,
+      consideredCount: candidates.length,
+      /** Why the ones that did not match were rejected, so the UI can explain. */
+      rejected,
+      toleranceKm: config.toleranceKm,
+      roadDataSource: mapbox.describeStatus().roadDataSource
+    });
+  } catch (error) {
+    console.error('[rides] smart-search failed:', error.message);
+    res.status(500).json({ message: 'Rides on that route could not be loaded. Please try again.' });
+  }
+});
+
+/**
+ * The road between two places, with no ride involved.
+ *
+ * Used by the offer form so an OWNER sees the real road - and the towns it passes
+ * through - while they are still typing, not after they have submitted and
+ * discovered it went somewhere unexpected. It stores nothing and books nothing;
+ * it is the same routing call the ride create path makes, minus the database.
+ */
+router.get('/route-preview', async (req, res) => {
+  const from = String(req.query.from || '').trim().slice(0, 120);
+  const to = String(req.query.to || '').trim().slice(0, 120);
+  if (!from || !to) {
+    return res.json({ ok: false, reason: 'incomplete', message: 'Enter both a starting town and a destination to preview the road.' });
+  }
+  try {
+    const result = await mapbox.buildRoute({ from, to });
+    if (!result.ok) return res.json({ ok: false, reason: result.reason, message: result.error || 'That road could not be found.' });
+    res.json({
+      ok: true,
+      provider: result.provider,
+      estimated: result.estimated,
+      note: result.note,
+      originName: result.originName,
+      destinationName: result.destinationName,
+      origin: result.origin,
+      destination: result.destination,
+      geometry: result.coordinates,
+      distanceKm: result.distanceKm,
+      durationMin: result.durationMin,
+      via: result.via,
+      // The same towns-and-marks shape the ride endpoints return, so the offer
+      // preview is drawn by exactly the same code as the rider's own map.
+      checkpoints: {
+        towns: (result.via || [])
+          .filter(entry => entry && entry.name)
+          .map(entry => ({ name: String(entry.name).slice(0, 120), fromBoardKm: Number(entry.alongKm) || 0, coordinate: entry.coordinate || null })),
+        townsBetween: null,
+        distances: geo.distanceCheckpoints(result.coordinates, { everyKm: 50 })
+      }
+    });
+  } catch (error) {
+    console.error('[rides] route preview failed:', error.message);
+    res.status(500).json({ ok: false, message: 'The road between those two places could not be loaded.' });
+  }
+});
+
+/**
+ * One ride's road, plus - when the rider supplies their own points - where they
+ * would join and leave and what that costs.
+ *
+ * This is what the map on the ride details screen and the pin-join map both
+ * read, so the polyline lives in exactly one place in the API.
+ */
+router.get('/:id/route', optionalAuth, async (req, res) => {
+  if (!mongoose.isValidObjectId(req.params.id)) return res.status(400).json({ message: 'Ride not found.' });
+  try {
+    const ride = await findRideWithRoute(req.params.id);
+    if (!ride) return res.status(404).json({ message: 'This ride is no longer available.' });
+    const isPrivileged = req.user?.role === 'admin' || (req.user && idOf(ride.driverId) === idOf(req.user._id));
+    if (![RIDE_STATUS.APPROVED, 'available'].includes(ride.status) && !isPrivileged) {
+      return res.status(404).json({ message: 'This ride is not available for booking.' });
+    }
+
+    // The SAME plan builder the quote and booking endpoints use, so the three
+    // can never disagree about whether a rider can join and what it costs.
+    const plan = await planFromRequest(ride, req.query);
+    const summary = smartRoute.routeSummary(ride);
+    res.json({
+      rideId: idOf(ride._id),
+      route: summary,
+      ...(plan ? { match: { ...smartRoute.summarisePlan(plan), legs: plan.legs || null } } : {})
+    });
+  } catch (error) {
+    console.error('[rides] route failed:', error.message);
+    res.status(500).json({ message: 'The route for this ride could not be loaded.' });
+  }
+});
+
 router.post('/', requireAuth, requireRole('owner', 'admin'), async (req, res) => {
   try {
     const {
@@ -383,6 +767,10 @@ router.post('/', requireAuth, requireRole('owner', 'admin'), async (req, res) =>
       submittedAt: new Date()
     });
 
+    // Compute the road the offer actually drives, so a rider searching a town in
+    // the middle of it can join midway. Never allowed to fail the offer.
+    await computeAndStoreRoute(ride);
+
     const [payload] = await serializeRides(ride, { includePrivate: true });
     res.status(201).json({
       ...payload,
@@ -425,7 +813,20 @@ router.patch('/:id', requireAuth, requireRole('owner', 'admin'), async (req, res
     if (body.notes !== undefined) ride.notes = String(body.notes).slice(0, 1000);
     if (body.pickupPoint !== undefined) ride.pickupPoint = String(body.pickupPoint).slice(0, 300);
     if (body.vehicleImage) ride.vehicleImage = imageValue(body.vehicleImage);
-    await ride.save();
+    // A changed endpoint means the stored road is now wrong, so it is discarded
+    // and recomputed. Any other edit leaves a valid road in place untouched.
+    const routeChanged = (body.from && String(body.from).trim() !== ride.from) || (body.to && String(body.to).trim() !== ride.to);
+    if (routeChanged) {
+      ride.routeOrigin = null;
+      ride.routeDestination = null;
+      ride.routeGeometry = undefined;
+      ride.routeDistanceKm = 0;
+      ride.routeDurationMin = 0;
+      ride.routeVia = [];
+      ride.routeProvider = '';
+    }
+    if (routeChanged) await computeAndStoreRoute(ride);
+    else await ride.save();
     const [payload] = await serializeRides(ride, { includePrivate: true });
     res.json({ ...payload, message: 'Ride offer updated.' });
   } catch (error) {
@@ -496,21 +897,31 @@ router.get('/:id', optionalAuth, async (req, res) => {
 /**
  * Backend-calculated quote for the booking panel. The displayed total, the
  * Razorpay order amount and the stored booking total all come from here.
+ *
+ * With no rider points it behaves exactly as it always has. With rider points it
+ * prices the part of the route they actually travel, using the same plan the
+ * matching and the booking endpoints use, so the number shown can never differ
+ * from the number charged.
  */
 router.get('/:id/quote', optionalAuth, async (req, res) => {
   if (!mongoose.isValidObjectId(req.params.id)) return res.status(400).json({ message: 'Ride not found.' });
   try {
-    const ride = await Ride.findById(req.params.id).lean();
+    const ride = await findRideWithRoute(req.params.id).lean();
     if (!ride) return res.status(404).json({ message: 'This ride is no longer available.' });
     const seats = Math.max(1, Math.min(6, num(req.query.seats, 1)));
     const booked = await bookedSeatsByRide([ride._id]);
     const seatsAvailable = availableSeats({ totalSeats: ride.seats, bookedSeats: booked.get(idOf(ride._id)) || 0 });
+    const plan = await planFromRequest(ride, req.query);
+    const quote = plan ? smartRoute.planQuote(ride, seats, plan) : calculateRideQuote(ride, seats);
     res.json({
       rideId: idOf(ride._id),
       seats,
       seatsAvailable,
       bookable: [RIDE_STATUS.APPROVED, 'available'].includes(ride.status) && seatsAvailable >= seats,
-      ...calculateRideQuote(ride, seats)
+      ...quote,
+      // `match` is null for a plain full-route quote, which is how the client
+      // knows the price is the whole-route price and not a prorated one.
+      match: plan ? smartRoute.summarisePlan(plan) : null
     });
   } catch (error) {
     console.error('[rides] quote failed:', error.message);
@@ -538,7 +949,7 @@ router.post('/:id/book', requireAuth, async (req, res) => {
       return res.status(400).json({ message: 'Accept the REVEX ride sharing terms before booking.' });
     }
 
-    const ride = await Ride.findById(req.params.id);
+    const ride = await findRideWithRoute(req.params.id);
     if (!ride || ![RIDE_STATUS.APPROVED, 'available'].includes(ride.status) || !ride.verified) {
       return res.status(404).json({ message: 'This ride is not available for booking.' });
     }
@@ -553,6 +964,17 @@ router.post('/:id/book', requireAuth, async (req, res) => {
       return res.status(409).json({ message: 'You already have a seat request on this ride.', bookingId: idOf(existing._id) });
     }
 
+    // Smart Route: the rider may be joining part-way along this road rather than
+    // at its start. The plan is rebuilt HERE, on the server, from the points the
+    // browser sent - never trusted as a price. A plan that no longer holds (the
+    // owner changed the route, the point drifted, it is now too short) is
+    // refused with a reason instead of being silently charged the full fare.
+    const plan = await planFromRequest(ride, req.body || {});
+    if (plan && !plan.ok) {
+      return res.status(400).json({ message: plan.message, reason: plan.reason });
+    }
+    const partial = Boolean(plan?.ok);
+
     // Atomic seat claim. Fails (null) when the ride closed or seats ran out.
     const claimed = await claimSeats(ride._id, requestedSeats);
     if (!claimed) {
@@ -561,7 +983,7 @@ router.post('/:id/book', requireAuth, async (req, res) => {
       return res.status(409).json({ message: left > 0 ? `Only ${left} seat(s) are available.` : 'All seats on this ride have been booked.' });
     }
 
-    const quote = calculateRideQuote(claimed, requestedSeats);
+    const quote = partial ? smartRoute.planQuote(ride, requestedSeats, plan) : calculateRideQuote(claimed, requestedSeats);
     let booking;
     try {
       booking = await RideBooking.create({
@@ -573,6 +995,18 @@ router.post('/:id/book', requireAuth, async (req, res) => {
         totalAmount: quote.grandTotal,
         quote,
         rideSnapshot: snapshotOf(ride),
+        // Where this rider joins and leaves, kept on the booking so the owner
+        // sees the pickup point in the request screen and the rider sees it in
+        // their own booking history.
+        partialRide: partial,
+        boardPoint: partial ? plan.board.coordinate : null,
+        dropPoint: partial ? plan.drop.coordinate : null,
+        boardName: partial ? String(plan.board.name || '').slice(0, 120) : '',
+        dropName: partial ? String(plan.drop.name || '').slice(0, 120) : '',
+        boardAlongKm: partial ? num(plan.boardAlongKm, 0) : 0,
+        dropAlongKm: partial ? num(plan.dropAlongKm, 0) : 0,
+        riderDistanceKm: partial ? num(plan.riderKm, 0) : 0,
+        totalRouteDistanceKm: partial ? num(plan.totalKm, 0) : 0,
         paymentMethod: gateway.isConfigured() ? 'razorpay' : 'demo',
         status: RIDE_BOOKING_STATUS.PAYMENT_PENDING,
         paymentStatus: 'pending',
@@ -589,13 +1023,16 @@ router.post('/:id/book', requireAuth, async (req, res) => {
     await notifyUser(ride.driverId, {
       type: 'booking',
       title: 'New ride booking request',
-      message: `${req.user.name} paid ₹${quote.grandTotal} for ${requestedSeats} seat(s) on your ${ride.from} to ${ride.to} ride.`,
+      message: partial
+        ? `${req.user.name} paid ₹${quote.grandTotal} to join your ${ride.from} to ${ride.to} ride at ${plan.board.name || 'their pickup point'}.`
+        : `${req.user.name} paid ₹${quote.grandTotal} for ${requestedSeats} seat(s) on your ${ride.from} to ${ride.to} ride.`,
       data: { rideBookingId: booking._id.toString(), rideId: ride._id.toString() }
     });
 
     res.status(201).json({
       ...serializeBooking(booking),
       quote,
+      match: partial ? smartRoute.summarisePlan(plan) : null,
       payment: {
         method: gateway.isConfigured() ? 'razorpay' : 'demo',
         currency: 'INR',

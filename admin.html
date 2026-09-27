@@ -10,12 +10,6 @@
 
 
 
-  <link rel="manifest" href="/manifest.json">
-  <meta name="theme-color" content="#0f766e">
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-title" content="REVEX">
-  <link rel="stylesheet" href="/css/download-app.css">
 </head>
 <body>
   <div class="admin-topbar"><div class="container admin-topbar-inner"><a class="brand" href="admin.html">REV<span>EX</span></a><button class="menu-btn admin-menu" aria-label="Open admin navigation" type="button">Menu</button><nav class="admin-tabs" aria-label="Admin navigation">
@@ -112,6 +106,21 @@
       <div class="feature-grid"><article class="detail-panel"><h3>Create admin</h3><div id="addAdminMsg" class="form-message"></div><form id="addAdminForm"><div class="field"><label>Full name</label><input name="name" required></div><div class="field"><label>Email</label><input name="email" type="email" required></div><div class="field"><label>Phone</label><input name="phone"></div><div class="field"><label>Password (min 8 characters)</label><input name="password" type="password" minlength="8" required></div><div class="field"><label>Confirm password</label><input name="confirmPassword" type="password" minlength="8" required></div><button class="btn btn-primary" style="width:100%" type="submit">Create admin</button></form></article><article class="detail-panel"><h3>Admin profile</h3><div id="adminProfile"><div class="empty">Loading profile…</div></div></article></div>
     </section>
   </main>
+
+  <section class="apk-download-strip" aria-label="Download REVEX Android app">
+    <div class="container apk-download-strip__inner">
+      <div class="apk-download-strip__copy">
+        <span class="apk-download-strip__eyebrow">REVEX FOR ANDROID</span>
+        <strong>Take REVEX with you.</strong>
+        <span>Install the Android APK and access REVEX directly from your phone.</span>
+      </div>
+      <a class="apk-download-strip__button" href="downloads/REVEX.apk" download="REVEX.apk" aria-label="Download REVEX Android APK">
+        <span class="apk-download-strip__icon" aria-hidden="true">↓</span>
+        <span><small>ANDROID APP</small>Download APK</span>
+      </a>
+    </div>
+  </section>
+
   <footer class="footer"><div class="container"><p>© 2026 REVEX · Admin control centre</p></div></footer>
   <script src="js/theme.js"></script>
   <script src="js/confirm-delete.js"></script>
@@ -119,10 +128,5 @@
   <script src="js/payment.js"></script>
   <script src="js/chat.js"></script>
   <script src="js/admin.js"></script>
-<div class="revex-app-tools" role="region" aria-label="REVEX app options">
-  <a class="revex-download-app" href="/downloads/REVEX.apk" download="REVEX.apk">⬇️ Download Android App</a>
-  <button class="revex-install-app" type="button" data-revex-install>📲 Install REVEX</button>
-</div>
-  <script src="/js/install.js" defer></script>
 </body>
 </html>

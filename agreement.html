@@ -9,16 +9,25 @@
 
 
   <meta name="description" content="View, sign and download the REVEX rental agreement for your booking, including the pricing snapshot and the full terms.">
-  <link rel="manifest" href="/manifest.json">
-  <meta name="theme-color" content="#0f766e">
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-title" content="REVEX">
-  <link rel="stylesheet" href="/css/download-app.css">
 </head>
 <body>
   <header class="container"><nav class="nav"><a class="brand" href="index.html">REV<span>EX</span></a><button class="menu-btn" aria-label="Open navigation" type="button">Menu</button><div class="nav-links"></div><div class="nav-actions"></div></nav></header>
   <main class="container section"><span class="eyebrow">DIGITAL RENTAL AGREEMENT</span><h1 class="section-title">Your agreement, clearly recorded.</h1><div id="agreementBox" class="detail-panel"><div class="empty">Loading agreement…</div></div></main>
+
+  <section class="apk-download-strip" aria-label="Download REVEX Android app">
+    <div class="container apk-download-strip__inner">
+      <div class="apk-download-strip__copy">
+        <span class="apk-download-strip__eyebrow">REVEX FOR ANDROID</span>
+        <strong>Take REVEX with you.</strong>
+        <span>Install the Android APK and access REVEX directly from your phone.</span>
+      </div>
+      <a class="apk-download-strip__button" href="downloads/REVEX.apk" download="REVEX.apk" aria-label="Download REVEX Android APK">
+        <span class="apk-download-strip__icon" aria-hidden="true">↓</span>
+        <span><small>ANDROID APP</small>Download APK</span>
+      </a>
+    </div>
+  </section>
+
   <footer class="footer"><div class="container"><p>© 2026 REVEX · Digital rental records</p></div></footer>
 <script>
 function esc(value){return String(value??'-').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
@@ -45,9 +54,4 @@ document.addEventListener('DOMContentLoaded',async()=>{
   <script src="js/main.js"></script>
   <script src="js/payment.js"></script>
   <script src="js/chat.js"></script>
-<div class="revex-app-tools" role="region" aria-label="REVEX app options">
-  <a class="revex-download-app" href="/downloads/REVEX.apk" download="REVEX.apk">⬇️ Download Android App</a>
-  <button class="revex-install-app" type="button" data-revex-install>📲 Install REVEX</button>
-</div>
-  <script src="/js/install.js" defer></script>
 </body></html>

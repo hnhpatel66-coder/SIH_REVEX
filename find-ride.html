@@ -2,7 +2,7 @@
 <html lang="en" data-theme="light">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
   <script>(function(){try{var s=localStorage.getItem('revexTheme');document.documentElement.setAttribute('data-theme',s==='dark'?'dark':'light');}catch(e){document.documentElement.setAttribute('data-theme','light');}})();</script><title>Find a Ride | REVEX</title>
-  <meta name="description" content="Browse approved REVEX ride offers. Compare vehicle photos, driver details, route, timing, available seats and the full total, then pay and book a seat instantly.">
+  <meta name="description" content="Search REVEX rides by the road they actually drive. A rider from Rajkot finds a Junagadh to Ahmedabad offer that passes through, pins a pickup point on the map, and pays only for their part of the route.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&amp;family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
@@ -10,12 +10,6 @@
 
 
 
-  <link rel="manifest" href="/manifest.json">
-  <meta name="theme-color" content="#0f766e">
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-title" content="REVEX">
-  <link rel="stylesheet" href="/css/download-app.css">
 </head>
 <body>
   <header class="container"><nav class="nav"><a class="brand" href="index.html">REV<span>EX</span></a><button class="menu-btn" aria-label="Open navigation" type="button">Menu</button><div class="nav-links"></div><div class="nav-actions"></div></nav></header>
@@ -31,29 +25,62 @@
 
     <form id="rideSearch" class="rvx-card rvx-card--quiet" style="margin-bottom:22px">
       <div style="display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(170px,1fr))">
-        <div class="rvx-field"><span>From</span><input name="from" placeholder="Surat"></div>
-        <div class="rvx-field"><span>To</span><input name="to" placeholder="Ahmedabad"></div>
-        <div class="rvx-field"><span>Date</span><input name="date" type="date"></div>
-        <div class="rvx-field"><span>Vehicle type</span><select name="vehicleType"><option value="">Any</option><option>Car</option><option>Bike</option><option>Scooter</option><option>Other</option></select></div>
+        <div class="rvx-field"><label for="rideFrom">From</label><input name="from" id="rideFrom" placeholder="Surat"></div>
+        <div class="rvx-field"><label for="rideTo">To</label><input name="to" id="rideTo" placeholder="Ahmedabad"></div>
+        <div class="rvx-field"><label for="rideDate">Date</label><input name="date" id="rideDate" type="date"></div>
+        <div class="rvx-field"><label for="rideVehicleType">Vehicle type</label><select name="vehicleType" id="rideVehicleType"><option value="">Any</option><option>Car</option><option>Bike</option><option>Scooter</option><option>Other</option></select></div>
       </div>
+      <input type="hidden" name="pickupLng" id="smartPickupLng">
+      <input type="hidden" name="pickupLat" id="smartPickupLat">
+      <input type="hidden" name="dropLng" id="smartDropLng">
+      <input type="hidden" name="dropLat" id="smartDropLat">
       <div class="rvx-btnrow">
+        <label class="rvx-toggle" for="rideSmartMode">
+          <input type="checkbox" id="rideSmartMode" name="smartMode" checked>
+          <span>Search the whole road (Smart Route)</span>
+        </label>
         <button class="rvx-btn rvx-btn--primary" type="submit">Search rides</button>
         <button class="rvx-btn rvx-btn--ghost" id="rideSearchReset" type="button">Clear</button>
       </div>
     </form>
 
+    <section class="rvx-smart" id="smartPanel" hidden>
+      <div class="rvx-smart__head">
+        <h2 class="rvx-smart__title">Your journey on the road</h2>
+        <div class="rvx-btnrow rvx-btnrow--keep">
+          <button class="rvx-btn rvx-btn--outline rvx-btn--sm" id="smartPinPickup" type="button" aria-pressed="false">Pin my pickup</button>
+          <button class="rvx-btn rvx-btn--outline rvx-btn--sm" id="smartPinDrop" type="button" aria-pressed="false">Pin my drop</button>
+          <button class="rvx-btn rvx-btn--ghost rvx-btn--sm" id="smartPinClear" type="button">Clear pins</button>
+        </div>
+      </div>
+      <div class="rvx-smart__map" id="smartMap"></div>
+      <p class="rvx-smart__note" id="smartNote">Rides that drive the same road are matched by distance, not by name, so a Junagadh to Ahmedabad offer also shows up for Rajkot to Ahmedabad.</p>
+      <p class="rvx-smart__rejected" id="smartRejected" hidden></p>
+    </section>
+
     <div class="rvx-grid rvx-grid--wide" id="rideResults"></div>
   </main>
+
+  <section class="apk-download-strip" aria-label="Download REVEX Android app">
+    <div class="container apk-download-strip__inner">
+      <div class="apk-download-strip__copy">
+        <span class="apk-download-strip__eyebrow">REVEX FOR ANDROID</span>
+        <strong>Take REVEX with you.</strong>
+        <span>Install the Android APK and access REVEX directly from your phone.</span>
+      </div>
+      <a class="apk-download-strip__button" href="downloads/REVEX.apk" download="REVEX.apk" aria-label="Download REVEX Android APK">
+        <span class="apk-download-strip__icon" aria-hidden="true">↓</span>
+        <span><small>ANDROID APP</small>Download APK</span>
+      </a>
+    </div>
+  </section>
+
   <footer class="footer"><div class="container"><p>© 2026 REVEX · Urban mobility, reimagined.</p></div></footer>
+  <script src="js/route-map.js"></script>
   <script src="js/theme.js"></script>
   <script src="js/confirm-delete.js"></script>
   <script src="js/main.js"></script>
   <script src="js/payment.js"></script>
   <script src="js/chat.js"></script>
   <script src="js/rides.js"></script>
-<div class="revex-app-tools" role="region" aria-label="REVEX app options">
-  <a class="revex-download-app" href="/downloads/REVEX.apk" download="REVEX.apk">⬇️ Download Android App</a>
-  <button class="revex-install-app" type="button" data-revex-install>📲 Install REVEX</button>
-</div>
-  <script src="/js/install.js" defer></script>
 </body></html>

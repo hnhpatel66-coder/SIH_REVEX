@@ -46,7 +46,8 @@ const MODULES = {
   'js/chat.js': ['RevexChat'],
   'js/admin.js': ['RevexAdmin'],
   'js/rides.js': ['RevexRides'],
-  'js/booking.js': ['RevexBookings']
+  'js/booking.js': ['RevexBookings'],
+  'js/route-map.js': ['RevexRouteMap']
 };
 
 const files = fs.readdirSync(JS).filter(name => name.endsWith('.js') && name !== 'main.js');

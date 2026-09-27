@@ -25,6 +25,7 @@ const DIR = __dirname;
 const SUITES = [
   'pricing.test.js',
   'ride-pricing.test.js',
+  'smart-route.test.js',
   'cancellation-policy.test.js',
   'statuses.test.js',
   'validation.test.js',

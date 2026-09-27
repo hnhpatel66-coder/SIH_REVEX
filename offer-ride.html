@@ -2,7 +2,7 @@
 <html lang="en" data-theme="light">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
   <script>(function(){try{var s=localStorage.getItem('revexTheme');document.documentElement.setAttribute('data-theme',s==='dark'?'dark':'light');}catch(e){document.documentElement.setAttribute('data-theme','light');}})();</script><title>Offer a Ride | REVEX</title>
-  <meta name="description" content="Publish a REVEX ride offer. Pick one of your registered vehicles to reuse its photo, set the route, date, seats and price per seat, and an admin approves it before it goes live.">
+  <meta name="description" content="Publish a REVEX ride offer and preview the real road it will follow. Pick one of your registered vehicles to reuse its photo, set the route, date, seats and price per seat, and an admin approves it before it goes live.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&amp;family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
@@ -10,12 +10,6 @@
 
 
 
-  <link rel="manifest" href="/manifest.json">
-  <meta name="theme-color" content="#0f766e">
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-title" content="REVEX">
-  <link rel="stylesheet" href="/css/download-app.css">
 </head>
 <body>
   <header class="container"><nav class="nav"><a class="brand" href="list-vehicle.html">REV<span>EX</span></a><button class="menu-btn" aria-label="Open navigation" type="button">Menu</button><div class="nav-links"></div><div class="nav-actions"></div></nav></header>
@@ -43,6 +37,12 @@
         <div class="rvx-form--2" style="display:grid;gap:14px">
           <div class="rvx-field"><label for="offerFrom">From *</label><input id="offerFrom" name="from" required placeholder="Surat"></div>
           <div class="rvx-field"><label for="offerTo">To *</label><input id="offerTo" name="to" required placeholder="Ahmedabad"></div>
+        </div>
+
+        <div class="rvx-join" id="offerRouteBox">
+          <p class="rvx-join__title" id="offerRouteTitle">The road this offer will publish</p>
+          <div class="rvx-smart__map" id="offerRouteMap"></div>
+          <p class="rvx-join__msg" id="offerRouteMsg">Type a starting town and a destination to see the real road, the towns it passes through, and how far it is.</p>
         </div>
 
         <div class="rvx-field" style="display:grid;gap:14px;grid-template-columns:1fr 1fr">
@@ -94,16 +94,27 @@
     </aside>
   </main>
   <div class="modal" id="successModal"><div class="modal-box"><div class="modal-icon">✓</div><h2>Ride submitted</h2><p></p><a class="btn btn-primary" href="ride-requests.html">Open ride requests</a></div></div>
+
+  <section class="apk-download-strip" aria-label="Download REVEX Android app">
+    <div class="container apk-download-strip__inner">
+      <div class="apk-download-strip__copy">
+        <span class="apk-download-strip__eyebrow">REVEX FOR ANDROID</span>
+        <strong>Take REVEX with you.</strong>
+        <span>Install the Android APK and access REVEX directly from your phone.</span>
+      </div>
+      <a class="apk-download-strip__button" href="downloads/REVEX.apk" download="REVEX.apk" aria-label="Download REVEX Android APK">
+        <span class="apk-download-strip__icon" aria-hidden="true">↓</span>
+        <span><small>ANDROID APP</small>Download APK</span>
+      </a>
+    </div>
+  </section>
+
   <footer class="footer"><div class="container"><div class="footer-grid"><div><div class="footer-brand">REVEX</div><p>Move Smart. Share More.</p></div></div><p>© 2026 REVEX · Urban mobility, reimagined.</p></div></footer>
+  <script src="js/route-map.js"></script>
   <script src="js/theme.js"></script>
   <script src="js/confirm-delete.js"></script>
   <script src="js/main.js"></script>
   <script src="js/payment.js"></script>
   <script src="js/chat.js"></script>
   <script src="js/rides.js"></script>
-<div class="revex-app-tools" role="region" aria-label="REVEX app options">
-  <a class="revex-download-app" href="/downloads/REVEX.apk" download="REVEX.apk">⬇️ Download Android App</a>
-  <button class="revex-install-app" type="button" data-revex-install>📲 Install REVEX</button>
-</div>
-  <script src="/js/install.js" defer></script>
 </body></html>

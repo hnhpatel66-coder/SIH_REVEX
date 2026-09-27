@@ -38,6 +38,20 @@ const rideBookingSchema = new mongoose.Schema({
   // booking, which is why it never disappears from history or from the
   // owner's request screen.
   rideSnapshot: { type: mongoose.Schema.Types.Mixed, default: {} },
+  /* ------------------------------------------------------------ Smart Route */
+  // Where this rider actually joined and left, when they joined part-way along
+  // the route rather than at its start. Optional and defaulted, so a booking
+  // made before this feature existed loads unchanged - it simply has no
+  // intermediate points and is treated as a full-route booking.
+  boardPoint: { type: [Number], default: null },
+  dropPoint: { type: [Number], default: null },
+  boardName: { type: String, default: '', maxlength: 120 },
+  dropName: { type: String, default: '', maxlength: 120 },
+  boardAlongKm: { type: Number, default: 0, min: 0, max: 100000 },
+  dropAlongKm: { type: Number, default: 0, min: 0, max: 100000 },
+  riderDistanceKm: { type: Number, default: 0, min: 0, max: 100000 },
+  totalRouteDistanceKm: { type: Number, default: 0, min: 0, max: 100000 },
+  partialRide: { type: Boolean, default: false },
   vehicleId: { type: mongoose.Schema.Types.ObjectId, ref: 'Vehicle', default: null },
   vehicleImage: { type: String, default: '' },
   paymentMethod: { type: String, default: 'razorpay' },

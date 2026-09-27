@@ -56,7 +56,34 @@ const rideSchema = new mongoose.Schema({
   removalReason: { type: String, trim: true, maxlength: 1000, default: '' },
   reviewedAt: { type: Date, default: null },
   reviewedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
-  submittedAt: { type: Date, default: Date.now }
+  submittedAt: { type: Date, default: Date.now },
+
+  /* ------------------------------------------------------------ Smart Route */
+  // The ride's REAL driving road, so a rider searching a place in the middle of
+  // it can join midway instead of being told the ride does not go there.
+  //
+  // Every field below is optional and defaulted, which is what lets a ride
+  // created before 1.4 load with no migration: it simply has no geometry, and
+  // the matcher falls back to estimating a line between its two towns.
+  //
+  // `routeGeometry` is GeoJSON order: [[longitude, latitude], ...]. It is
+  // deselected in listings (see serializeRides) because it can hold a few
+  // hundred points, which would otherwise bloat every Find Ride response.
+  routeOrigin: { type: [Number], default: null },
+  routeDestination: { type: [Number], default: null },
+  routeGeometry: { type: [[Number]], default: undefined, select: false },
+  routeDistanceKm: { type: Number, default: 0, min: 0, max: 100000 },
+  routeDurationMin: { type: Number, default: 0, min: 0, max: 10000 },
+  // [{ name, coordinate, alongKm }] - the towns the road actually passes through,
+  // in order. This is what makes a route read "Junagadh to Ahmedabad via Rajkot".
+  routeVia: { type: [mongoose.Schema.Types.Mixed], default: () => [] },
+  // 'mapbox' | 'osrm' | 'estimate'. Never guess: the UI shows the label this
+  // produces, so an estimate is never presented as real road data.
+  routeProvider: { type: String, default: '', maxlength: 40 },
+  routeComputedAt: { type: Date, default: null },
+  // Why no geometry exists. Surfaced on the ride's own screen so a blank route
+  // is explained rather than looking broken.
+  routeError: { type: String, default: '', maxlength: 300 }
 }, { timestamps: true });
 
 rideSchema.index({ status: 1, date: 1 });
