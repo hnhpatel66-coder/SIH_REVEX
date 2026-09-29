@@ -52,23 +52,3 @@ services:
         sync: false
       - key: ADMIN_NAME
         value: REVEX Admin
-      # Mapbox. BOTH keys must be set here or the deployed site silently
-      # degrades: the page renders "MAPBOX_PUBLIC_TOKEN (a pk.... token) is not
-      # set, so the interactive Mapbox map is disabled" and draws a plain
-      # diagram instead. backend/.env holds them locally, but that file is
-      # gitignored and never reaches Render, so the ONLY copy that matters for
-      # production is the one set in the Render dashboard.
-      #
-      #   MAPBOX_ACCESS_TOKEN  a SECRET  sk.ey... token. Server side only:
-      #                         Mapbox Geocoding v5 and Directions v5.
-      #   MAPBOX_PUBLIC_TOKEN  a PUBLIC  pk.ey... token. Sent to the browser
-      #                         by GET /api/rides/map-config so Mapbox GL JS
-      #                         can draw the basemap. Needs the scopes
-      #                         styles:read, fonts:read, tiles:read; the secret
-      #                         token additionally needs styles:tiles:read.
-      #
-      # Get both from https://account.mapbox.com/access-tokens/
-      - key: MAPBOX_ACCESS_TOKEN
-        sync: false
-      - key: MAPBOX_PUBLIC_TOKEN
-        sync: false
