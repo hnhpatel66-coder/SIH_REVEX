@@ -1,0 +1,115 @@
+/* REVEX final publish refinements - 2026-09-29 */
+
+/* Admin Ask REVEX uses the same slim header language while reading as a clear action. */
+.admin-tabs .admin-ask-revex{
+  color: var(--pf-ink) !important;
+  text-decoration: none !important;
+}
+.admin-tabs .admin-ask-revex::before{
+  content: "✦";
+  margin-right: 6px;
+  color: var(--pf-accent, #2dd4bf);
+  font-size: .72em;
+}
+.admin-tabs .admin-ask-revex:hover{
+  color: var(--pf-ink) !important;
+  background: color-mix(in srgb, var(--pf-accent, #2dd4bf) 8%, transparent) !important;
+}
+
+/* Rental search panel: one coherent palette in both modes instead of a light card inside a dark page. */
+#rentalSearch{
+  background: color-mix(in srgb, var(--surface, #ffffff) 96%, transparent) !important;
+  border: 1px solid var(--line, #dfe7e4) !important;
+  box-shadow: 0 18px 52px rgba(5, 18, 27, .10) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+#rentalSearch .field{
+  gap: 8px !important;
+}
+#rentalSearch .field label{
+  display: block !important;
+  margin: 0 !important;
+  padding: 0 2px !important;
+  background: transparent !important;
+  border: 0 !important;
+  color: var(--muted-strong, #475569) !important;
+  font-size: .76rem !important;
+  font-weight: 800 !important;
+  line-height: 1.25 !important;
+}
+#rentalSearch .field input,
+#rentalSearch .field select{
+  min-height: 52px !important;
+  border-radius: 12px !important;
+  background: var(--panel-soft, #f8fafc) !important;
+  border: 1px solid var(--line, #dfe7e4) !important;
+  color: var(--ink, #0f172a) !important;
+  box-shadow: inset 0 1px 2px rgba(15,23,42,.025) !important;
+}
+#rentalSearch .field input::placeholder{
+  color: var(--muted, #94a3b8) !important;
+}
+#rentalSearch .field input:focus,
+#rentalSearch .field select:focus{
+  border-color: var(--brand, #14b8a6) !important;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand, #14b8a6) 16%, transparent) !important;
+}
+#rentalSearch > .btn{
+  min-height: 52px !important;
+  align-self: end !important;
+  border-radius: 12px !important;
+  font-weight: 800 !important;
+}
+
+[data-theme="dark"] #rentalSearch{
+  background: #0b1f2b !important;
+  border-color: rgba(95, 224, 211, .18) !important;
+  box-shadow: 0 20px 58px rgba(0,0,0,.30) !important;
+}
+[data-theme="dark"] #rentalSearch .field label{
+  background: transparent !important;
+  color: #b9cbd6 !important;
+}
+[data-theme="dark"] #rentalSearch .field input,
+[data-theme="dark"] #rentalSearch .field select{
+  background: #0f2937 !important;
+  border-color: rgba(139, 190, 200, .20) !important;
+  color: #eef8fa !important;
+}
+[data-theme="dark"] #rentalSearch .field input::placeholder{
+  color: #8199a6 !important;
+}
+[data-theme="dark"] #rentalSearch .field select option{
+  background: #0f2937 !important;
+  color: #eef8fa !important;
+}
+[data-theme="dark"] #rentalSearch > .btn-primary{
+  background: linear-gradient(135deg, #27d7c6, #21bfb2) !important;
+  color: #052529 !important;
+  border-color: transparent !important;
+  box-shadow: 0 10px 24px rgba(39,215,198,.20) !important;
+}
+
+/* Light mode keeps the form premium rather than stark white. */
+[data-theme="light"] #rentalSearch{
+  background: #f8fcfb !important;
+  border-color: #dbe9e6 !important;
+}
+[data-theme="light"] #rentalSearch .field input,
+[data-theme="light"] #rentalSearch .field select{
+  background: #ffffff !important;
+  border-color: #d7e4e2 !important;
+  color: #10232d !important;
+}
+[data-theme="light"] #rentalSearch .field label{
+  color: #425b66 !important;
+}
+
+/* Keep the page consistent on tablet/mobile. */
+@media (max-width: 760px){
+  #rentalSearch{padding: 15px !important; gap: 12px !important;}
+  #rentalSearch .field input,
+  #rentalSearch .field select,
+  #rentalSearch > .btn{min-height: 50px !important;}
+}

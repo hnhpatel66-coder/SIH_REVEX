@@ -1,0 +1,10 @@
+REVEX FINAL PUBLISH RELEASE
+
+Final requested refinements applied:
+- Admin header Chat tab replaced by Ask REVEX.
+- Embedded admin chat panel removed; Ask REVEX opens the shared chat page.
+- Admin stale saved Chat tab falls back safely to Dashboard.
+- Admin-lite navigation labels the shared assistant as Ask REVEX.
+- Rental search form now uses a coherent premium palette in both light and dark mode.
+- Dark mode no longer shows a bright white rental filter card or dark label strips.
+- No backend/API/database files were modified for these UI changes.

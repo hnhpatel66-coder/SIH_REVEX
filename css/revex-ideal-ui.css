@@ -1,0 +1,393 @@
+/* REVEX IDEAL UI RELEASE — final header + assistant spacing polish
+   Frontend-only. API/backend/auth/payment/map contracts are untouched. */
+
+/* Accessible visually-hidden helper used by the assistant composer. */
+.sr-only {
+  position:absolute !important;
+  width:1px !important;
+  height:1px !important;
+  padding:0 !important;
+  margin:-1px !important;
+  overflow:hidden !important;
+  clip:rect(0,0,0,0) !important;
+  white-space:nowrap !important;
+  border:0 !important;
+}
+
+/* ========================================================================== 
+   ONE HEADER DESIGN LANGUAGE — USER + OWNER
+   Plain navigation, breathing room, active underline, compact actions.
+   ========================================================================== */
+@media (min-width: 1440px) {
+  html[data-role="user"][data-role][data-role] body > header.container,
+  html[data-role="owner"][data-role][data-role] body > header.container {
+    min-height:72px !important;
+    padding:0 28px !important;
+    background:color-mix(in srgb,var(--revex-header) 96%,transparent) !important;
+    border-bottom:1px solid color-mix(in srgb,var(--pf-line) 76%,transparent) !important;
+    box-shadow:0 5px 22px rgba(3,18,27,.08) !important;
+  }
+
+  html[data-role="user"][data-role][data-role] body > header.container > .nav,
+  html[data-role="owner"][data-role][data-role] body > header.container > .nav {
+    width:min(1760px,100%) !important;
+    min-height:72px !important;
+    height:72px !important;
+    grid-template-columns:auto minmax(0,1fr) auto !important;
+    grid-template-rows:72px !important;
+    column-gap:30px !important;
+    row-gap:0 !important;
+    padding:0 !important;
+    margin:0 auto !important;
+    border:0 !important;
+    border-radius:0 !important;
+    background:transparent !important;
+    box-shadow:none !important;
+  }
+
+  html[data-role="user"][data-role][data-role] body > header.container .brand,
+  html[data-role="owner"][data-role][data-role] body > header.container .brand {
+    gap:10px !important;
+    min-width:max-content !important;
+  }
+  html[data-role="user"][data-role][data-role] body > header.container .brand-mark,
+  html[data-role="owner"][data-role][data-role] body > header.container .brand-mark {
+    width:41px !important;
+    height:41px !important;
+    flex-basis:41px !important;
+  }
+  html[data-role="user"][data-role][data-role] body > header.container .brand-word,
+  html[data-role="owner"][data-role][data-role] body > header.container .brand-word {
+    font-size:1.12rem !important;
+    letter-spacing:-.035em !important;
+  }
+
+  html[data-role="user"][data-role][data-role] body > header.container .nav-links,
+  html[data-role="owner"][data-role][data-role] body > header.container .nav-links {
+    grid-column:2 !important;
+    grid-row:1 !important;
+    position:static !important;
+    display:flex !important;
+    flex-direction:row !important;
+    align-items:center !important;
+    justify-content:center !important;
+    width:auto !important;
+    min-width:0 !important;
+    margin:0 !important;
+    padding:0 !important;
+    gap:22px !important;
+    overflow-x:auto !important;
+    overflow-y:hidden !important;
+    border:0 !important;
+    border-radius:0 !important;
+    background:transparent !important;
+    box-shadow:none !important;
+    scrollbar-width:none !important;
+  }
+  html[data-role="user"][data-role][data-role] body > header.container .nav-links::-webkit-scrollbar,
+  html[data-role="owner"][data-role][data-role] body > header.container .nav-links::-webkit-scrollbar { display:none !important; }
+
+  html[data-role="user"][data-role][data-role] body > header.container .nav-links a,
+  html[data-role="owner"][data-role][data-role] body > header.container .nav-links a {
+    position:relative !important;
+    flex:0 0 auto !important;
+    min-width:max-content !important;
+    min-height:44px !important;
+    padding:0 1px !important;
+    border:0 !important;
+    border-radius:0 !important;
+    background:transparent !important;
+    color:var(--pf-muted) !important;
+    box-shadow:none !important;
+    font-size:.78rem !important;
+    font-weight:720 !important;
+    line-height:1 !important;
+    white-space:nowrap !important;
+  }
+  html[data-role="user"][data-role][data-role] body > header.container .nav-links a::after,
+  html[data-role="owner"][data-role][data-role] body > header.container .nav-links a::after {
+    content:"" !important;
+    display:block !important;
+    position:absolute !important;
+    left:0 !important;
+    right:0 !important;
+    bottom:4px !important;
+    height:2px !important;
+    border-radius:999px !important;
+    background:transparent !important;
+    transform:scaleX(.42) !important;
+    transition:transform .16s ease,background .16s ease !important;
+  }
+  html[data-role="user"][data-role][data-role] body > header.container .nav-links a:hover {
+    color:var(--pf-ink) !important;
+    background:transparent !important;
+  }
+  html[data-role="owner"][data-role][data-role] body > header.container .nav-links a:hover {
+    color:var(--pf-ink) !important;
+    background:transparent !important;
+  }
+  html[data-role="user"][data-role][data-role] body > header.container .nav-links a.active,
+  html[data-role="owner"][data-role][data-role] body > header.container .nav-links a.active,
+  html[data-role="user"][data-role][data-role] body > header.container .nav-links a[aria-current="page"],
+  html[data-role="owner"][data-role][data-role] body > header.container .nav-links a[aria-current="page"] {
+    color:var(--pf-ink) !important;
+    border:0 !important;
+    background:transparent !important;
+    box-shadow:none !important;
+  }
+  html[data-role="user"][data-role][data-role] body > header.container .nav-links a.active::after,
+  html[data-role="owner"][data-role][data-role] body > header.container .nav-links a.active::after,
+  html[data-role="user"][data-role][data-role] body > header.container .nav-links a[aria-current="page"]::after,
+  html[data-role="owner"][data-role][data-role] body > header.container .nav-links a[aria-current="page"]::after {
+    background:var(--pf-bright) !important;
+    transform:scaleX(1) !important;
+  }
+
+  html[data-role="user"][data-role][data-role] body > header.container .nav-actions,
+  html[data-role="owner"][data-role][data-role] body > header.container .nav-actions {
+    grid-column:3 !important;
+    grid-row:1 !important;
+    display:flex !important;
+    align-items:center !important;
+    justify-content:flex-end !important;
+    flex-wrap:nowrap !important;
+    width:auto !important;
+    min-width:max-content !important;
+    padding:0 !important;
+    gap:10px !important;
+    overflow:visible !important;
+  }
+  html[data-role="user"][data-role][data-role] body > header.container .nav-actions .btn,
+  html[data-role="owner"][data-role][data-role] body > header.container .nav-actions .btn,
+  html[data-role="user"][data-role][data-role] body > header.container .nav-actions .user-nav,
+  html[data-role="owner"][data-role][data-role] body > header.container .nav-actions .user-nav,
+  html[data-role="user"][data-role][data-role] body > header.container .notification-link,
+  html[data-role="owner"][data-role][data-role] body > header.container .notification-link,
+  html[data-role="user"][data-role][data-role] body > header.container .theme-toggle,
+  html[data-role="owner"][data-role][data-role] body > header.container .theme-toggle {
+    min-height:40px !important;
+    height:40px !important;
+    font-size:.72rem !important;
+  }
+  html[data-role="user"][data-role][data-role] body > header.container .nav-actions .btn,
+  html[data-role="owner"][data-role][data-role] body > header.container .nav-actions .btn { padding:0 14px !important; }
+  html[data-role="user"][data-role][data-role] body > header.container .notification-link,
+  html[data-role="owner"][data-role][data-role] body > header.container .notification-link {
+    width:40px !important;
+    min-width:40px !important;
+  }
+}
+
+/* Compact two-row fallback keeps the SAME visual language on medium screens. */
+@media (min-width: 781px) and (max-width: 1439px) {
+  html[data-role="user"][data-role][data-role] body > header.container,
+  html[data-role="owner"][data-role][data-role] body > header.container { padding:0 22px !important; }
+  html[data-role="user"][data-role][data-role] body > header.container > .nav,
+  html[data-role="owner"][data-role][data-role] body > header.container > .nav {
+    width:min(1500px,100%) !important;
+    min-height:108px !important;
+    grid-template-columns:auto minmax(0,1fr) auto !important;
+    grid-template-rows:60px 48px !important;
+    column-gap:16px !important;
+    row-gap:0 !important;
+    padding:0 !important;
+    margin:0 auto !important;
+    border:0 !important;
+    background:transparent !important;
+    box-shadow:none !important;
+  }
+  html[data-role="user"][data-role][data-role] body > header.container .nav-links,
+  html[data-role="owner"][data-role][data-role] body > header.container .nav-links {
+    grid-column:1/-1 !important;
+    grid-row:2 !important;
+    width:100% !important;
+    display:flex !important;
+    align-items:center !important;
+    justify-content:flex-start !important;
+    gap:24px !important;
+    padding:0 !important;
+    margin:0 !important;
+    overflow-x:auto !important;
+    border:0 !important;
+    border-top:1px solid color-mix(in srgb,var(--pf-line) 64%,transparent) !important;
+    border-radius:0 !important;
+    background:transparent !important;
+    box-shadow:none !important;
+    scrollbar-width:none !important;
+  }
+  html[data-role="user"][data-role][data-role] body > header.container .nav-links a,
+  html[data-role="owner"][data-role][data-role] body > header.container .nav-links a {
+    min-height:46px !important;
+    padding:0 1px !important;
+    border:0 !important;
+    border-radius:0 !important;
+    background:transparent !important;
+    box-shadow:none !important;
+    font-size:.75rem !important;
+  }
+  html[data-role="user"][data-role][data-role] body > header.container .nav-links a.active,
+  html[data-role="owner"][data-role][data-role] body > header.container .nav-links a.active {
+    color:var(--pf-ink) !important;
+    border:0 !important;
+    background:transparent !important;
+    box-shadow:inset 0 -2px 0 var(--pf-bright) !important;
+  }
+  html[data-role="user"][data-role][data-role] body > header.container .nav-actions,
+  html[data-role="owner"][data-role][data-role] body > header.container .nav-actions {
+    grid-column:3 !important;
+    grid-row:1 !important;
+    gap:7px !important;
+  }
+  html[data-role="user"][data-role][data-role] body > header.container .nav-actions .btn,
+  html[data-role="owner"][data-role][data-role] body > header.container .nav-actions .btn,
+  html[data-role="user"][data-role][data-role] body > header.container .nav-actions .user-nav,
+  html[data-role="owner"][data-role][data-role] body > header.container .nav-actions .user-nav,
+  html[data-role="user"][data-role][data-role] body > header.container .notification-link,
+  html[data-role="owner"][data-role][data-role] body > header.container .notification-link,
+  html[data-role="user"][data-role][data-role] body > header.container .theme-toggle,
+  html[data-role="owner"][data-role][data-role] body > header.container .theme-toggle { min-height:38px !important; height:38px !important; }
+}
+
+/* ========================================================================== 
+   ADMIN — same proportions + underline language, but roomier than the previous
+   compressed row. All controls still remain one row on wide desktop.
+   ========================================================================== */
+@media (min-width: 1440px) {
+  .admin-topbar .admin-topbar-inner {
+    width:min(1780px,calc(100% - 52px)) !important;
+    min-height:72px !important;
+    padding:0 !important;
+    gap:18px !important;
+  }
+  .admin-topbar .brand { gap:10px !important; margin-right:8px !important; }
+  .admin-topbar .brand .brand-mark { width:39px !important; height:39px !important; flex-basis:39px !important; }
+  .admin-topbar .brand .brand-word { font-size:1.10rem !important; }
+  .admin-tabs { gap:8px !important; }
+  .admin-tab {
+    min-height:44px !important;
+    padding:0 9px !important;
+    font-size:.76rem !important;
+    font-weight:700 !important;
+  }
+  .admin-tab::after { left:9px !important; right:9px !important; bottom:3px !important; }
+  .admin-view-site,
+  .admin-topbar [data-exit-admin] {
+    min-height:40px !important;
+    height:40px !important;
+    padding:0 13px !important;
+    border-radius:10px !important;
+    font-size:.72rem !important;
+  }
+  .admin-view-site { margin-left:8px !important; }
+  .admin-topbar [data-exit-admin] { margin-left:-6px !important; }
+}
+
+@media (min-width: 951px) and (max-width: 1439px) {
+  .admin-topbar .admin-topbar-inner { width:calc(100% - 30px) !important; min-height:68px !important; gap:10px !important; }
+  .admin-tabs { gap:4px !important; }
+  .admin-tab { min-height:42px !important; padding:0 7px !important; font-size:.70rem !important; }
+  .admin-tab::after { left:7px !important; right:7px !important; }
+  .admin-view-site,
+  .admin-topbar [data-exit-admin] { min-height:38px !important; padding:0 10px !important; border-radius:9px !important; }
+}
+
+/* ========================================================================== 
+   ASSISTANT FULL PAGE — balanced margins and controlled vertical rhythm.
+   ========================================================================== */
+body.chat-page-body main.container.section {
+  width:min(1480px,calc(100% - 48px)) !important;
+  padding-top:42px !important;
+  padding-bottom:52px !important;
+}
+body.chat-page-body .rvx-page-head {
+  margin-bottom:18px !important;
+  align-items:end !important;
+}
+body.chat-page-body .rvx-notice { margin-bottom:18px !important; }
+body.chat-page-body .rvx-chat-layout {
+  grid-template-columns:minmax(240px,280px) minmax(0,1fr) !important;
+  gap:24px !important;
+  align-items:start !important;
+}
+body.chat-page-body .rvx-chat-layout > aside .rvx-card {
+  padding:22px !important;
+  border-radius:18px !important;
+}
+body.chat-page-body .rvx-chat-page {
+  height:clamp(500px,56vh,590px) !important;
+  min-height:500px !important;
+  border-radius:18px !important;
+  box-shadow:0 18px 48px -32px rgba(4,23,34,.48) !important;
+}
+body.chat-page-body .rvx-chat-panel[data-host="page"] {
+  height:100% !important;
+  min-height:0 !important;
+  display:flex !important;
+  flex-direction:column !important;
+}
+body.chat-page-body .rvx-chat-panel[data-host="page"] .rvx-chat-head {
+  padding:14px 18px !important;
+  min-height:76px !important;
+}
+body.chat-page-body .rvx-chat-panel[data-host="page"] .rvx-chat-log {
+  min-height:0 !important;
+  padding:18px 18px 14px !important;
+}
+body.chat-page-body .rvx-chat-panel[data-host="page"] .rvx-chat-msg {
+  max-width:82% !important;
+  margin-bottom:10px !important;
+  padding:11px 14px !important;
+}
+body.chat-page-body .rvx-chat-panel[data-host="page"] .rvx-chat-suggest {
+  gap:9px !important;
+  padding:11px 18px !important;
+}
+body.chat-page-body .rvx-chat-panel[data-host="page"] .rvx-chat-suggest button {
+  padding:8px 12px !important;
+}
+body.chat-page-body .rvx-chat-panel[data-host="page"] .rvx-chat-form {
+  align-items:center !important;
+  gap:10px !important;
+  padding:12px 18px 10px !important;
+}
+body.chat-page-body .rvx-chat-panel[data-host="page"] .rvx-chat-form textarea {
+  min-height:46px !important;
+  max-height:96px !important;
+  padding:12px 14px !important;
+  border-radius:13px !important;
+}
+body.chat-page-body .rvx-chat-panel[data-host="page"] .rvx-chat-form button {
+  width:46px !important;
+  height:46px !important;
+  border-radius:13px !important;
+}
+body.chat-page-body .rvx-chat-panel[data-host="page"] .rvx-chat-note {
+  margin:0 !important;
+  padding:2px 18px 14px !important;
+  font-size:.72rem !important;
+  line-height:1.45 !important;
+}
+body.chat-page-body .rvx-chat-panel[data-host="page"] .rvx-chat-status {
+  margin:0 18px 10px !important;
+}
+body.chat-page-body .rvx-card[style*="margin-top:20px"] { margin-top:24px !important; }
+
+@media (max-width: 939px) {
+  body.chat-page-body main.container.section { width:min(100% - 30px,900px) !important; padding-top:28px !important; }
+  body.chat-page-body .rvx-chat-layout { grid-template-columns:1fr !important; gap:16px !important; }
+  body.chat-page-body .rvx-chat-layout > aside .rvx-card { padding:18px !important; }
+  body.chat-page-body .rvx-chat-page { height:min(600px,62vh) !important; min-height:500px !important; }
+}
+@media (max-width: 640px) {
+  body.chat-page-body main.container.section { width:calc(100% - 20px) !important; padding-top:20px !important; padding-bottom:34px !important; }
+  body.chat-page-body .rvx-chat-page { height:calc(100vh - 210px) !important; min-height:470px !important; border-radius:15px !important; }
+  body.chat-page-body .rvx-chat-panel[data-host="page"] .rvx-chat-head { min-height:68px !important; padding:12px 14px !important; }
+  body.chat-page-body .rvx-chat-panel[data-host="page"] .rvx-chat-log { padding:14px 12px 10px !important; }
+  body.chat-page-body .rvx-chat-panel[data-host="page"] .rvx-chat-suggest { padding:9px 12px !important; }
+  body.chat-page-body .rvx-chat-panel[data-host="page"] .rvx-chat-form { padding:10px 12px 8px !important; }
+  body.chat-page-body .rvx-chat-panel[data-host="page"] .rvx-chat-note { padding:2px 12px 11px !important; }
+}
+
+/* Avoid old oversized page-host minimums overriding the polished layout. */
+body.chat-page-body .rvx-chat-panel[data-host="page"].rvx-chat-log--tall,
+body.chat-page-body .rvx-chat-panel[data-host="page"] .rvx-chat-log--tall { min-height:0 !important; }

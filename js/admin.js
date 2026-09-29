@@ -9,7 +9,6 @@
  * Additions in 1.3:
  *   - Ride Approvals tab: the full approval queue with owner, vehicle, photo,
  *     registration, route, timing, seats, price and documents.
- *   - Ride Bookings tab: confirm / complete / cancel-with-refund.
  *   - Payments tab: the gateway ledger.
  *   - Chat tab: the admin's own assistant conversation.
  *   - Vehicle actions inside the Owner Summary (approve, reject, disable,
@@ -30,7 +29,6 @@
     owners: [],
     ownerDetail: null,
     bookings: [],
-    rideBookings: [],
     rideApprovals: [],
     payments: [],
     users: [],
@@ -44,7 +42,6 @@
       ownerSearch: '',
       booking: 'all',
       ride: 'pending',
-      rideBooking: 'all',
       payment: 'all',
       user: 'all',
       agreement: 'all',
@@ -129,7 +126,6 @@
       statCard('Pending vehicles', summary.pendingVehicleVerification, 'Awaiting documents'),
       statCard('Ride offers', summary.rides, `${summary.pendingRideApprovals || 0} pending`),
       statCard('Rental bookings', summary.bookings, 'Rental records'),
-      statCard('Ride bookings', summary.rideBookings || 0, 'Seat requests'),
       statCard('Total revenue', formatMoney(summary.totalRevenue), 'Paid, non-cancelled'),
       statCard('Platform share', formatMoney(summary.platformEarnings ?? summary.commission), `${100 - ownerRate}% service fee`),
       statCard('Owner payout', formatMoney(summary.ownerPayout), `${ownerRate}% of gross`),
@@ -144,7 +140,6 @@
     const pendingVehicles = state.vehicles.filter(vehicle => vehicle.status === 'pending');
     const pendingRides = state.rideApprovals.filter(ride => ride.status === 'pending');
     const pendingBookings = state.bookings.filter(booking => booking.status === 'pending_owner');
-    const pendingRideBookings = state.rideBookings.filter(booking => booking.status === 'pending_owner');
     const section = (title, items, render) => `
       <h4 style="margin:14px 0 6px">${escapeHtml(title)} (${items.length})</h4>
       ${items.length ? items.slice(0, 4).map(render).join('') : '<div class="empty">Nothing waiting.</div>'}`;
@@ -153,8 +148,7 @@
         `<button class="btn btn-primary btn-small" data-verify="${escapeHtml(vehicle.id)}" data-decision="approve" type="button">Approve</button>`)),
       section('Ride offers awaiting approval', pendingRides, ride => row(`${ride.from} → ${ride.to}`, `${ride.driverName || 'Owner'} · ${formatDate(ride.date)}`,
         `<button class="btn btn-primary btn-small" data-ride-verify="${escapeHtml(ride.id)}" data-decision="approve" type="button">Approve</button>`)),
-      section('Rental requests awaiting an owner', pendingBookings, booking => row(booking.vehicleName, `${booking.userName} · ${formatMoney(booking.grandTotal)}`, '')),
-      section('Seat requests awaiting a driver', pendingRideBookings, booking => row(`${booking.from} → ${booking.to}`, `${booking.userName} · ${formatMoney(booking.totalAmount)}`, ''))
+      section('Rental requests awaiting an owner', pendingBookings, booking => row(booking.vehicleName, `${booking.userName} · ${formatMoney(booking.grandTotal)}`, ''))
     ].join('');
   }
 
@@ -162,11 +156,7 @@
     const box = document.getElementById('adminActivity');
     if (!box) return;
     const rental = state.bookings.slice(0, 4).map(item => row(item.vehicleName || 'Vehicle', `${item.userName} · ${formatDateTime(item.createdAt)}`, statusBadge(item.status)));
-    const ride = state.rideBookings.slice(0, 4).map(item => row(`${item.from} → ${item.to}`, `${item.userName} · ${formatDateTime(item.createdAt)}`, statusBadge(item.status)));
-    box.innerHTML = [
-      rental.length ? `<h4 style="margin:0 0 6px">Rental bookings</h4>${rental.join('')}` : '<div class="empty">No rental activity yet.</div>',
-      ride.length ? `<h4 style="margin:14px 0 6px">Ride bookings</h4>${ride.join('')}` : ''
-    ].join('');
+    box.innerHTML = rental.length ? `<h4 style="margin:0 0 6px">Rental bookings</h4>${rental.join('')}` : '<div class="empty">No rental activity yet.</div>';
   }
 
   /* ----------------------------------------------------------- vehicles */
@@ -267,7 +257,7 @@
         <div class="owner-metrics">
           <span><b>${owner.totalVehicles}</b> vehicles</span><span><b>${owner.approvedVehicles}</b> approved</span>
           <span><b>${owner.pendingVehicles}</b> pending</span><span><b>${owner.totalRides}</b> rides</span>
-          <span><b>${owner.totalBookings}</b> rentals</span><span><b>${owner.totalRideBookings}</b> seat requests</span>
+          <span><b>${owner.totalBookings}</b> rentals</span>
           <span><b>${owner.completedBookings}</b> completed</span><span><b>${owner.cancelledBookings}</b> cancelled</span>
           <span><b>${formatMoney(owner.totalEarnings)}</b> earnings</span>
         </div>
@@ -301,7 +291,6 @@
         ${stat('Total vehicles', totals.totalVehicles || 0, `${totals.approvedVehicles || 0} approved`)}
         ${stat('Total rides', rides.length, `${rides.filter(r => r.status === 'pending').length} pending approval`)}
         ${stat('Rental bookings', totals.totalBookings || 0, `${totals.completedBookings || 0} completed`)}
-        ${stat('Seat requests', activity.totalRideBookings || 0, `${activity.totalRentalBookings || 0} rental bookings`)}
         ${stat('Total revenue', formatMoney(revenue.total?.gross || 0), 'Paid, non-cancelled', 'accent')}
         ${stat('Cancellations', activity.cancellationCount || 0, `${formatMoney(revenue.total?.refunds || 0)} refunded`, activity.cancellationCount ? 'bad' : '')}
       </div>
@@ -359,7 +348,6 @@
         ${stat('Active rides', activity.activeRides || 0)}
         ${stat('Completed rides', activity.completedRides || 0)}
         ${stat('Cancelled rides', activity.cancelledRides || 0)}
-        ${stat('Total ride bookings', activity.totalRideBookings || 0)}
         ${stat('Total rental bookings', activity.totalRentalBookings || 0)}
         ${stat('Completed rentals', activity.completedRentalBookings || 0)}
         ${stat('Cancellations', activity.cancellationCount || 0)}
@@ -373,9 +361,6 @@
 
       <h3 style="margin-top:24px">Recent rental bookings</h3>
       ${(data.recentBookings || []).length ? (data.recentBookings || []).slice(0, 12).map(booking => row(booking.vehicleName || 'Vehicle', `${booking.userName} · ${formatDateTime(booking.createdAt)} · ${formatMoney(booking.grandTotal)}`, statusBadge(booking.status))).join('') : '<div class="empty">No rental bookings yet.</div>'}
-
-      <h3 style="margin-top:24px">Recent seat requests</h3>
-      ${(data.rideBookings || []).length ? (data.rideBookings || []).slice(0, 12).map(booking => row(`${booking.from} → ${booking.to}`, `${booking.userName} · ${booking.seats} seat(s) · ${formatMoney(booking.totalAmount)}`, statusBadge(booking.status))).join('') : '<div class="empty">No seat requests yet.</div>'}
     </article>`;
 
     box.querySelector('#closeOwnerDetail')?.addEventListener('click', () => { state.activeOwnerId = null; renderOwnerDetail(null); });
@@ -434,30 +419,6 @@
     const filter = state.filters.ride;
     const list = filter === 'all' ? state.rideApprovals : state.rideApprovals.filter(ride => ride.status === filter);
     box.innerHTML = list.length ? list.map(rideApprovalCard).join('') : '<div class="empty">No ride offers in this status.</div>';
-  }
-
-  /* -------------------------------------------------------- ride bookings */
-
-  function renderRideBookings() {
-    const box = document.getElementById('adminRideBookings');
-    if (!box) return;
-    const filter = state.filters.rideBooking;
-    const list = filter === 'all' ? state.rideBookings : state.rideBookings.filter(booking => booking.status === filter);
-    box.innerHTML = list.length ? list.map(booking => `
-      <article class="booking-row" data-ride-booking-row="${escapeHtml(booking.id)}">
-        <div class="rvx-user" style="margin-bottom:8px">
-          ${imageOrInitials(booking.vehicleImage, booking.vehicleName, { className: 'rvx-thumb rvx-thumb--xs', alt: '' })}
-          <span style="min-width:0"><strong>${escapeHtml(booking.from)} → ${escapeHtml(booking.to)}</strong><small>${escapeHtml(booking.userName || 'Rider')} · ${escapeHtml(formatDate(booking.rideDate))} ${escapeHtml(booking.rideTime || '')}</small></span>
-        </div>
-        <div class="badge-row">${statusBadge(booking.status)}${statusBadge(booking.paymentStatus)}${booking.paymentMethod === 'demo' ? statusBadge('pending', 'test') : ''}</div>
-        <p class="card-meta">${booking.seats} seat(s) · ${formatMoney(booking.totalAmount)} · booked ${escapeHtml(formatDateTime(booking.createdAt))}</p>
-        ${booking.cancellation?.reason ? `<p class="status-error">${escapeHtml(booking.cancellation.reason)} · refund ${formatMoney(booking.cancellation.refundAmount || 0)}</p>` : ''}
-        <div class="request-actions">
-          ${booking.status === 'pending_owner' && booking.paymentStatus === 'paid' ? `<button class="btn btn-outline btn-small" data-ridebooking-status="confirmed" data-ridebooking-id="${escapeHtml(booking.id)}" type="button">Confirm</button>` : ''}
-          ${booking.status === 'confirmed' ? `<button class="btn btn-outline btn-small" data-ridebooking-status="completed" data-ridebooking-id="${escapeHtml(booking.id)}" type="button">Complete</button>` : ''}
-          ${!['completed', 'rejected'].includes(booking.status) && !String(booking.status).startsWith('cancelled') ? `<button class="btn btn-danger btn-small" data-ridebooking-cancel="${escapeHtml(booking.id)}" type="button">Cancel &amp; refund</button>` : ''}
-        </div>
-      </article>`).join('') : '<div class="empty">No ride bookings in this status.</div>';
   }
 
   /* ------------------------------------------------------------ bookings */
@@ -628,7 +589,6 @@
       api('/admin/vehicles?status=all'),
       api('/admin/owners'),
       api('/admin/bookings'),
-      api('/admin/ride-bookings'),
       api('/admin/ride-approvals?status=all'),
       api('/admin/income'),
       api('/admin/users'),
@@ -643,29 +603,40 @@
     state.vehicles = list(1);
     state.owners = list(2);
     state.bookings = list(3);
-    state.rideBookings = list(4);
-    state.rideApprovals = list(5);
-    state.income = value(6);
-    state.users = list(7);
-    state.profile = value(8)?.user || null;
-    state.agreements = list(9).length ? list(9) : (value(9)?.agreements || []);
-    state.missingAgreements = value(9)?.missingBookings || [];
-    state.payments = list(10);
+    state.rideApprovals = list(4);
+    state.income = value(5);
+    state.users = list(6);
+    state.profile = value(7)?.user || null;
+    state.agreements = list(8).length ? list(8) : (value(8)?.agreements || []);
+    state.missingAgreements = value(8)?.missingBookings || [];
+    state.payments = list(9);
 
     renderStats(); renderApprovalSummary(); renderActivity(); renderVehicles();
-    renderOwners(); renderRideApprovals(); renderBookings(); renderRideBookings();
+    renderOwners(); renderRideApprovals(); renderBookings();
     renderPayments(); renderAgreements(); renderIncome(); renderUsers(); renderAdminProfile();
 
     const failed = results.findIndex(result => result.status === 'rejected');
     if (failed >= 0) adminMessage(results[failed].reason?.message || 'Some admin data could not be loaded.', true);
   }
 
-  function showTab(tab) {
+  function showTab(tab, options = {}) {
+    if (!tab || tab === 'rideBookings' || !document.getElementById(`panel-${tab}`)) tab = 'dashboard';
     state.activeTab = tab;
     document.querySelectorAll('.admin-tab').forEach(button => button.classList.toggle('active', button.dataset.tab === tab));
     document.querySelectorAll('.admin-panel').forEach(panel => panel.classList.toggle('active', panel.id === `panel-${tab}`));
     try { sessionStorage.setItem('revexAdminTab', tab); } catch { /* private mode */ }
-    if (tab === 'chat') mountAdminChat();
+
+    // Keep the active Admin function in the URL so refresh, browser Back/Forward
+    // and direct links behave like the User/Owner mobile navigation.
+    if (options.history) {
+      const url = new URL(location.href);
+      url.searchParams.set('tab', tab);
+      url.searchParams.delete('bookingId');
+      const method = options.history === 'replace' ? 'replaceState' : 'pushState';
+      if (`${url.pathname}${url.search}${url.hash}` !== `${location.pathname}${location.search}${location.hash}`) {
+        history[method]({ revexAdminTab: tab }, '', `${url.pathname}${url.search}${url.hash}`);
+      }
+    }
   }
 
   /* ------------------------------------------------------------- actions */
@@ -820,34 +791,6 @@
     } catch (error) { adminMessage(error.message, true); showToast(error.message, 'bad'); busy(button, false); }
   }
 
-  async function updateRideBookingStatus(button) {
-    const next = button.dataset.ridebookingStatus;
-    const answer = await confirmAction({ title: `Mark this seat ${next}?`, message: 'The rider is notified.', confirmLabel: `Mark ${next}` });
-    if (!answer) return;
-    busy(button);
-    try {
-      const result = await api(`/admin/ride-bookings/${encodeURIComponent(button.dataset.ridebookingId)}/status`, { method: 'PATCH', body: { status: next } });
-      adminMessage(result.message || 'Ride booking updated.'); showToast(result.message || 'Ride booking updated.', 'ok');
-      await loadData();
-    } catch (error) { adminMessage(error.message, true); showToast(error.message, 'bad'); busy(button, false); }
-  }
-
-  async function cancelRideBooking(button) {
-    const answer = await confirmAction({
-      title: 'Cancel this seat?',
-      message: 'The seat is released and the rider is refunded under the REVEX cancellation policy. The booking record is kept for the audit trail.',
-      confirmLabel: 'Cancel and refund', tone: 'danger',
-      reasonLabel: 'Cancellation reason (the rider sees this)', reasonRequired: true
-    });
-    if (!answer) return;
-    busy(button);
-    try {
-      const result = await api(`/admin/ride-bookings/${encodeURIComponent(button.dataset.ridebookingCancel)}/status`, { method: 'PATCH', body: { status: 'cancelled', reason: answer.reason } });
-      adminMessage(result.message); showToast(result.message, 'ok', 9000);
-      if (result.refund?.gatewayError) showToast(`Automatic refund failed: ${result.refund.gatewayError}`, 'bad', 12000);
-      await loadData();
-    } catch (error) { adminMessage(error.message, true); showToast(error.message, 'bad'); busy(button, false); }
-  }
 
   async function deleteUserAccount(button) {
     const name = button.dataset.userName || 'this account';
@@ -895,10 +838,17 @@
 
   document.addEventListener('DOMContentLoaded', async () => {
     if (getStoredUser()?.role !== 'admin') return;
-    document.querySelector('[data-exit-admin]')?.addEventListener('click', () => { clearSession(); location.href = 'index.html'; });
+    document.querySelectorAll('[data-exit-admin]').forEach((button) => button.addEventListener('click', () => { clearSession(); location.href = 'index.html'; }));
     document.querySelector('.admin-tabs')?.addEventListener('click', event => {
       const button = event.target.closest('[data-tab]');
-      if (button) showTab(button.dataset.tab);
+      if (button) {
+        event.preventDefault();
+        showTab(button.dataset.tab, { history: 'push' });
+        const tabs = document.querySelector('.admin-tabs');
+        const menu = document.querySelector('.admin-menu');
+        tabs?.classList.remove('open');
+        menu?.setAttribute('aria-expanded', 'false');
+      }
     });
 
     document.body.addEventListener('click', async event => {
@@ -919,8 +869,6 @@
       if (bookingFilter) { state.filters.booking = bookingFilter.dataset.bookingFilter; document.querySelectorAll('[data-booking-filter]').forEach(chip => chip.classList.toggle('active', chip === bookingFilter)); renderBookings(); return; }
       const rideFilter = event.target.closest('[data-ride-filter]');
       if (rideFilter) { state.filters.ride = rideFilter.dataset.rideFilter; document.querySelectorAll('[data-ride-filter]').forEach(chip => chip.classList.toggle('active', chip === rideFilter)); renderRideApprovals(); return; }
-      const rideBookingFilter = event.target.closest('[data-ridebooking-filter]');
-      if (rideBookingFilter) { state.filters.rideBooking = rideBookingFilter.dataset.ridebookingFilter; document.querySelectorAll('[data-ridebooking-filter]').forEach(chip => chip.classList.toggle('active', chip === rideBookingFilter)); renderRideBookings(); return; }
       const paymentFilter = event.target.closest('[data-payment-filter]');
       if (paymentFilter) { state.filters.payment = paymentFilter.dataset.paymentFilter; document.querySelectorAll('[data-payment-filter]').forEach(chip => chip.classList.toggle('active', chip === paymentFilter)); renderPayments(); return; }
       const userFilter = event.target.closest('[data-user-filter]');
@@ -940,10 +888,6 @@
       if (booking) return updateBookingStatus(booking);
       const bookingCancel = event.target.closest('[data-booking-cancel]');
       if (bookingCancel) return cancelBooking(bookingCancel);
-      const rideBooking = event.target.closest('[data-ridebooking-status]');
-      if (rideBooking) return updateRideBookingStatus(rideBooking);
-      const rideBookingCancel = event.target.closest('[data-ridebooking-cancel]');
-      if (rideBookingCancel) return cancelRideBooking(rideBookingCancel);
       const ride = event.target.closest('[data-ride-verify]');
       if (ride) return verifyRide(ride);
       const rideRemove = event.target.closest('[data-ride-remove]');
@@ -980,8 +924,26 @@
       } catch (error) { message.textContent = error.message; message.className = 'form-message form-message-error'; }
     });
 
-    try { const saved = sessionStorage.getItem('revexAdminTab'); if (saved) showTab(saved); } catch { /* private mode */ }
-    const focusBooking = new URLSearchParams(location.search).get('bookingId');
+    const pageParams = new URLSearchParams(location.search);
+    const requestedTabRaw = pageParams.get('tab');
+    const requestedTab = requestedTabRaw === 'rideBookings' ? 'dashboard' : requestedTabRaw;
+    try { if (sessionStorage.getItem('revexAdminTab') === 'rideBookings') sessionStorage.removeItem('revexAdminTab'); } catch { /* private mode */ }
+    try {
+      const saved = sessionStorage.getItem('revexAdminTab');
+      if (requestedTab && document.getElementById(`panel-${requestedTab}`)) showTab(requestedTab);
+      else if (saved && document.getElementById(`panel-${saved}`)) showTab(saved);
+      else showTab('dashboard');
+    } catch {
+      if (requestedTab && document.getElementById(`panel-${requestedTab}`)) showTab(requestedTab);
+      else showTab('dashboard');
+    }
+    window.addEventListener('popstate', () => {
+      const raw = new URLSearchParams(location.search).get('tab');
+      const tab = raw === 'rideBookings' ? 'dashboard' : raw;
+      showTab(tab && document.getElementById(`panel-${tab}`) ? tab : 'dashboard');
+    });
+
+    const focusBooking = pageParams.get('bookingId');
     if (focusBooking) showTab('bookings');
 
     await loadData();

@@ -1,0 +1,444 @@
+/* ==========================================================================\n   REVEX FINAL TYPOGRAPHY + ALIGNMENT RELEASE\n   Approved reference: compact premium hierarchy, calm spacing, one visual\n   rhythm across every page. This file is loaded LAST and intentionally does\n   not alter the REVEX logo artwork, logo proportions, or brand colors.\n   ========================================================================== */
+
+:root {
+  --rft-page: 1380px;
+  --rft-gutter: clamp(20px, 3.2vw, 52px);
+  --rft-display: 'Manrope', 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --rft-ui: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --rft-title: clamp(2.55rem, 3.5vw, 3.65rem);
+  --rft-section: clamp(2rem, 2.7vw, 2.75rem);
+  --rft-card: 1.16rem;
+  --rft-body: 1rem;
+  --rft-small: .88rem;
+}
+
+/* Keep a single centered alignment grid on every page. */
+.container,
+main.container,
+section.container,
+.footer > .container {
+  width: min(var(--rft-page), calc(100% - (var(--rft-gutter) * 2))) !important;
+  max-width: var(--rft-page) !important;
+  margin-inline: auto !important;
+}
+
+/* One typography system everywhere. */
+body {
+  font-family: var(--rft-ui) !important;
+  font-size: var(--rft-body) !important;
+  line-height: 1.6 !important;
+  letter-spacing: -.008em !important;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,h2,h3,h4,h5,h6,
+.section-title,
+.rvx-page-head h1,
+.page-hero h1,
+.owner-hero h1,
+.admin-panel h1,
+.admin-panel h2,
+.assistant-pro-title,
+.assistant-page-title {
+  font-family: var(--rft-display) !important;
+  font-style: normal !important;
+  letter-spacing: -.045em !important;
+  text-wrap: balance;
+}
+
+h1,
+.section-title,
+.rvx-page-head h1,
+.page-hero h1,
+.owner-hero h1 {
+  font-weight: 800 !important;
+}
+
+p,li,dd,dt,label,input,select,textarea,button,a,small,span {
+  font-family: var(--rft-ui) !important;
+}
+
+/* Standard page title scale: intentionally smaller than the previous build. */
+.rvx-page-head h1,
+.page-hero h1,
+.owner-hero h1,
+main.container.section > .section-title,
+.admin-panel .section-title {
+  font-size: var(--rft-title) !important;
+  line-height: 1.03 !important;
+  letter-spacing: -.05em !important;
+  margin-top: 10px !important;
+  margin-bottom: 14px !important;
+  max-width: 820px !important;
+}
+
+.section-title:not(h1),
+h2.section-title,
+.small-title {
+  font-size: var(--rft-section) !important;
+  line-height: 1.08 !important;
+  letter-spacing: -.042em !important;
+}
+
+h3,
+.detail-panel > h3,
+.rvx-card__title,
+.feature-card h3,
+.vehicle-card h3,
+.admin-card h3,
+.modal-box h2 {
+  font-size: var(--rft-card) !important;
+  line-height: 1.28 !important;
+  letter-spacing: -.025em !important;
+  font-weight: 750 !important;
+}
+
+p,
+.section-intro,
+.rvx-page-head p,
+.page-hero p,
+.owner-hero p,
+.detail-panel p,
+.feature-card p,
+.vehicle-card p {
+  font-size: 1rem !important;
+  line-height: 1.68 !important;
+  letter-spacing: -.008em !important;
+}
+
+.eyebrow,.rvx-eyebrow,.feature-kicker {
+  font-size: .76rem !important;
+  line-height: 1.1 !important;
+  letter-spacing: .17em !important;
+  font-weight: 800 !important;
+  text-transform: uppercase;
+}
+
+/* Header text: compact and aligned like the approved reference. Logo itself is untouched. */
+.nav-links a,
+.nav-actions a,
+.nav-actions button,
+.menu-btn,
+.admin-nav a,
+.owner-nav a {
+  font-size: .92rem !important;
+  line-height: 1.2 !important;
+  font-weight: 650 !important;
+  letter-spacing: -.015em !important;
+}
+
+/* Buttons and form typography are identical across all pages. */
+.btn,.rvx-btn,button[type='submit'],button[type='button'] {
+  font-size: .92rem !important;
+  line-height: 1.2 !important;
+  font-weight: 700 !important;
+  letter-spacing: -.018em !important;
+}
+
+label,.field label,.rvx-field label,.rvx-field > span {
+  font-size: .86rem !important;
+  line-height: 1.25 !important;
+  font-weight: 700 !important;
+  letter-spacing: -.012em !important;
+}
+
+input,select,textarea,
+.field input,.field select,.field textarea,
+.rvx-field input,.rvx-field select,.rvx-field textarea {
+  font-size: .97rem !important;
+  line-height: 1.45 !important;
+  font-weight: 500 !important;
+  letter-spacing: -.008em !important;
+}
+
+small,.form-note,.muted,.meta,.rvx-meta {
+  font-size: .84rem !important;
+  line-height: 1.55 !important;
+}
+
+/* Shared vertical rhythm: prevents pages from feeling pushed to one edge. */
+main.container.section,
+body:not(.home-page) main.container.section {
+  padding-top: clamp(44px, 4.5vw, 66px) !important;
+  padding-bottom: clamp(64px, 6vw, 92px) !important;
+}
+
+.rvx-page-head,
+.section-heading {
+  width: 100% !important;
+  margin-bottom: 26px !important;
+  gap: 24px !important;
+  align-items: end !important;
+}
+
+.rvx-page-head > div,
+.section-heading > div {
+  min-width: 0 !important;
+  max-width: 850px !important;
+}
+
+.rvx-page-head p,
+.section-heading p {
+  max-width: 760px !important;
+  margin-bottom: 0 !important;
+}
+
+/* Cards/forms share the same internal spacing and title rhythm. */
+.detail-panel,
+.rvx-card,
+.booking-panel,
+.owner-form,
+.admin-card,
+.admin-panel,
+.feature-card,
+.vehicle-card,
+.terms-grid > article {
+  padding: clamp(20px, 2vw, 28px) !important;
+}
+
+.detail-panel > h3:first-child,
+.rvx-card > h3:first-child,
+.admin-card > h3:first-child,
+.feature-card > h3:first-child {
+  margin-top: 0 !important;
+  margin-bottom: 8px !important;
+}
+
+.feature-grid,
+.rvx-grid,
+.vehicle-grid,
+.terms-grid {
+  gap: clamp(18px, 2vw, 26px) !important;
+}
+
+.form-grid,
+.rvx-form {
+  gap: 16px !important;
+}
+
+.field,.rvx-field {
+  gap: 7px !important;
+}
+
+/* --------------------------------------------------------------------------
+   HOMEPAGE — exact stacked reference format.
+   Logo/brand HTML and artwork are deliberately not touched.
+   -------------------------------------------------------------------------- */
+.home-page .hero {
+  padding: clamp(58px, 6vw, 84px) 0 clamp(62px, 6.5vw, 94px) !important;
+}
+
+.home-page .hero > .container {
+  grid-template-columns: minmax(0, .9fr) minmax(470px, .88fr) !important;
+  gap: clamp(50px, 5vw, 82px) !important;
+  align-items: center !important;
+}
+
+.home-page .hero-copy {
+  max-width: 620px !important;
+}
+
+.home-page .hero h1 {
+  max-width: 590px !important;
+  margin: 20px 0 22px !important;
+  font-family: var(--rft-display) !important;
+  font-size: clamp(3.35rem, 4.15vw, 4.45rem) !important;
+  line-height: .94 !important;
+  letter-spacing: -.062em !important;
+  font-weight: 800 !important;
+}
+
+.home-page .hero h1 .hero-line {
+  display: block !important;
+  width: max-content;
+  max-width: 100%;
+}
+
+.home-page .hero h1 .hero-line-short {
+  margin-top: .08em !important;
+}
+
+.home-page .hero h1 em.hero-line {
+  font-style: normal !important;
+}
+
+.home-page .hero-copy > p {
+  max-width: 590px !important;
+  font-size: .98rem !important;
+  line-height: 1.72 !important;
+  margin: 0 0 26px !important;
+}
+
+.home-page .hero-buttons {
+  gap: 10px !important;
+  margin-bottom: 0 !important;
+}
+
+.home-page .hero-buttons .btn {
+  min-height: 46px !important;
+  padding: 0 20px !important;
+}
+
+.home-page .hero-stats {
+  max-width: 560px !important;
+  margin-top: 32px !important;
+  padding-top: 22px !important;
+}
+
+.home-page .hero-stats > div {
+  padding-inline: 20px !important;
+}
+.home-page .hero-stats > div:first-child { padding-left: 0 !important; }
+.home-page .hero-stats strong {
+  font-size: 1.36rem !important;
+  line-height: 1.1 !important;
+  font-weight: 800 !important;
+}
+.home-page .hero-stats span {
+  font-size: .78rem !important;
+  line-height: 1.4 !important;
+}
+
+.home-page .hero-visual {
+  max-width: 610px !important;
+}
+
+.home-page .visual-shell {
+  border-radius: 22px !important;
+}
+
+.home-page .visual-content {
+  gap: 14px !important;
+}
+
+.home-page .visual-title,
+.home-page .mini-card strong,
+.home-page .float-card b {
+  font-family: var(--rft-display) !important;
+  letter-spacing: -.025em !important;
+}
+
+/* --------------------------------------------------------------------------
+   PROFILE — centered, organized composition matching the approved profile ref.
+   -------------------------------------------------------------------------- */
+body[data-revex-page='profile'] main.container.section {
+  max-width: var(--rft-page) !important;
+}
+body[data-revex-page='profile'] .profile-head {
+  max-width: 100% !important;
+  margin: 0 0 28px !important;
+  align-items: center !important;
+}
+body[data-revex-page='profile'] .profile-head .section-title {
+  font-size: clamp(2.55rem, 3.2vw, 3.35rem) !important;
+  line-height: 1 !important;
+  margin: 0 0 6px !important;
+}
+body[data-revex-page='profile'] .feature-grid {
+  grid-template-columns: repeat(2,minmax(0,1fr)) !important;
+  align-items: stretch !important;
+}
+body[data-revex-page='profile'] .detail-panel {
+  min-width: 0 !important;
+}
+body[data-revex-page='profile'] .detail-panel p {
+  margin: 0 0 18px !important;
+}
+body[data-revex-page='profile'] .detail-panel b {
+  display: inline-block;
+  margin-bottom: 3px;
+  font-size: .9rem;
+  font-weight: 700;
+}
+
+/* Find ride + rental: cleaner hierarchy and less oversized page headings. */
+body[data-revex-page='find-ride'] .rvx-page-head,
+body[data-revex-page='rental'] .page-hero > .container {
+  max-width: var(--rft-page) !important;
+}
+body[data-revex-page='find-ride'] .rvx-card--quiet {
+  margin-top: 8px !important;
+  margin-bottom: 28px !important;
+}
+body[data-revex-page='rental'] .page-hero {
+  padding-top: clamp(46px, 5vw, 70px) !important;
+  padding-bottom: clamp(48px, 5vw, 72px) !important;
+}
+body[data-revex-page='rental'] .form-grid {
+  margin-top: 24px !important;
+}
+
+/* Tables/list rows/admin content should never use oversized display typography. */
+table,th,td,
+.admin-table,
+.booking-card,
+.ride-card,
+.notification-item,
+.assistant-conversation-item {
+  font-size: .92rem !important;
+  line-height: 1.5 !important;
+}
+
+th {
+  font-size: .78rem !important;
+  line-height: 1.25 !important;
+  letter-spacing: .045em !important;
+  font-weight: 800 !important;
+}
+
+/* Assistant: same text proportions as the rest of the product. */
+body[data-revex-page='chat'] .assistant-page-title,
+body[data-revex-page='chat'] h1 {
+  font-size: clamp(2.1rem, 3vw, 3rem) !important;
+  line-height: 1.03 !important;
+}
+body[data-revex-page='chat'] .assistant-message,
+body[data-revex-page='chat'] .assistant-pro-message {
+  font-size: .96rem !important;
+  line-height: 1.62 !important;
+}
+body[data-revex-page='chat'] .assistant-quick button,
+body[data-revex-page='chat'] .assistant-popular-pro button {
+  font-size: .85rem !important;
+}
+
+/* Responsive: preserve hierarchy without crowding. */
+@media (max-width: 1180px) {
+  :root { --rft-gutter: clamp(18px, 2.8vw, 34px); }
+  .home-page .hero > .container {
+    grid-template-columns: minmax(0,1fr) minmax(400px,.9fr) !important;
+    gap: 38px !important;
+  }
+  .home-page .hero h1 { font-size: clamp(3rem, 5.4vw, 4rem) !important; }
+}
+
+@media (max-width: 900px) {
+  .home-page .hero > .container { grid-template-columns: 1fr !important; }
+  .home-page .hero-copy { max-width: 680px !important; }
+  .home-page .hero h1 { max-width: 620px !important; }
+  .home-page .hero-visual { justify-self: stretch !important; max-width: 680px !important; }
+  body[data-revex-page='profile'] .feature-grid { grid-template-columns: 1fr !important; }
+}
+
+@media (max-width: 640px) {
+  :root { --rft-gutter: 16px; }
+  body { font-size: 15px !important; }
+  .home-page .hero { padding-top: 44px !important; }
+  .home-page .hero h1 {
+    font-size: clamp(2.65rem, 13vw, 3.35rem) !important;
+    line-height: .96 !important;
+  }
+  .home-page .hero h1 .hero-line { width: auto; }
+  .home-page .hero-stats { grid-template-columns: 1fr !important; gap: 14px !important; }
+  .home-page .hero-stats > div {
+    border-right: 0 !important;
+    padding: 0 !important;
+  }
+  .rvx-page-head h1,.page-hero h1,.owner-hero h1,main.container.section > .section-title {
+    font-size: clamp(2.15rem, 10vw, 2.8rem) !important;
+  }
+  .detail-panel,.rvx-card,.booking-panel,.owner-form,.admin-card,.feature-card,.vehicle-card {
+    padding: 18px !important;
+  }
+}

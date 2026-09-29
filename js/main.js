@@ -155,12 +155,14 @@ const NAV_CONFIG = {
     { href: 'index.html', label: 'Home' }, { href: 'find-ride.html', label: 'Find a Ride' }, { href: 'rental.html', label: 'Rent a Vehicle' }
   ],
   user: [
-    { href: 'index.html', label: 'Home' }, { href: 'rental.html', label: 'Find Vehicles' }, { href: 'find-ride.html', label: 'Find a Ride' }, { href: 'bookings.html', label: 'My Bookings' }, { href: 'chat.html', label: 'Assistant' }, { href: 'profile.html', label: 'Profile' }
+    { href: 'index.html', label: 'Home' }, { href: 'find-ride.html', label: 'Find a Ride' }, { href: 'rental.html', label: 'Rent a Vehicle' }, { href: 'bookings.html', label: 'My Bookings' }, { href: 'profile.html', label: 'Profile' }
   ],
   owner: [
-    { href: 'list-vehicle.html', label: 'Dashboard' }, { href: 'list-vehicle.html#fleet', label: 'My Vehicles' }, { href: 'list-vehicle.html#add', label: 'Add Vehicle' }, { href: 'list-vehicle.html#requests', label: 'Rental Requests' }, { href: 'offer-ride.html', label: 'Offer a Ride' }, { href: 'ride-requests.html', label: 'Ride Requests' }, { href: 'chat.html', label: 'Assistant' }, { href: 'profile.html', label: 'Profile' }
+    { href: 'list-vehicle.html', label: 'Dashboard' }, { href: 'list-vehicle.html#fleet', label: 'My Vehicles' }, { href: 'list-vehicle.html#add', label: 'Add Vehicle' }, { href: 'list-vehicle.html#requests', label: 'Rental Requests' }, { href: 'offer-ride.html', label: 'Offer a Ride' }, { href: 'ride-requests.html', label: 'Ride Requests' }, { href: 'profile.html', label: 'Profile' }
   ],
-  adminLite: [{ href: 'admin.html', label: 'Admin Dashboard' }, { href: 'chat.html', label: 'Assistant' }, { href: 'profile.html', label: 'Profile' }]
+  adminLite: [{ href: 'admin.html', label: 'Admin Dashboard' }, { href: 'chat.html', label: 'Ask REVEX' }, { href: 'profile.html', label: 'Profile' }],
+  adminAgreementLite: [{ href: 'admin.html', label: 'Admin Dashboard' }, { href: 'profile.html', label: 'Profile' }],
+  adminProfileLite: [{ href: 'admin.html', label: 'Admin Dashboard' }, { href: 'profile.html', label: 'Profile' }]
 };
 
 /* -------------------------------------------------------------------------
@@ -302,7 +304,10 @@ function buildNav(role, user) {
     const activeHref = items.some(item => item.href === full) ? full : currentPage();
     items.forEach(item => {
       const link = document.createElement('a'); link.href = item.href; link.textContent = item.label;
-      if (item.href === activeHref || (item.href.includes('#') && location.hash === item.href.split('#')[1])) link.classList.add('active');
+      if (item.href === activeHref || (item.href.includes('#') && currentHash() === `#${item.href.split('#')[1]}`)) {
+        link.classList.add('active');
+        link.setAttribute('aria-current', 'page');
+      }
       link.addEventListener('click', () => links.classList.remove('open'));
       links.appendChild(link);
     });
@@ -329,8 +334,9 @@ function buildNav(role, user) {
     profile.insertAdjacentHTML('afterbegin', imageOrInitials(user.photo, user.name, { className: 'user-avatar', alt: '' }));
     const name = document.createElement('span'); name.className = 'user-nav-name'; name.textContent = user.name || 'Account';
     profile.appendChild(name); actions.appendChild(profile);
-    if (role === 'user') { const owner = document.createElement('a'); owner.href = 'profile.html#owner'; owner.className = 'btn btn-outline'; owner.textContent = 'Become an Owner'; actions.appendChild(owner); }
-    if (role === 'owner') { const userLink = document.createElement('a'); userLink.href = 'profile.html#switch'; userLink.className = 'btn btn-outline'; userLink.textContent = 'Switch to User'; actions.appendChild(userLink); }
+    // Keep role headers focused on the current workspace. Rider/owner switching
+    // is handled inside Profile rather than adding a second workspace button
+    // to every owner page.
     const logout = document.createElement('button'); logout.type = 'button'; logout.className = 'btn btn-primary'; logout.textContent = 'Logout'; logout.onclick = () => { clearSession(); location.href = 'index.html'; }; actions.appendChild(logout);
   } else if (isPublicSite() && getToken()) {
     const back = document.createElement('a'); back.href = 'admin.html'; back.className = 'btn btn-outline'; back.textContent = 'Return to Admin'; actions.appendChild(back);
@@ -356,23 +362,55 @@ async function loadNotifications() {
   if (!getToken() || !document.querySelector('.nav-actions')) return;
   try {
     const items = await api('/notifications'); const unread = items.filter(item => !item.read).length;
-    if (!unread) return;
-    const button = document.createElement('a'); button.href = 'profile.html#notifications'; button.className = 'notification-link'; button.textContent = `Notifications (${unread})`; document.querySelector('.nav-actions')?.prepend(button);
+    const button = document.createElement('a');
+    button.href = 'profile.html#notifications';
+    button.className = 'notification-link';
+    button.setAttribute('aria-label', `${unread} unread notification${unread === 1 ? '' : 's'}`);
+    button.title = `${unread} unread notification${unread === 1 ? '' : 's'}`;
+    button.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"></path><path d="M10 21h4"></path></svg><span class="notification-count"></span>';
+    button.querySelector('.notification-count').textContent = String(unread);
+    document.querySelector('.nav-actions')?.prepend(button);
   } catch {}
 }
 
 document.addEventListener('DOMContentLoaded', () => {
   const user = getStoredUser(); const role = user?.role || 'guest'; const page = currentPage(); const publicSite = isPublicSite();
+  document.documentElement.setAttribute('data-role', role);
+  document.body?.setAttribute('data-role', role);
   if (page === 'admin.html') {
     if (role !== 'admin') { location.replace('login.html?next=admin.html'); return; }
-    bindMenu(); applyBrand(); return;
+    bindMenu();
+    applyBrand();
+    // Keep the admin header focused on admin navigation. The assistant uses the
+    // same bottom-right floating Ask REVEX launcher as the rider/owner pages.
+    if (!document.body.dataset.noChatLauncher) window.RevexChat?.mount({ launcher: true });
+    return;
   }
   if (publicSite) { document.querySelectorAll('[data-owner-only]').forEach(element => { element.hidden = true; }); buildNav('guest', null); bindMenu(); applyBrand(); return; }
   if (role === 'admin') {
     // Admins may open the agreement viewer, the owner portal and the assistant
     // (the owner APIs explicitly accept the admin role), but must never be
     // bounced out of admin.html itself.
-    if (['profile.html', 'agreement.html', 'chat.html'].includes(page)) { buildNav('adminLite', user); bindMenu(); applyBrand(); return; }
+    if (page === 'agreement.html') {
+      // Keep the rental agreement header clean and consistent with the admin
+      // dashboard. Ask REVEX is available as the standard floating launcher.
+      buildNav('adminAgreementLite', user);
+      bindMenu();
+      applyBrand();
+      if (!document.body.dataset.noChatLauncher) window.RevexChat?.mount({ launcher: true });
+      return;
+    }
+    if (page === 'profile.html') {
+      // Profile keeps the same clean admin header pattern as the agreement
+      // page, with Ask REVEX exposed as the floating launcher instead of a
+      // top-nav item.
+      buildNav('adminProfileLite', user);
+      bindMenu();
+      applyBrand();
+      if (!document.body.dataset.noChatLauncher) window.RevexChat?.mount({ launcher: true });
+      return;
+    }
+    if (page === 'chat.html') { buildNav('adminLite', user); bindMenu(); applyBrand(); return; }
     if (['list-vehicle.html', 'offer-ride.html', 'ride-requests.html'].includes(page)) { buildNav('adminLite', user); bindMenu(); applyBrand(); loadNotifications(); return; }
     location.replace('admin.html'); return;
   }

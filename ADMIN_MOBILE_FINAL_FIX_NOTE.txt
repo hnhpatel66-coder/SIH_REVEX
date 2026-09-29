@@ -1,0 +1,11 @@
+REVEX ADMIN MOBILE FINAL FIX — 2026-09-29
+
+Changes are frontend-only.
+- Removed Ride Bookings from the Admin interface/navigation.
+- Added a defensive cleanup so an old cached Ride Bookings tab/panel cannot reappear.
+- Admin mobile header is now compact: REVEX + Menu.
+- All remaining Admin destinations are hidden inside the Menu on phone screens.
+- Menu opens/closes reliably, closes after a selection, closes outside, and supports Escape.
+- Rental Bookings remains available and unchanged.
+- Backend, APIs, MongoDB models/routes, payments, and existing business logic were not modified.
+- Cache-busting versions were updated for the Admin mobile CSS/JS.

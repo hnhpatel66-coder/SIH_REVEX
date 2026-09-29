@@ -1,0 +1,10 @@
+REVEX Admin Mobile Navigation V5
+
+- Admin Menu now uses the same compact dropdown interaction pattern as User/Owner on phones.
+- All Admin functions remain inside the mobile Menu.
+- Ride Bookings remains completely removed from Admin navigation/interface.
+- Menu selection changes the active Admin section and updates ?tab= in the URL.
+- Browser Back/Forward, refresh and direct admin.html?tab=... links restore the correct Admin function.
+- Menu closes automatically after selection and on outside click/Escape.
+- Removed generic double-toggle conflict from main.js on the Admin Menu button.
+- Backend/API/database logic otherwise unchanged.

@@ -10,9 +10,18 @@
 
 
 
+
+  <link rel="stylesheet" href="css/revex-final-typography.css?v=20260928-integrated">
+  <link rel="stylesheet" href="css/revex-premium-finish.css?v=20260928-integrated">
+  <link rel="stylesheet" href="css/revex-final-integrated.css?v=20260928-final">
+  <link rel="stylesheet" href="css/revex-final-fix.css?v=20260928-release">
+  <link rel="stylesheet" href="css/revex-ideal-ui.css?v=20260928-ideal-final">
+  <link rel="stylesheet" href="css/revex-premium-professional.css?v=20260928-premium-pro">
+  <link rel="stylesheet" href="css/revex-stability.css?v=20260928-stable">
+  <link rel="stylesheet" href="css/revex-luxe.css?v=20260929-luxe">
 </head>
 <body>
-  <header class="container"><nav class="nav"><a class="brand" href="index.html">REV<span>EX</span></a><button class="menu-btn" aria-label="Open navigation" type="button">Menu</button><div class="nav-links"></div><div class="nav-actions"></div></nav></header>
+  <header class="container"><nav class="nav"><a class="brand" href="index.html"><img class="brand-mark" src="assets/revex-mark.png" alt="" aria-hidden="true"><span class="brand-word">REVEX</span></a><button class="menu-btn" aria-label="Open navigation" type="button">Menu</button><div class="nav-links"></div><div class="nav-actions"></div></nav></header>
   <main class="container section"><span class="eyebrow">YOUR JOURNEYS</span><h1 class="section-title">My bookings</h1><p>Keep rental bookings and shared rides in one place.</p><div class="booking-toolbar"><div class="bookings-tabs"><button class="tab active" data-status="upcoming" type="button">Upcoming</button><button class="tab" data-status="completed" type="button">Completed</button><button class="tab" data-status="cancelled" type="button">Cancelled</button><button class="tab" data-status="rejected" type="button">Declined</button></div><div class="filter-group" id="categoryFilters" aria-label="Filter rentals by category"><span>Category</span><button class="filter-chip active" data-category="all" type="button">All</button><button class="filter-chip" data-category="Car" type="button">Cars</button><button class="filter-chip" data-category="Bike" type="button">Bikes</button><button class="filter-chip" data-category="Scooter" type="button">Scooters</button><button class="filter-chip" data-category="Other" type="button">Other</button></div></div><div id="bookingList"><div class="empty">Loading bookings…</div></div><section class="section" id="agreementsSection"><span class="eyebrow">CERTIFICATES</span><h2 class="section-title small-title">My agreements</h2><div id="agreementList"></div></section></main>
   <div class="modal" id="successModal"><div class="modal-box"><div class="modal-icon">✓</div><h2 id="successTitle">Done</h2><p id="successMessage"></p><button class="btn btn-primary" type="button" data-close-modal>Close</button></div></div>
   <div class="modal" id="ratingModal"><div class="modal-box"><div class="modal-icon">★</div><h2>Rate your vehicle</h2><p id="ratingTarget">Choose a star rating</p><div class="star-picker" id="starPicker" role="radiogroup" aria-label="Rating out of five"><button type="button" data-rating="1" aria-label="1 star">★</button><button type="button" data-rating="2" aria-label="2 stars">★</button><button type="button" data-rating="3" aria-label="3 stars">★</button><button type="button" data-rating="4" aria-label="4 stars">★</button><button type="button" data-rating="5" aria-label="5 stars">★</button></div><p id="ratingValue" class="rating-value">Select 1–5 stars</p><div class="field"><label for="ratingComment">Review (optional)</label><textarea id="ratingComment" rows="3" maxlength="500" placeholder="Tell us about your experience"></textarea></div><div class="modal-actions"><button class="btn btn-primary" id="submitRating" type="button">Submit review</button><button class="btn btn-outline" id="closeRating" type="button">Cancel</button></div></div></div>
@@ -32,10 +41,14 @@
   </section>
 
   <footer class="footer"><div class="container"><p>© 2026 REVEX · Urban mobility, reimagined.</p></div></footer>
-  <script src="js/theme.js"></script>
+  <script src="js/theme.js?v=20260928-stability2"></script>
   <script src="js/confirm-delete.js"></script>
-  <script src="js/main.js"></script>
+  <script src="js/main.js?v=20260928-stability2"></script>
   <script src="js/payment.js"></script>
-  <script src="js/chat.js"></script>
+  <script src="js/chat.js?v=20260928-stability2"></script>
   <script src="js/booking.js"></script>
+
+  <script src="js/revex-final-integrated.js?v=20260928-stability2"></script>
+  <script src="js/revex-final-fix.js?v=20260928-stability2"></script>
+  <script src="js/revex-3d.js?v=20260929-3d" defer></script>
 </body></html>

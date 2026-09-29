@@ -13,11 +13,20 @@
 
 
   <meta name="description" content="REVEX moves you smarter: rent a verified vehicle or share a ride with a local driver. One account for riding, lending and earning.">
+
+  <link rel="stylesheet" href="css/revex-final-typography.css?v=20260928-integrated">
+  <link rel="stylesheet" href="css/revex-premium-finish.css?v=20260928-integrated">
+  <link rel="stylesheet" href="css/revex-final-integrated.css?v=20260928-final">
+  <link rel="stylesheet" href="css/revex-final-fix.css?v=20260928-release">
+  <link rel="stylesheet" href="css/revex-ideal-ui.css?v=20260928-ideal-final">
+  <link rel="stylesheet" href="css/revex-premium-professional.css?v=20260928-premium-pro">
+  <link rel="stylesheet" href="css/revex-stability.css?v=20260929-adminhome">
+  <link rel="stylesheet" href="css/revex-luxe.css?v=20260929-luxe">
 </head>
-<body>
+<body class="home-page">
   <header class="container">
     <nav class="nav">
-      <a class="brand" href="index.html">REV<span>EX</span></a>
+      <a class="brand" href="index.html"><img class="brand-mark" src="assets/revex-mark.png" alt="" aria-hidden="true"><span class="brand-word">REVEX</span></a>
       <button class="menu-btn" aria-label="Open navigation" type="button">Menu</button>
       <div class="nav-links">
         <a class="active" href="index.html">Home</a>
@@ -54,22 +63,43 @@
         <div class="hero-visual" aria-label="REVEX mobility dashboard preview">
           <div class="visual-shell">
             <div class="visual-top">
-              <div class="visual-title"><span class="mini-logo">R</span><span>Mobility overview</span></div>
+              <div class="visual-title"><img class="mini-brand-mark" src="assets/revex-mark.png" alt="" aria-hidden="true"><span>Mobility overview</span></div>
               <span class="live-pill">Service active</span>
             </div>
             <div class="visual-content">
-              <div class="visual-map">
-                <div class="route-line"></div>
-                <span class="route-dot start"></span>
-                <span class="route-dot end"></span>
-                <div class="map-car" aria-hidden="true">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M5 17h14l-1-5a2 2 0 0 0-2-1.5H8A2 2 0 0 0 6 12l-1 5Z"/>
-                    <path d="M7.5 10.5 9 7.5h6l1.5 3"/>
-                    <path d="M4 17v2M20 17v2"/>
-                    <circle cx="8" cy="17" r="1"/><circle cx="16" cy="17" r="1"/>
-                  </svg>
-                </div>
+              <div class="visual-map" aria-label="Live route preview from Anand to Vadodara">
+                <svg class="route-svg" viewBox="0 0 360 338" role="img" aria-label="Animated route map">
+                  <defs>
+                    <linearGradient id="routeGradient" x1="0" y1="0" x2="1" y2="1">
+                      <stop offset="0" stop-color="#2ad8c4"/>
+                      <stop offset="1" stop-color="#7185ff"/>
+                    </linearGradient>
+                    <filter id="routeGlow" x="-50%" y="-50%" width="200%" height="200%">
+                      <feGaussianBlur stdDeviation="3.2" result="blur"/>
+                      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+                    </filter>
+                  </defs>
+                  <path class="map-road" d="M18 72 C92 45 158 55 226 22 S327 18 348 34"/>
+                  <path class="map-road" d="M8 210 C76 178 109 198 151 166 S246 92 350 112"/>
+                  <path class="map-road" d="M42 330 C89 274 119 232 177 235 S270 282 356 236"/>
+                  <path class="map-road" d="M108 5 C92 74 94 128 126 178 S202 264 208 338"/>
+                  <path class="map-road" d="M250 0 C216 65 214 122 239 174 S295 250 318 338"/>
+                  <path class="route-shadow" d="M78 58 C70 108 89 139 127 157 C170 177 161 224 204 241 C246 258 269 261 286 294"/>
+                  <path id="revexHomeRoutePath" class="route-path" d="M78 58 C70 108 89 139 127 157 C170 177 161 224 204 241 C246 258 269 261 286 294"/>
+                  <circle class="route-ring" cx="78" cy="58" r="13"/><circle class="route-core" cx="78" cy="58" r="4"/>
+                  <circle class="route-ring" cx="286" cy="294" r="13"/><circle class="route-core" cx="286" cy="294" r="4"/>
+                  <g class="route-vehicle" aria-hidden="true">
+                    <circle class="vehicle-halo" r="25"/>
+                    <rect class="vehicle-body" x="-13" y="-9" width="26" height="18" rx="7"/>
+                    <rect class="vehicle-window" x="-7" y="-6" width="14" height="6" rx="2"/>
+                    <circle cx="-8" cy="10" r="2.4" fill="#071824"/>
+                    <circle cx="8" cy="10" r="2.4" fill="#071824"/>
+                    <animateMotion dur="7.5s" repeatCount="indefinite" rotate="auto">
+                      <mpath href="#revexHomeRoutePath"/>
+                    </animateMotion>
+                  </g>
+                </svg>
+                <span class="route-car-lite" aria-hidden="true"><span class="route-car-lite__body"></span></span>
               </div>
               <div class="visual-side">
                 <div class="mini-card route"><small>Upcoming shared route</small><strong>Anand → Vadodara</strong><div class="mini-row"><span>Today · 5:30 PM</span><span>3 seats</span></div></div>
@@ -160,10 +190,8 @@
   </footer>
 
   <div class="modal" id="successModal"><div class="modal-box"><div class="modal-icon">✓</div><h2>Success</h2><p></p><button class="btn btn-primary" data-close-modal type="button">Done</button></div></div>
-  <script src="js/theme.js"></script>
-  <script src="js/confirm-delete.js"></script>
-  <script src="js/main.js"></script>
-  <script src="js/payment.js"></script>
-  <script src="js/chat.js"></script>
+  <script src="js/theme.js?v=20260929-userhome-lite"></script>
+  <script src="js/home-lite.js?v=20260929-adminhome"></script>
+  <script src="js/revex-3d.js?v=20260929-3d" defer></script>
 </body>
 </html>

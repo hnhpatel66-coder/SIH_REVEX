@@ -1,4 +1,4 @@
-const CACHE_NAME = 'revex-shell-v1';
+const CACHE_NAME = 'revex-shell-v2';
 const APP_SHELL = [
   '/',
   '/index.html',

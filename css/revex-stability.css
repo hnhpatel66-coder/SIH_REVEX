@@ -1,0 +1,624 @@
+/* REVEX stability compatibility layer — keeps premium appearance without costly renderer effects. */
+:root {
+  --rvx-stable-shadow: 0 18px 46px rgba(5, 24, 34, .12);
+}
+
+/* Avoid GPU/renderer stalls caused by large live backdrop blurs in Chromium/Edge. */
+body > header.container,
+body > header.container .nav,
+.admin-topbar,
+.rvx-chat-panel,
+.assistant-pro-panel,
+.assistant-pro-sidebar,
+.home-page .visual-shell,
+.home-page .float-card {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+
+/* Keep the premium depth as static perspective rather than pointer-driven transforms. */
+.home-page .visual-shell {
+  transform: perspective(1400px) rotateY(-3deg) rotateX(1.2deg) translate3d(0,0,0) !important;
+  transition: transform .25s ease, box-shadow .25s ease !important;
+  will-change: auto !important;
+  box-shadow: 0 22px 54px -30px rgba(3, 35, 52, .38), 0 2px 0 rgba(38, 211, 194, .12) !important;
+}
+.home-page .visual-shell:hover {
+  transform: perspective(1400px) rotateY(-2deg) rotateX(.6deg) translate3d(0,-3px,0) !important;
+}
+
+/* Disable the legacy SVG moving group; use one lightweight compositor animation instead. */
+.home-page .route-vehicle { display: none !important; }
+.home-page .visual-map { position: relative !important; overflow: hidden !important; }
+.route-car-lite {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 36px;
+  height: 36px;
+  z-index: 6;
+  pointer-events: none;
+  transform: translate3d(61px, 41px, 0) rotate(72deg);
+  animation: rvx-route-car-lite 8s linear infinite;
+  will-change: transform;
+}
+.route-car-lite::before {
+  content: '';
+  position: absolute;
+  inset: -8px;
+  border-radius: 50%;
+  background: rgba(32, 216, 199, .15);
+  border: 1px solid rgba(32, 216, 199, .22);
+}
+.route-car-lite__body {
+  position: absolute;
+  left: 7px;
+  top: 10px;
+  width: 22px;
+  height: 15px;
+  border-radius: 6px;
+  background: linear-gradient(145deg, #f8ffff, #c9fff8);
+  border: 2px solid #13cfc0;
+  box-shadow: 0 5px 14px rgba(10, 197, 184, .28);
+}
+.route-car-lite__body::before {
+  content: '';
+  position: absolute;
+  left: 5px;
+  top: 2px;
+  width: 8px;
+  height: 4px;
+  border-radius: 2px;
+  background: #0b3542;
+}
+@keyframes rvx-route-car-lite {
+  0%   { transform: translate3d(61px, 41px, 0) rotate(82deg); }
+  18%  { transform: translate3d(60px, 89px, 0) rotate(62deg); }
+  36%  { transform: translate3d(102px, 133px, 0) rotate(20deg); }
+  55%  { transform: translate3d(143px, 165px, 0) rotate(74deg); }
+  73%  { transform: translate3d(183px, 215px, 0) rotate(24deg); }
+  88%  { transform: translate3d(235px, 238px, 0) rotate(55deg); }
+  100% { transform: translate3d(269px, 278px, 0) rotate(72deg); }
+}
+
+/* A route glow without SVG filters or runtime filter recomposition. */
+.home-page .route-shadow { opacity: .18 !important; filter: none !important; }
+.home-page .route-path { filter: none !important; }
+
+/* Limit transition cost on the hero card and header controls. */
+body > header.container *, .home-page .visual-shell * {
+  transition-property: color, background-color, border-color, box-shadow, transform, opacity !important;
+}
+
+/* Pause decorative motion if the user/browser requests reduced motion. */
+@media (prefers-reduced-motion: reduce) {
+  .route-car-lite { animation: none !important; transform: translate3d(143px,165px,0) rotate(74deg) !important; }
+  .home-page .visual-shell, .home-page .visual-shell:hover { transform: none !important; }
+}
+
+
+/* ======================================================================
+   FINAL UNIFIED HEADER + CHAT REFINEMENT
+   Based on the admin header reference requested by the user.
+   ====================================================================== */
+:root{
+  --rvx-header-surface: color-mix(in srgb, var(--pf-surface, #07151c) 94%, transparent);
+  --rvx-header-line: color-mix(in srgb, var(--pf-line, rgba(255,255,255,.12)) 88%, transparent);
+  --rvx-header-pill: color-mix(in srgb, var(--pf-accent, #2ce6d6) 10%, transparent);
+}
+
+html[data-role="user"] body > header.container,
+html[data-role="owner"] body > header.container,
+html[data-role="guest"] body > header.container{
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 1200 !important;
+  width: 100% !important;
+  max-width: none !important;
+  background: var(--rvx-header-surface) !important;
+  backdrop-filter: blur(16px) saturate(130%) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(130%) !important;
+  border-bottom: 1px solid var(--rvx-header-line) !important;
+  box-shadow: 0 10px 30px rgba(2, 10, 16, .14) !important;
+}
+
+html[data-role="user"] body > header.container .nav,
+html[data-role="owner"] body > header.container .nav,
+html[data-role="guest"] body > header.container .nav{
+  width: min(1480px, calc(100% - 40px)) !important;
+  min-height: 68px !important;
+  margin-inline: auto !important;
+  padding: 8px 0 !important;
+  display: flex !important;
+  flex-wrap: nowrap !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 10px !important;
+}
+
+html[data-role="user"] .brand,
+html[data-role="owner"] .brand,
+html[data-role="guest"] .brand{
+  flex: 0 0 auto !important;
+  gap: 10px !important;
+  min-width: max-content !important;
+  letter-spacing: -.035em !important;
+}
+html[data-role="user"] .brand::before,
+html[data-role="owner"] .brand::before,
+html[data-role="guest"] .brand::before,
+html[data-role="user"] a.brand::before,
+html[data-role="owner"] a.brand::before,
+html[data-role="guest"] a.brand::before{content:none !important; display:none !important;}
+html[data-role="user"] .brand .brand-mark,
+html[data-role="owner"] .brand .brand-mark,
+html[data-role="guest"] .brand .brand-mark{
+  width: 40px !important; height: 40px !important; flex: 0 0 40px !important; object-fit: contain !important;
+}
+html[data-role="user"] .brand .brand-word,
+html[data-role="owner"] .brand .brand-word,
+html[data-role="guest"] .brand .brand-word{
+  font-size: 1.02rem !important;
+  font-weight: 850 !important;
+  color: var(--pf-ink, #f8fffe) !important;
+}
+
+html[data-role="user"] .nav-links,
+html[data-role="owner"] .nav-links,
+html[data-role="guest"] .nav-links{
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  width: auto !important;
+  display: flex !important;
+  flex-wrap: nowrap !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  scrollbar-width: none !important;
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  scroll-padding-inline: 12px !important;
+}
+html[data-role="user"] .nav-links::-webkit-scrollbar,
+html[data-role="owner"] .nav-links::-webkit-scrollbar,
+html[data-role="guest"] .nav-links::-webkit-scrollbar{display:none !important;}
+html[data-role="user"] .nav-links a,
+html[data-role="owner"] .nav-links a,
+html[data-role="guest"] .nav-links a{
+  position: relative !important;
+  flex: 0 0 auto !important;
+  min-height: 38px !important;
+  padding: 0 14px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  color: var(--pf-muted, rgba(235,244,248,.78)) !important;
+  font-size: .82rem !important;
+  font-weight: 750 !important;
+  line-height: 1 !important;
+}
+html[data-role="user"] .nav-links a::after,
+html[data-role="owner"] .nav-links a::after,
+html[data-role="guest"] .nav-links a::after{
+  content:"" !important;
+  position:absolute !important;
+  left:14px !important; right:14px !important; bottom:1px !important;
+  height:2px !important; border-radius:999px !important;
+  background: transparent !important; transform: scaleX(.4) !important; transform-origin:center !important;
+  transition: transform .18s ease, background .18s ease !important;
+}
+html[data-role="user"] .nav-links a:hover,
+html[data-role="owner"] .nav-links a:hover,
+html[data-role="guest"] .nav-links a:hover{
+  color: var(--pf-ink, #ffffff) !important;
+  background: color-mix(in srgb, var(--pf-accent, #2ce6d6) 6%, transparent) !important;
+}
+html[data-role="user"] .nav-links a.active,
+html[data-role="owner"] .nav-links a.active,
+html[data-role="guest"] .nav-links a.active{
+  color: var(--pf-ink, #ffffff) !important;
+  background: transparent !important;
+}
+html[data-role="user"] .nav-links a.active::after,
+html[data-role="owner"] .nav-links a.active::after,
+html[data-role="guest"] .nav-links a.active::after{
+  background: var(--pf-accent, #2ce6d6) !important;
+  transform: scaleX(1) !important;
+}
+
+html[data-role="user"] .nav-actions,
+html[data-role="owner"] .nav-actions,
+html[data-role="guest"] .nav-actions{
+  flex: 0 0 auto !important;
+  min-width: max-content !important;
+  display:flex !important;
+  align-items:center !important;
+  gap: 10px !important;
+  flex-wrap: nowrap !important;
+  margin-left: 2px !important;
+}
+html[data-role="user"] .notification-link,
+html[data-role="owner"] .notification-link,
+html[data-role="guest"] .notification-link{
+  padding: 0 !important;
+  width: 40px !important; min-width: 40px !important; height: 40px !important;
+  display:inline-flex !important; align-items:center !important; justify-content:center !important;
+  border-radius: 12px !important;
+  background: transparent !important;
+  border: 1px solid color-mix(in srgb, var(--pf-accent, #2ce6d6) 34%, var(--pf-line, rgba(255,255,255,.12))) !important;
+  color: #f2c14e !important;
+}
+html[data-role="user"] .notification-link .notification-count,
+html[data-role="owner"] .notification-link .notification-count,
+html[data-role="guest"] .notification-link .notification-count{
+  position: absolute; transform: translate(10px,-10px);
+  min-width: 18px; height: 18px; padding: 0 4px;
+  display: grid; place-items: center;
+  border-radius: 999px; background: var(--pf-accent, #2ce6d6); color: #04252b; font-size: .68rem; font-weight: 800;
+}
+html[data-role="user"] .theme-toggle,
+html[data-role="owner"] .theme-toggle,
+html[data-role="guest"] .theme-toggle,
+html[data-role="user"] .user-nav,
+html[data-role="owner"] .user-nav,
+html[data-role="guest"] .user-nav,
+html[data-role="user"] .portal-switch,
+html[data-role="owner"] .portal-switch,
+html[data-role="guest"] .portal-switch,
+html[data-role="user"] .nav .btn,
+html[data-role="owner"] .nav .btn,
+html[data-role="guest"] .nav .btn{
+  min-height: 40px !important;
+  border-radius: 12px !important;
+}
+html[data-role="user"] .user-nav,
+html[data-role="owner"] .user-nav,
+html[data-role="guest"] .user-nav{
+  gap: 9px !important;
+  padding: 0 10px !important;
+  border: 1px solid color-mix(in srgb, var(--pf-accent, #2ce6d6) 26%, var(--pf-line, rgba(255,255,255,.12))) !important;
+  background: transparent !important;
+  color: var(--pf-ink, #ffffff) !important;
+}
+html[data-role="user"] .user-avatar,
+html[data-role="owner"] .user-avatar,
+html[data-role="guest"] .user-avatar{
+  width: 34px !important; height: 34px !important; border-radius: 50% !important;
+  background: rgba(255,255,255,.10) !important;
+  border: 1px solid rgba(255,255,255,.16) !important;
+  color: var(--pf-ink, #ffffff) !important;
+}
+html[data-role="user"] .portal-switch,
+html[data-role="owner"] .portal-switch,
+html[data-role="guest"] .portal-switch{
+  padding-inline: 16px !important;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.06) !important;
+}
+html[data-role="user"] .nav .btn-primary,
+html[data-role="owner"] .nav .btn-primary,
+html[data-role="guest"] .nav .btn-primary{
+  padding-inline: 16px !important;
+  box-shadow: 0 10px 24px rgba(44,230,214,.16) !important;
+}
+
+/* Chat page: cleaner, more balanced dimensions on owner/user screens */
+.rvx-chat-layout{align-items:start !important;}
+.rvx-chat-page{
+  height: clamp(540px, calc(100vh - 215px), 760px) !important;
+  min-height: 540px !important;
+  border-radius: 24px !important;
+  background: color-mix(in srgb, var(--surface, #09121a) 94%, transparent) !important;
+  box-shadow: 0 28px 80px -44px rgba(0,0,0,.55) !important;
+}
+.rvx-chat-panel[data-host='page']{
+  height: 100% !important;
+  min-height: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+  background: transparent !important;
+}
+.rvx-chat-panel[data-host='page'] .rvx-chat-log{
+  flex: 1 1 auto !important;
+  min-height: 240px !important;
+}
+.rvx-chat-panel[data-host='page'] .rvx-chat-suggest{
+  padding-top: 12px !important;
+}
+.rvx-chat-panel[data-host='page'] .rvx-chat-form{
+  margin-top: 0 !important;
+  padding: 14px 20px 12px !important;
+}
+.rvx-chat-panel[data-host='page'] .rvx-chat-note{
+  padding: 0 18px 16px !important;
+  font-size: 12px !important;
+}
+.rvx-chat-panel[data-host='page'] .rvx-chat-msg{
+  max-width: min(88%, 920px) !important;
+}
+.rvx-card--quiet{border-radius: 24px !important;}
+.rvx-card--quiet .rvx-card__meta{line-height: 1.7 !important;}
+
+/* Homepage / premium touch */
+.hero, .hero-visual, .surface-card, .card, .stat-card{transform-style: preserve-3d;}
+.hero .btn, .filters .btn, .search-card button, .rvx-chat-launcher{box-shadow: 0 12px 26px rgba(18, 210, 195, .18), 0 4px 12px rgba(2, 10, 16, .16) !important;}
+
+@media (max-width: 1180px){
+  html[data-role="user"] body > header.container .nav,
+  html[data-role="owner"] body > header.container .nav,
+  html[data-role="guest"] body > header.container .nav{width: calc(100% - 28px) !important; gap: 8px !important;}
+  html[data-role="user"] .nav-links a,
+  html[data-role="owner"] .nav-links a,
+  html[data-role="guest"] .nav-links a{padding-inline: 12px !important; font-size: .78rem !important;}
+  html[data-role="user"] .brand .brand-mark,
+  html[data-role="owner"] .brand .brand-mark,
+  html[data-role="guest"] .brand .brand-mark{width:36px !important; height:36px !important; flex-basis:36px !important;}
+}
+
+@media (max-width: 980px){
+  html[data-role="user"] body > header.container .nav,
+  html[data-role="owner"] body > header.container .nav,
+  html[data-role="guest"] body > header.container .nav{
+    flex-wrap: wrap !important;
+    justify-content: space-between !important;
+  }
+  html[data-role="user"] .nav-links,
+  html[data-role="owner"] .nav-links,
+  html[data-role="guest"] .nav-links{
+    display: none !important; width: 100% !important; order: 5 !important; padding: 8px !important; border-radius: 16px !important;
+    border: 1px solid var(--rvx-header-line) !important; background: color-mix(in srgb, var(--pf-surface, #08141d) 96%, transparent) !important;
+    box-shadow: 0 16px 34px rgba(0,0,0,.22) !important;
+  }
+  html[data-role="user"] .nav-links.open,
+  html[data-role="owner"] .nav-links.open,
+  html[data-role="guest"] .nav-links.open{display:flex !important; flex-direction:column !important; align-items:stretch !important;}
+  html[data-role="user"] .nav-links a,
+  html[data-role="owner"] .nav-links a,
+  html[data-role="guest"] .nav-links a{width:100% !important; justify-content:flex-start !important; border-radius:10px !important; min-height:42px !important;}
+  html[data-role="user"] .nav-links a::after,
+  html[data-role="owner"] .nav-links a::after,
+  html[data-role="guest"] .nav-links a::after{display:none !important;}
+  html[data-role="user"] .menu-btn,
+  html[data-role="owner"] .menu-btn,
+  html[data-role="guest"] .menu-btn{display:inline-flex !important; align-items:center !important;}
+  html[data-role="user"] .nav-actions,
+  html[data-role="owner"] .nav-actions,
+  html[data-role="guest"] .nav-actions{width:100% !important; order:6 !important; padding-bottom: 4px !important; overflow-x:auto !important;}
+  .rvx-chat-layout{grid-template-columns:minmax(0,1fr) !important;}
+  .rvx-chat-page{height: min(72vh, 760px) !important; min-height: 500px !important;}
+}
+
+@media (max-width: 640px){
+  html[data-role="user"] body > header.container .nav,
+  html[data-role="owner"] body > header.container .nav,
+  html[data-role="guest"] body > header.container .nav{width: calc(100% - 22px) !important;}
+  html[data-role="user"] .nav-actions,
+  html[data-role="owner"] .nav-actions,
+  html[data-role="guest"] .nav-actions{gap:8px !important;}
+  .rvx-chat-page{min-height: 460px !important;}
+}
+
+
+/* ======================================================================
+   USER HOME STABILITY LAYER
+   Home no longer boots the full signed-in application stack. The premium
+   visuals stay CSS-only; signed-in actions are simple links/buttons.
+   ====================================================================== */
+.home-lite-role{
+  min-height:40px !important;
+  padding:0 14px !important;
+  border:1px solid color-mix(in srgb,var(--pf-accent,#22d3c5) 28%,var(--pf-line,rgba(255,255,255,.12))) !important;
+  border-radius:12px !important;
+  background:transparent !important;
+  color:var(--pf-ink,#fff) !important;
+  font-weight:800 !important;
+}
+.home-lite-login{padding:9px 12px;font-weight:750;white-space:nowrap;}
+.home-lite-ask{
+  position:fixed;
+  right:24px;
+  bottom:24px;
+  z-index:1100;
+  min-height:52px;
+  padding:0 20px;
+  display:inline-flex;
+  align-items:center;
+  gap:10px;
+  border:1px solid color-mix(in srgb,var(--pf-accent,#22d3c5) 70%,transparent);
+  border-radius:999px;
+  background:linear-gradient(135deg,#13cfc1,#0a9e94);
+  color:#031b22;
+  box-shadow:0 16px 38px rgba(10,158,148,.26),0 6px 16px rgba(2,10,16,.18);
+  font-size:.84rem;
+  text-decoration:none;
+}
+.home-lite-ask span{font-size:1.25rem;line-height:1;}
+.home-lite-ask:hover{transform:translateY(-2px);box-shadow:0 20px 44px rgba(10,158,148,.31),0 8px 20px rgba(2,10,16,.20);}
+.home-page .hero-visual{will-change:auto !important;}
+.home-page .visual-shell{will-change:auto !important;}
+@media(max-width:640px){.home-lite-ask{right:14px;bottom:14px;min-height:48px;padding:0 16px;}}
+
+
+/* ======================================================================
+   FINAL HOME POLISH — exact floating Ask REVEX + route-following car
+   The car now travels on the SVG route itself (animateMotion), so it stays
+   aligned with the road when the hero card scales responsively.
+   ====================================================================== */
+body.home-page .route-vehicle {
+  display: inline !important;
+  pointer-events: none !important;
+  filter: drop-shadow(0 5px 8px rgba(0,0,0,.30)) !important;
+}
+body.home-page .route-car-lite { display: none !important; }
+body.home-page .home-lite-ask {
+  text-decoration: none !important;
+  color: #031b22 !important;
+}
+body.home-page .home-lite-ask svg {
+  width: 20px !important;
+  height: 20px !important;
+  flex: 0 0 auto !important;
+}
+body.home-page .home-lite-ask b { font-weight: 800 !important; }
+@media (prefers-reduced-motion: reduce) {
+  body.home-page .route-vehicle { display: none !important; }
+  body.home-page .route-car-lite {
+    display: block !important;
+    animation: none !important;
+    transform: translate3d(143px,165px,0) rotate(74deg) !important;
+  }
+}
+
+
+/* ======================================================================
+   ADMIN HOME WORKSPACE HEADER
+   When an admin chooses "View Site", keep a professional role-aware header
+   just like the owner home experience. This block is scoped to body.home-page
+   so the Admin Control Centre header itself remains completely unchanged.
+   ====================================================================== */
+html[data-role="admin"] body.home-page > header.container{
+  position:sticky !important;
+  top:0 !important;
+  z-index:1200 !important;
+  width:100% !important;
+  max-width:none !important;
+  background:var(--rvx-header-surface) !important;
+  backdrop-filter:blur(16px) saturate(130%) !important;
+  -webkit-backdrop-filter:blur(16px) saturate(130%) !important;
+  border-bottom:1px solid var(--rvx-header-line) !important;
+  box-shadow:0 10px 30px rgba(2,10,16,.14) !important;
+}
+html[data-role="admin"] body.home-page > header.container .nav{
+  width:min(1540px,calc(100% - 40px)) !important;
+  min-height:68px !important;
+  margin-inline:auto !important;
+  padding:8px 0 !important;
+  display:flex !important;
+  flex-wrap:nowrap !important;
+  align-items:center !important;
+  justify-content:flex-start !important;
+  gap:10px !important;
+}
+html[data-role="admin"] body.home-page .brand{
+  flex:0 0 auto !important;
+  gap:10px !important;
+  min-width:max-content !important;
+  letter-spacing:-.035em !important;
+}
+html[data-role="admin"] body.home-page .brand::before,
+html[data-role="admin"] body.home-page a.brand::before{content:none !important;display:none !important;}
+html[data-role="admin"] body.home-page .brand .brand-mark{
+  width:40px !important;height:40px !important;flex:0 0 40px !important;object-fit:contain !important;
+}
+html[data-role="admin"] body.home-page .brand .brand-word{
+  font-size:1.02rem !important;font-weight:850 !important;color:var(--pf-ink,#f8fffe) !important;
+}
+html[data-role="admin"] body.home-page .nav-links{
+  flex:1 1 auto !important;
+  min-width:0 !important;
+  width:auto !important;
+  display:flex !important;
+  flex-wrap:nowrap !important;
+  align-items:center !important;
+  justify-content:flex-start !important;
+  gap:0 !important;
+  padding:0 !important;
+  margin:0 !important;
+  overflow-x:auto !important;
+  overflow-y:hidden !important;
+  scrollbar-width:none !important;
+  background:transparent !important;
+  border:0 !important;
+  border-radius:0 !important;
+  box-shadow:none !important;
+  scroll-padding-inline:12px !important;
+}
+html[data-role="admin"] body.home-page .nav-links::-webkit-scrollbar{display:none !important;}
+html[data-role="admin"] body.home-page .nav-links a{
+  position:relative !important;
+  flex:0 0 auto !important;
+  min-height:38px !important;
+  padding:0 11px !important;
+  display:inline-flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  white-space:nowrap !important;
+  border:0 !important;
+  border-radius:0 !important;
+  background:transparent !important;
+  color:var(--pf-muted,rgba(235,244,248,.78)) !important;
+  font-size:.76rem !important;
+  font-weight:750 !important;
+  line-height:1 !important;
+}
+html[data-role="admin"] body.home-page .nav-links a::after{
+  content:"" !important;
+  position:absolute !important;
+  left:11px !important;right:11px !important;bottom:1px !important;
+  height:2px !important;border-radius:999px !important;
+  background:transparent !important;transform:scaleX(.4) !important;transform-origin:center !important;
+  transition:transform .18s ease,background .18s ease !important;
+}
+html[data-role="admin"] body.home-page .nav-links a:hover{
+  color:var(--pf-ink,#fff) !important;
+  background:color-mix(in srgb,var(--pf-accent,#2ce6d6) 6%,transparent) !important;
+}
+html[data-role="admin"] body.home-page .nav-actions{
+  flex:0 0 auto !important;
+  min-width:max-content !important;
+  display:flex !important;
+  align-items:center !important;
+  gap:10px !important;
+  flex-wrap:nowrap !important;
+  margin-left:2px !important;
+}
+html[data-role="admin"] body.home-page .theme-toggle,
+html[data-role="admin"] body.home-page .user-nav,
+html[data-role="admin"] body.home-page .nav .btn{
+  min-height:40px !important;
+  border-radius:12px !important;
+}
+html[data-role="admin"] body.home-page .user-nav{
+  gap:9px !important;
+  padding:0 12px !important;
+  border:1px solid color-mix(in srgb,var(--pf-accent,#2ce6d6) 26%,var(--pf-line,rgba(255,255,255,.12))) !important;
+  background:transparent !important;
+  color:var(--pf-ink,#fff) !important;
+}
+html[data-role="admin"] body.home-page .nav .btn-primary{
+  padding-inline:16px !important;
+  box-shadow:0 10px 24px rgba(44,230,214,.16) !important;
+}
+html[data-role="admin"] body.home-page .menu-btn{display:none !important;}
+
+@media(max-width:1180px){
+  html[data-role="admin"] body.home-page > header.container .nav{width:calc(100% - 28px) !important;gap:8px !important;}
+  html[data-role="admin"] body.home-page .nav-links a{padding-inline:10px !important;font-size:.73rem !important;}
+  html[data-role="admin"] body.home-page .brand .brand-mark{width:36px !important;height:36px !important;flex-basis:36px !important;}
+}
+@media(max-width:980px){
+  html[data-role="admin"] body.home-page > header.container .nav{flex-wrap:wrap !important;justify-content:space-between !important;}
+  html[data-role="admin"] body.home-page .nav-links{
+    display:none !important;width:100% !important;order:5 !important;padding:8px !important;border-radius:16px !important;
+    border:1px solid var(--rvx-header-line) !important;background:color-mix(in srgb,var(--pf-surface,#08141d) 96%,transparent) !important;
+    box-shadow:0 16px 34px rgba(0,0,0,.22) !important;
+  }
+  html[data-role="admin"] body.home-page .nav-links.open{display:flex !important;flex-direction:column !important;align-items:stretch !important;}
+  html[data-role="admin"] body.home-page .nav-links a{width:100% !important;justify-content:flex-start !important;border-radius:10px !important;min-height:42px !important;}
+  html[data-role="admin"] body.home-page .nav-links a::after{display:none !important;}
+  html[data-role="admin"] body.home-page .menu-btn{display:inline-flex !important;align-items:center !important;}
+  html[data-role="admin"] body.home-page .nav-actions{width:100% !important;order:6 !important;padding-bottom:4px !important;overflow-x:auto !important;}
+}
+@media(max-width:640px){
+  html[data-role="admin"] body.home-page > header.container .nav{width:calc(100% - 22px) !important;}
+  html[data-role="admin"] body.home-page .nav-actions{gap:8px !important;}
+}

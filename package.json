@@ -1,6 +1,6 @@
 {
   "name": "revex-app",
-  "version": "1.3.0",
+  "version": "1.5.0-local-ready",
   "private": true,
   "description": "REVEX - vehicle rental and shared ride platform (rider, owner and admin portals)",
   "main": "api/index.js",

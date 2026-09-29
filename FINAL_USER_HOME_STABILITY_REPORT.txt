@@ -1,0 +1,15 @@
+REVEX User Home Stability Release
+
+Targeted issue:
+- Browser Page Unresponsive occurred only after login as User on index.html.
+
+Changes:
+- index.html no longer loads main.js, payment.js, chat.js, revex-final-integrated.js or revex-final-fix.js.
+- Added js/home-lite.js with zero API requests and zero render/observer loops.
+- User header is rendered from the stored session only.
+- Notifications are not fetched during homepage startup.
+- Ask REVEX on homepage is a lightweight link to chat.html rather than mounting the full chat engine.
+- On localhost, old service workers and Cache Storage are cleared asynchronously.
+- New service worker registration is disabled on localhost/127.0.0.1.
+- Guest and Owner homepage navigation remain supported.
+- Premium light/dark visuals and CSS-only route presentation are preserved.

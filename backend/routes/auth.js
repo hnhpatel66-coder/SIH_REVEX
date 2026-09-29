@@ -283,28 +283,45 @@ router.post('/edit-profile', requireAuth, async (req, res) => {
 
 router.post('/login', rateLimit(15 * 60 * 1000, 20), async (req, res) => {
   try {
-    const { userId, email, password } = req.body;
-    const login = (email || userId || '').trim().toLowerCase();
+    if (mongoose.connection.readyState !== 1) {
+      return res.status(503).json({ success: false, code: 'DATABASE_UNAVAILABLE', message: 'Login is temporarily unavailable because the database is not connected.' });
+    }
+    if (!process.env.JWT_SECRET) {
+      console.error('[login] JWT_SECRET is not configured.');
+      return res.status(503).json({ success: false, code: 'SERVER_NOT_CONFIGURED', message: 'Login is temporarily unavailable. Server authentication is not configured.' });
+    }
 
+    const { userId, email, password } = req.body || {};
+    const login = String(email || userId || '').trim().toLowerCase();
     if (!login || !password) {
-      return res.status(400).json({ message: 'Email/User ID and password are required.' });
+      return res.status(400).json({ success: false, code: 'VALIDATION_ERROR', message: 'Email/User ID and password are required.' });
     }
 
     let user = await User.findOne({ email: login });
     if (!user && /^[a-f0-9]{24}$/i.test(login)) user = await User.findById(login);
 
-    if (!user || !(await bcrypt.compare(password, user.passwordHash))) {
-      return res.status(401).json({ message: 'Invalid login details.' });
+    // Old/incomplete records must not make bcrypt throw a 500 response.
+    if (!user || !user.passwordHash || typeof user.passwordHash !== 'string') {
+      return res.status(401).json({ success: false, code: 'INVALID_CREDENTIALS', message: 'Invalid login details.' });
+    }
+
+    const passwordMatches = await bcrypt.compare(String(password), user.passwordHash);
+    if (!passwordMatches) {
+      return res.status(401).json({ success: false, code: 'INVALID_CREDENTIALS', message: 'Invalid login details.' });
     }
     if (user.isActive === false) {
-      return res.status(403).json({ message: 'This account has been deactivated. Contact support.' });
+      return res.status(403).json({ success: false, code: 'ACCOUNT_DEACTIVATED', message: 'This account has been deactivated. Contact support.' });
     }
 
     user.lastLoginAt = new Date();
     await user.save();
-    res.json({ token: signToken(user), user: publicUser(user) });
+    res.json({ success: true, token: signToken(user), user: publicUser(user) });
   } catch (e) {
-    res.status(500).json({ message: 'Login failed. Please try again.' });
+    console.error('[login] failed:', e.name, e.message);
+    if (e.name === 'MongooseServerSelectionError' || e.name === 'MongoNetworkError') {
+      return res.status(503).json({ success: false, code: 'DATABASE_UNAVAILABLE', message: 'Login is temporarily unavailable. Please try again shortly.' });
+    }
+    res.status(500).json({ success: false, code: 'LOGIN_FAILED', message: 'Login failed. Please try again.' });
   }
 });
 

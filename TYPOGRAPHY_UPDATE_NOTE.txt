@@ -1,0 +1,4 @@
+REVEX TYPOGRAPHY UPDATE - 2026-09-29
+Frontend-only global typography refinement applied in css/revex-luxe.css.
+Backend files were not modified.
+Updated hierarchy covers page titles, section/card headings, body copy, navigation, forms, buttons, tables, status badges, stats, chat and footer, with responsive mobile/tablet scaling.

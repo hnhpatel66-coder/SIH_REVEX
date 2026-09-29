@@ -1,0 +1,277 @@
+/* REVEX Admin mobile navigation
+   Matches the User / Owner mobile shell: header row + full-width dropdown
+   that participates in page flow (no floating/clipped drawer). */
+
+.admin-mobile-actions { display: none; }
+.admin-mobile-logout { display: none; }
+
+/* Ride Bookings is intentionally removed from the Admin interface. */
+.admin-tabs [data-tab="rideBookings"],
+#panel-rideBookings,
+[data-go-tab="rideBookings"] { display: none !important; }
+
+@media (max-width: 1000px) {
+  .admin-topbar {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 1000 !important;
+    overflow: visible !important;
+    background: var(--pf-bg, #061821) !important;
+    border-bottom: 1px solid var(--pf-line, rgba(45, 212, 191, .18)) !important;
+    box-shadow: none !important;
+  }
+
+  .admin-topbar .admin-topbar-inner {
+    width: min(100% - 28px, 1180px) !important;
+    min-height: 70px !important;
+    margin-inline: auto !important;
+    padding: 10px 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 12px !important;
+    flex-wrap: wrap !important;
+    overflow: visible !important;
+  }
+
+  .admin-topbar .brand {
+    order: 1 !important;
+    min-width: 0 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+  }
+
+  .admin-topbar .brand .brand-mark {
+    width: 40px !important;
+    height: 40px !important;
+    flex: 0 0 40px !important;
+    object-fit: contain !important;
+  }
+
+  .admin-topbar .brand .brand-word {
+    font-size: .98rem !important;
+    font-weight: 800 !important;
+    letter-spacing: -.025em !important;
+    color: var(--pf-ink, #f5fbff) !important;
+  }
+
+  /* Same light Menu button seen on User/Owner mobile pages. */
+  .admin-topbar .admin-menu {
+    order: 2 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    min-width: 66px !important;
+    min-height: 40px !important;
+    margin-left: auto !important;
+    padding: 8px 13px !important;
+    border: 1px solid rgba(219, 227, 238, .95) !important;
+    border-radius: 10px !important;
+    background: #fff !important;
+    color: #263443 !important;
+    font-size: .82rem !important;
+    font-weight: 800 !important;
+    line-height: 1 !important;
+    box-shadow: 0 1px 2px rgba(0,0,0,.08) !important;
+    cursor: pointer !important;
+  }
+
+  .admin-topbar .admin-menu:hover,
+  .admin-topbar .admin-menu:focus-visible {
+    background: #f8fbfc !important;
+    color: #0b7b72 !important;
+  }
+
+  .admin-mobile-actions,
+  .admin-view-site,
+  .admin-desktop-logout { display: none !important; }
+
+  /* IMPORTANT: static/order-based menu, not absolute. It pushes content down,
+     exactly like the User/Owner menu shown in the reference screenshot. */
+  .admin-topbar .admin-tabs,
+  .admin-topbar .admin-tabs:not(.open) {
+    order: 5 !important;
+    display: none !important;
+    width: 100% !important;
+    flex: 0 0 100% !important;
+    margin: -2px 0 0 !important;
+    padding: 8px !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 2px !important;
+    overflow: visible !important;
+    max-height: none !important;
+    border: 1px solid var(--pf-line, rgba(45, 212, 191, .18)) !important;
+    border-radius: 14px !important;
+    background: var(--pf-surface, #0a202b) !important;
+    box-shadow: none !important;
+    position: static !important;
+    transform: none !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
+  }
+
+  .admin-topbar .admin-tabs.open {
+    display: flex !important;
+    animation: revex-admin-nav-in .18s ease both !important;
+  }
+
+  /* User/Owner menu uses simple text rows — no floating pills or icons. */
+  .admin-topbar .admin-tab {
+    display: flex !important;
+    width: 100% !important;
+    min-height: 42px !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    margin: 0 !important;
+    padding: 10px 12px !important;
+    border: 0 !important;
+    border-radius: 9px !important;
+    background: transparent !important;
+    color: var(--pf-muted, #a7b6c3) !important;
+    text-align: left !important;
+    font-size: .80rem !important;
+    font-weight: 750 !important;
+    line-height: 1.2 !important;
+    white-space: nowrap !important;
+    cursor: pointer !important;
+    box-shadow: none !important;
+  }
+
+  .admin-topbar .admin-tab::before,
+  .admin-topbar .admin-tab::after { display: none !important; content: none !important; }
+
+  .admin-topbar .admin-tab:hover,
+  .admin-topbar .admin-tab:focus-visible {
+    color: var(--pf-ink, #f5fbff) !important;
+    background: color-mix(in srgb, var(--pf-accent, #24d2c4) 8%, var(--pf-surface, #0a202b)) !important;
+  }
+
+  .admin-topbar .admin-tab.active {
+    color: var(--pf-accent, #24d2c4) !important;
+    background: color-mix(in srgb, var(--pf-accent, #24d2c4) 8%, var(--pf-surface, #0a202b)) !important;
+    border: 0 !important;
+    box-shadow: none !important;
+  }
+
+  /* Main section starts naturally below the expanded header/menu. */
+  .admin-main {
+    padding-top: 24px !important;
+    position: relative !important;
+    z-index: 1 !important;
+  }
+}
+
+@media (max-width: 600px) {
+  .admin-topbar .admin-topbar-inner {
+    width: min(100% - 24px, 1180px) !important;
+    gap: 9px !important;
+  }
+
+  .admin-topbar .brand .brand-mark {
+    width: 38px !important;
+    height: 38px !important;
+    flex-basis: 38px !important;
+  }
+
+  .admin-topbar .admin-menu {
+    min-width: 64px !important;
+    min-height: 40px !important;
+    padding-inline: 12px !important;
+  }
+
+  .admin-topbar .admin-tabs { padding: 7px !important; }
+  .admin-topbar .admin-tab { min-height: 40px !important; padding: 9px 11px !important; }
+}
+
+@keyframes revex-admin-nav-in {
+  from { opacity: 0; transform: translateY(-5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .admin-topbar .admin-tabs.open { animation: none !important; }
+}
+
+/* Publish-final hard reset for legacy Admin header rules. */
+@media (max-width:1000px){
+  .admin-topbar .admin-tabs > .admin-nav-logout{
+    display:flex!important;width:100%!important;min-height:40px!important;align-items:center!important;justify-content:flex-start!important;
+    margin:5px 0 0!important;padding:10px 11px!important;border:0!important;border-top:1px solid var(--pf-line,rgba(45,212,191,.18))!important;
+    border-radius:0 0 9px 9px!important;background:transparent!important;color:#ff8a94!important;text-align:left!important;font-weight:750!important;box-shadow:none!important;
+  }
+}
+
+/* FINAL STRUCTURAL FIX — detached mobile admin nav is a real block between
+   header and page content. This cannot overlap admin-main because it is not
+   positioned inside the sticky header. */
+@media (max-width:1000px){
+  body > .admin-tabs.admin-mobile-detached{
+    display:none!important;
+    position:relative!important;
+    inset:auto!important;
+    transform:none!important;
+    float:none!important;
+    clear:both!important;
+    width:calc(100% - 24px)!important;
+    max-width:1180px!important;
+    min-width:0!important;
+    height:auto!important;
+    max-height:none!important;
+    margin:8px auto 0!important;
+    padding:7px!important;
+    box-sizing:border-box!important;
+    flex-direction:column!important;
+    align-items:stretch!important;
+    gap:2px!important;
+    overflow:visible!important;
+    opacity:1!important;
+    visibility:visible!important;
+    pointer-events:auto!important;
+    z-index:100!important;
+    border:1px solid var(--pf-line,rgba(45,212,191,.18))!important;
+    border-radius:14px!important;
+    background:var(--pf-surface,#0a202b)!important;
+    box-shadow:none!important;
+  }
+  body > .admin-tabs.admin-mobile-detached.open{display:flex!important;}
+  body > .admin-tabs.admin-mobile-detached > .admin-tab,
+  body > .admin-tabs.admin-mobile-detached > .admin-nav-logout{
+    position:relative!important;
+    inset:auto!important;
+    display:flex!important;
+    width:100%!important;
+    min-width:0!important;
+    max-width:100%!important;
+    min-height:40px!important;
+    margin:0!important;
+    padding:9px 11px!important;
+    box-sizing:border-box!important;
+    align-items:center!important;
+    justify-content:flex-start!important;
+    border:0!important;
+    border-radius:9px!important;
+    background:transparent!important;
+    color:var(--pf-muted,#a7b6c3)!important;
+    text-align:left!important;
+    white-space:normal!important;
+    font:750 .80rem/1.2 'Plus Jakarta Sans',system-ui,sans-serif!important;
+    box-shadow:none!important;
+  }
+  body > .admin-tabs.admin-mobile-detached > .admin-tab.active{
+    color:var(--pf-accent,#24d2c4)!important;
+    background:color-mix(in srgb,var(--pf-accent,#24d2c4) 8%,var(--pf-surface,#0a202b))!important;
+  }
+  body > .admin-tabs.admin-mobile-detached > .admin-nav-logout{
+    margin-top:5px!important;
+    padding-top:11px!important;
+    border-top:1px solid var(--pf-line,rgba(45,212,191,.18))!important;
+    border-radius:0 0 9px 9px!important;
+    color:#ff8a94!important;
+  }
+  body > .admin-tabs.admin-mobile-detached > *::before,
+  body > .admin-tabs.admin-mobile-detached > *::after{display:none!important;content:none!important;}
+  body .admin-main{margin-top:0!important;padding-top:22px!important;clear:both!important;}
+}

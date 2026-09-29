@@ -1,0 +1,8 @@
+REVEX final unified release
+
+Applied in this package:
+- User/Owner/Guest header aligned to slim admin-style reference
+- Removed Assistant tab from user/owner navbar; Ask REVEX remains available as chat launcher / Ask REVEX page
+- Chat page dimensions tightened and made consistent across owner and user layouts
+- Improved navbar overflow/slider behavior so first and last options remain accessible
+- Added role data attributes for consistent per-role styling

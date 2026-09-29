@@ -1,0 +1,21 @@
+REVEX FINAL PERFORMANCE OPTIMIZED RELEASE
+
+Purpose
+- Fix browser "This page isn't responding" / main-thread freeze risk on the REVEX homepage.
+- Preserve the premium UI, 3D dashboard feel, moving route vehicle, backend, APIs and authentication.
+
+Fixes applied
+1. Removed duplicate homepage 3D pointer handlers.
+2. Throttled 3D pointer rendering with requestAnimationFrame (max one transform update per frame).
+3. Cached the hero-card bounds instead of forcing layout on every pointer movement.
+4. Pauses SVG route animation when the card is off-screen or the browser tab is hidden.
+5. Removed explicit duplicate SMIL beginElement calls; native SVG animation starts normally.
+6. Fixed the portal/workspace repair routine so it is idempotent.
+7. Replaced the document-wide subtree MutationObserver with a direct-child observer only on .nav-actions.
+   This removes the user-role feedback loop that could repeatedly rewrite "Owner workspace" and freeze the page.
+8. Reduced expensive sticky-header backdrop blur while preserving the premium glass effect.
+9. Replaced the animated route's SVG blur filter with the existing route-shadow halo for a lighter neon effect.
+10. will-change is enabled only during active 3D interaction, rather than permanently.
+
+Backend
+- Backend/API/MongoDB/payment/chat/map logic was not intentionally changed.

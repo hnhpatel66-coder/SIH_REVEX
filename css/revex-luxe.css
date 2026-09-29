@@ -1,0 +1,341 @@
+/* REVEX LUXE — premium presentation layer. Loaded last; visual only. */
+@import url("https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&display=swap");
+
+:root{
+  --lx-ink:#0c1f24; --lx-deep:#0f3038; --lx-teal:#12756d; --lx-teal-hi:#1a9a8e;
+  --lx-brass:#b48a4c; --lx-brass-hi:#d4ae6e;
+  --lx-bg:#f5f7f6; --lx-surface:#ffffff; --lx-line:#dde5e2; --lx-muted:#5d6f71;
+  --lx-text:#0c1f24;
+  --lx-r-lg:22px; --lx-r-md:14px; --lx-r-sm:10px;
+  --lx-sh-1:0 1px 2px rgba(12,31,36,.05),0 8px 24px -12px rgba(12,31,36,.14);
+  --lx-sh-2:0 2px 4px rgba(12,31,36,.05),0 28px 56px -24px rgba(12,31,36,.28);
+  --lx-display:"Fraunces",Georgia,serif;
+  --lx-ease:cubic-bezier(.2,.7,.2,1);
+}
+html[data-theme="dark"]{
+  --lx-bg:#0a1a1e; --lx-surface:#10262c; --lx-line:#1f3a41; --lx-muted:#9db4b6; --lx-text:#eaf3f1;
+  --lx-sh-1:0 1px 2px rgba(0,0,0,.4),0 10px 28px -14px rgba(0,0,0,.6);
+  --lx-sh-2:0 30px 60px -26px rgba(0,0,0,.75);
+}
+
+html body{background:var(--lx-bg);color:var(--lx-text);font-family:"Plus Jakarta Sans",system-ui,sans-serif;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+html body ::selection{background:var(--lx-brass-hi);color:var(--lx-ink)}
+
+/* Headings: serif display gives the brand a voice */
+html body h1,html body h2,html body .section-title,html body .section-heading h2,html body .rvx-page-head h1{
+  font-family:var(--lx-display);font-weight:500;letter-spacing:-.02em;line-height:1.08;color:var(--lx-text)}
+html body h1{font-size:clamp(2.4rem,5.4vw,4.2rem)}
+html body h1 em{font-style:italic;color:var(--lx-teal-hi)}
+html body h2,html body .section-title{font-size:clamp(1.7rem,3.2vw,2.5rem)}
+html body h3{font-family:"Plus Jakarta Sans",sans-serif;letter-spacing:-.01em}
+
+/* Eyebrows: quiet brass, sentence case, with a short rule */
+html body .eyebrow,html body .rvx-eyebrow,html body .feature-kicker{
+  display:inline-flex;align-items:center;gap:10px;text-transform:none;letter-spacing:.02em;
+  font-size:.86rem;font-weight:600;color:var(--lx-brass);background:none;border:0;padding:0}
+html body .eyebrow::before,html body .rvx-eyebrow::before{content:"";width:26px;height:1px;background:currentColor}
+
+/* Navigation: slim glass bar */
+html body header.container,html body header{position:sticky;top:0;z-index:50}
+html body .nav{background:color-mix(in srgb,var(--lx-surface) 82%,transparent);
+  backdrop-filter:saturate(1.4) blur(18px);-webkit-backdrop-filter:saturate(1.4) blur(18px);
+  border-bottom:1px solid var(--lx-line);box-shadow:none}
+html body .brand-word{font-family:var(--lx-display);font-weight:600;letter-spacing:.14em;color:var(--lx-text)}
+html body .nav-links a{color:var(--lx-muted);font-weight:600;position:relative;transition:color .2s var(--lx-ease)}
+html body .nav-links a:hover{color:var(--lx-text)}
+html body .nav-links a.active{color:var(--lx-text)}
+html body .nav-links a.active::after{content:"";position:absolute;left:0;right:0;bottom:-6px;height:2px;
+  background:linear-gradient(90deg,var(--lx-brass),var(--lx-brass-hi));border-radius:2px}
+
+/* Buttons */
+html body .btn,html body .rvx-btn,html body button.btn-small{
+  border-radius:999px;font-weight:700;letter-spacing:.005em;
+  transition:transform .18s var(--lx-ease),box-shadow .2s var(--lx-ease),background .2s,border-color .2s}
+html body .btn-primary,html body .rvx-btn:not(.rvx-btn--outline):not(.rvx-btn--ghost){
+  background:linear-gradient(135deg,var(--lx-teal),var(--lx-deep));color:#fff;border:1px solid transparent;
+  box-shadow:0 1px 0 rgba(255,255,255,.18) inset,0 14px 28px -14px rgba(15,48,56,.7)}
+html body .btn-primary:hover,html body .rvx-btn:not(.rvx-btn--outline):not(.rvx-btn--ghost):hover{
+  transform:translateY(-1px);box-shadow:0 1px 0 rgba(255,255,255,.22) inset,0 20px 34px -14px rgba(15,48,56,.75)}
+html body .btn-dark{background:var(--lx-ink);color:#fff;border:1px solid var(--lx-ink)}
+html body .btn-outline,html body .rvx-btn--outline{background:transparent;color:var(--lx-text);border:1px solid var(--lx-line)}
+html body .btn-outline:hover,html body .rvx-btn--outline:hover{border-color:var(--lx-brass);color:var(--lx-text);transform:translateY(-1px)}
+html body .btn:active,html body .rvx-btn:active{transform:translateY(0) scale(.985)}
+html body :is(a,button,input,select,textarea,summary):focus-visible{outline:2px solid var(--lx-brass-hi);outline-offset:3px}
+
+/* Surfaces */
+html body :is(.feature-card,.rvx-card,.detail-panel,.booking-panel,.agree-card,.auth-card,.mini-card,.admin-panel,.owner-section,.modal-box){
+  background:var(--lx-surface);border:1px solid var(--lx-line);border-radius:var(--lx-r-lg);box-shadow:var(--lx-sh-1)}
+html body :is(.feature-card,.rvx-card):hover{box-shadow:var(--lx-sh-2);border-color:color-mix(in srgb,var(--lx-brass) 45%,var(--lx-line))}
+html body :is(.feature-card,.rvx-card){transition:box-shadow .3s var(--lx-ease),border-color .3s,transform .3s var(--lx-ease)}
+html body .visual-shell{border-radius:28px;border:1px solid var(--lx-line);box-shadow:var(--lx-sh-2)}
+html body .section-band{background:linear-gradient(180deg,var(--lx-bg),color-mix(in srgb,var(--lx-teal) 5%,var(--lx-bg)))}
+
+/* Hero atmosphere */
+html body .hero{background:
+  radial-gradient(900px 480px at 85% -10%,color-mix(in srgb,var(--lx-teal) 16%,transparent),transparent 70%),
+  radial-gradient(600px 360px at 0% 100%,color-mix(in srgb,var(--lx-brass) 12%,transparent),transparent 70%),var(--lx-bg)}
+html body .hero-copy p{color:var(--lx-muted);font-size:1.08rem;line-height:1.7;max-width:56ch}
+html body .hero-stats strong{font-family:var(--lx-display);font-weight:500;font-size:1.7rem;color:var(--lx-text)}
+html body .hero-stats span{color:var(--lx-muted)}
+html body .live-pill{border-radius:999px;background:color-mix(in srgb,var(--lx-teal) 12%,transparent);color:var(--lx-teal-hi);border:1px solid color-mix(in srgb,var(--lx-teal) 30%,transparent)}
+
+/* Forms */
+html body :is(input,select,textarea){background:var(--lx-surface);color:var(--lx-text);border:1px solid var(--lx-line);
+  border-radius:var(--lx-r-sm);transition:border-color .2s,box-shadow .2s}
+html body :is(input,select,textarea):hover{border-color:color-mix(in srgb,var(--lx-teal) 40%,var(--lx-line))}
+html body :is(input,select,textarea):focus{border-color:var(--lx-teal);box-shadow:0 0 0 4px color-mix(in srgb,var(--lx-teal) 18%,transparent);outline:0}
+html body :is(.field label,.rvx-field label,label){color:var(--lx-text);font-weight:600}
+html body .form-note,html body .form-message{color:var(--lx-muted)}
+
+/* Chips, tabs, badges */
+html body .filter-chip,html body .rvx-chip,html body .admin-tab,html body .tab{border-radius:999px;border:1px solid var(--lx-line);
+  background:var(--lx-surface);color:var(--lx-muted);font-weight:600;transition:all .2s var(--lx-ease)}
+html body :is(.filter-chip,.rvx-chip,.admin-tab,.tab):is(.active,[aria-pressed="true"],[aria-selected="true"]){
+  background:var(--lx-ink);color:#fff;border-color:var(--lx-ink)}
+html body .empty{border:1px dashed var(--lx-line);border-radius:var(--lx-r-lg);color:var(--lx-muted);background:transparent}
+
+/* Auth pages */
+html body .auth-visual{background:linear-gradient(160deg,var(--lx-deep),var(--lx-ink));color:#eaf3f1;border-radius:var(--lx-r-lg)}
+html body .auth-visual :is(h1,h2,h3,p,li,.auth-point){color:#eaf3f1}
+
+/* Modals */
+html body .modal{background:rgba(8,22,26,.55);backdrop-filter:blur(6px)}
+
+/* Footer */
+html body .footer{background:var(--lx-ink);color:#b9cccc;border-top:1px solid var(--lx-line)}
+html body .footer :is(h3,h4,strong,.brand-word){color:#fff}
+html body .footer a{color:#b9cccc;transition:color .2s}
+html body .footer a:hover{color:var(--lx-brass-hi)}
+
+/* One orchestrated entrance: hero only */
+@media (prefers-reduced-motion:no-preference){
+  html body .hero-copy>*{animation:lxIn .7s var(--lx-ease) both}
+  html body .hero-copy>*:nth-child(2){animation-delay:.08s}
+  html body .hero-copy>*:nth-child(3){animation-delay:.16s}
+  html body .hero-copy>*:nth-child(n+4){animation-delay:.24s}
+  @keyframes lxIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+}
+@media (prefers-reduced-motion:reduce){html body *{animation:none!important;transition:none!important}}
+@media (max-width:760px){html body :is(.feature-card,.rvx-card,.detail-panel,.auth-card){border-radius:18px}}
+
+/* ===================== 3D TOUCH ===================== */
+:root{--lx-persp:1100px}
+html body .hero .container,html body .feature-grid,html body .vehicle-grid,html body .steps{perspective:var(--lx-persp)}
+html body :is(.feature-card,.rvx-card,.visual-shell,.mini-card,.step){
+  --rx:0deg;--ry:0deg;--gx:50%;--gy:0%;--lift:0px;
+  transform-style:preserve-3d;will-change:transform;
+  transform:perspective(var(--lx-persp)) rotateX(var(--rx)) rotateY(var(--ry)) translateZ(var(--lift));
+  transition:transform .35s var(--lx-ease),box-shadow .35s var(--lx-ease),border-color .3s}
+html body :is(.feature-card,.rvx-card,.visual-shell)[data-tilting]{
+  transition:transform .08s linear,box-shadow .35s var(--lx-ease);--lift:14px;
+  background-image:radial-gradient(420px circle at var(--gx) var(--gy),rgba(212,174,110,.16),transparent 55%);
+  box-shadow:0 2px 4px rgba(12,31,36,.06),0 40px 60px -28px rgba(12,31,36,.42),0 0 0 1px rgba(180,138,76,.25)}
+/* children float above the card plane */
+html body :is(.feature-card,.rvx-card)>:is(.feature-icon,img,.thumb,h3){transform:translateZ(28px)}
+html body .visual-shell>.visual-top{transform:translateZ(22px)}
+html body .float-card{transform:translateZ(60px);box-shadow:0 26px 44px -18px rgba(12,31,36,.45);animation:lxFloat 6s ease-in-out infinite}
+html body .float-card.bottom{animation-delay:-3s}
+@keyframes lxFloat{50%{transform:translateZ(60px) translateY(-8px)}}
+
+/* Tactile 3D buttons: solid edge that presses down */
+html body .btn-primary{box-shadow:0 1px 0 rgba(255,255,255,.2) inset,0 4px 0 #0a3a3f,0 16px 26px -12px rgba(15,48,56,.65)}
+html body .btn-primary:hover{transform:translateY(-2px);box-shadow:0 1px 0 rgba(255,255,255,.25) inset,0 6px 0 #0a3a3f,0 22px 30px -12px rgba(15,48,56,.7)}
+html body .btn-primary:active{transform:translateY(3px);box-shadow:0 1px 0 rgba(255,255,255,.15) inset,0 1px 0 #0a3a3f,0 6px 10px -6px rgba(15,48,56,.6)}
+html body .btn-dark{box-shadow:0 4px 0 #000,0 14px 22px -12px rgba(0,0,0,.5)}
+html body .btn-dark:active{transform:translateY(3px);box-shadow:0 1px 0 #000}
+
+/* Brand mark and nav depth */
+html body .brand-mark{filter:drop-shadow(0 6px 8px rgba(12,31,36,.35));transition:transform .5s var(--lx-ease)}
+html body .brand:hover .brand-mark{transform:rotateY(180deg)}
+html body .hero-stats>div{transform:translateZ(0);transition:transform .3s var(--lx-ease)}
+html body .hero-stats>div:hover{transform:translateY(-4px)}
+/* Inputs sit slightly recessed */
+html body :is(input,select,textarea){box-shadow:inset 0 2px 3px rgba(12,31,36,.06)}
+html body :is(input,select,textarea):focus{box-shadow:inset 0 1px 2px rgba(12,31,36,.05),0 0 0 4px color-mix(in srgb,var(--lx-teal) 18%,transparent)}
+
+/* Touch screens and reduced motion: keep depth, drop tilt */
+@media (hover:none),(prefers-reduced-motion:reduce){
+  html body :is(.feature-card,.rvx-card,.visual-shell,.mini-card,.step){transform:none!important}
+  html body .float-card{animation:none}
+}
+
+/* ==========================================================================\n   REVEX LUXE — GLOBAL PROFESSIONAL TYPOGRAPHY PASS (2026-09-29)\n   Frontend-only refinement. Establishes one elegant, readable type scale across\n   User, Owner, Admin, auth, ride, rental, booking, agreement and assistant UI.\n   Logo artwork and brand proportions are intentionally untouched.\n   ========================================================================== */
+
+:root{
+  --rvx-font-display:"Manrope","Plus Jakarta Sans",system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  --rvx-font-ui:"Plus Jakarta Sans",system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  --rvx-type-display:clamp(2.65rem,4.25vw,3.75rem);
+  --rvx-type-page:clamp(2.25rem,3.35vw,3.15rem);
+  --rvx-type-section:clamp(1.65rem,2.25vw,2.15rem);
+  --rvx-type-card:clamp(1.08rem,1.25vw,1.22rem);
+  --rvx-type-body:clamp(.96rem,.25vw + .91rem,1.04rem);
+  --rvx-type-ui:.94rem;
+  --rvx-type-small:.84rem;
+  --rvx-type-micro:.76rem;
+}
+
+html{font-size:16px}
+html body{
+  font-family:var(--rvx-font-ui)!important;
+  font-size:var(--rvx-type-body)!important;
+  line-height:1.62!important;
+  letter-spacing:-.008em!important;
+  font-kerning:normal;
+  text-rendering:optimizeLegibility;
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+}
+
+/* Headings — clear hierarchy without oversized dashboard typography. */
+html body :is(h1,h2,h3,h4,h5,h6,.section-title,.rvx-card__title,.rvx-smart__title,.rvx-join__title,.assistant-pro-title,.assistant-page-title){
+  font-family:var(--rvx-font-display)!important;
+  color:var(--lx-text)!important;
+  text-wrap:balance;
+}
+html body :is(.rvx-page-head h1,.page-hero h1,.owner-hero h1,main.container.section>h1.section-title,.admin-main>h1,.admin-panel>h1){
+  font-size:var(--rvx-type-page)!important;
+  line-height:1.06!important;
+  font-weight:800!important;
+  letter-spacing:-.045em!important;
+}
+html body .home-page .hero h1,
+html body .hero-copy>h1{
+  font-size:var(--rvx-type-display)!important;
+  line-height:.99!important;
+  font-weight:800!important;
+  letter-spacing:-.052em!important;
+}
+html body :is(h2,.section-title:not(h1),.rvx-section__head h2,.section-heading h2,.owner-section>h2,.admin-panel>h2){
+  font-size:var(--rvx-type-section)!important;
+  line-height:1.15!important;
+  font-weight:750!important;
+  letter-spacing:-.034em!important;
+}
+html body :is(h3,.rvx-card__title,.rvx-smart__title,.rvx-join__title,.detail-panel>h3,.vehicle-body h3,.booking-panel h3,.admin-card h3,.modal-box h2,.profile-head h2){
+  font-size:var(--rvx-type-card)!important;
+  line-height:1.3!important;
+  font-weight:700!important;
+  letter-spacing:-.022em!important;
+}
+html body :is(h4,h5,h6){
+  font-size:1rem!important;
+  line-height:1.35!important;
+  font-weight:700!important;
+  letter-spacing:-.016em!important;
+}
+
+/* Paragraphs and supporting copy. */
+html body :is(p,.section-intro,.rvx-page-head p,.page-hero p,.owner-hero p,.rvx-smart__note,.form-message){
+  font-family:var(--rvx-font-ui)!important;
+  font-size:var(--rvx-type-body)!important;
+  line-height:1.68!important;
+  font-weight:450!important;
+  letter-spacing:-.006em!important;
+}
+html body :is(.muted,.meta,.rvx-meta,.rvx-card__meta,.field-hint,.form-note,small,.footer p,.footer a){
+  font-size:var(--rvx-type-small)!important;
+  line-height:1.58!important;
+  letter-spacing:-.003em!important;
+}
+html body :is(.eyebrow,.rvx-eyebrow,.feature-kicker){
+  font-family:var(--rvx-font-ui)!important;
+  font-size:var(--rvx-type-micro)!important;
+  line-height:1.2!important;
+  font-weight:800!important;
+  letter-spacing:.16em!important;
+}
+
+/* Navigation and role shells. */
+html body :is(.nav-links a,.nav-actions a,.nav-actions button,.admin-menu a,.admin-tab,.admin-tabs button,.rvx-subnav a,.owner-nav a,.menu-btn){
+  font-family:var(--rvx-font-ui)!important;
+  font-size:.89rem!important;
+  line-height:1.25!important;
+  font-weight:650!important;
+  letter-spacing:-.012em!important;
+}
+html body :is(.brand-word,.footer-brand strong){
+  font-family:var(--rvx-font-display)!important;
+}
+
+/* Buttons — one compact premium button voice everywhere. */
+html body :is(.btn,.rvx-btn,button,input[type="button"],input[type="submit"],input[type="reset"]){
+  font-family:var(--rvx-font-ui)!important;
+  font-size:.91rem!important;
+  line-height:1.2!important;
+  font-weight:700!important;
+  letter-spacing:-.012em!important;
+}
+html body :is(.btn-lg,.rvx-btn--lg,.hero-actions .btn,.hero-buttons .btn){font-size:.96rem!important}
+html body :is(.rvx-btn--sm,.btn-sm){font-size:.82rem!important}
+
+/* Forms — readable labels, full-size inputs, no tiny helper copy. */
+html body :is(label,.field label,.rvx-field label,.rvx-field>span,.form-label){
+  font-family:var(--rvx-font-ui)!important;
+  font-size:.86rem!important;
+  line-height:1.35!important;
+  font-weight:700!important;
+  letter-spacing:-.008em!important;
+}
+html body :is(input,select,textarea,.field input,.field select,.field textarea,.rvx-field input,.rvx-field select,.rvx-field textarea,.admin-search){
+  font-family:var(--rvx-font-ui)!important;
+  font-size:.96rem!important;
+  line-height:1.45!important;
+  font-weight:500!important;
+  letter-spacing:-.006em!important;
+}
+html body :is(input,textarea)::placeholder{font-size:.94rem!important;font-weight:450!important;letter-spacing:-.004em!important}
+
+/* Tables and data-heavy Admin/Owner areas. */
+html body table{font-family:var(--rvx-font-ui)!important;font-size:.9rem!important;line-height:1.45!important}
+html body :is(th,.table-head){font-size:.78rem!important;line-height:1.3!important;font-weight:750!important;letter-spacing:.045em!important;text-transform:uppercase}
+html body td{font-size:.9rem!important;line-height:1.48!important;font-weight:500!important;letter-spacing:-.005em!important}
+html body :is(.badge,.pill,.rvx-chip,[class*="status-"]){
+  font-family:var(--rvx-font-ui)!important;
+  font-size:.76rem!important;
+  line-height:1.2!important;
+  font-weight:750!important;
+  letter-spacing:.01em!important;
+}
+
+/* Statistics, prices and concise numeric UI. */
+html body :is(.hero-stats strong,.rvx-stats strong,.owner-summary-grid strong,.stat-value,.price,.amount){
+  font-family:var(--rvx-font-display)!important;
+  font-weight:750!important;
+  letter-spacing:-.035em!important;
+}
+html body :is(.hero-stats span,.rvx-stats span,.owner-summary-grid span,.stat-label){
+  font-size:.82rem!important;
+  line-height:1.4!important;
+  font-weight:600!important;
+  letter-spacing:-.004em!important;
+}
+
+/* Chat / Ask REVEX text follows the same hierarchy. */
+html body :is(.rvx-chat-history,.chat-page-body,.assistant-message,.chat-message){font-size:.94rem!important;line-height:1.62!important}
+html body :is(.assistant-pro-title,.assistant-page-title){font-weight:750!important;letter-spacing:-.028em!important}
+
+/* Footer: deliberately quieter than primary content. */
+html body .footer{font-size:.86rem!important;line-height:1.6!important}
+html body .footer :is(h3,h4,strong){font-size:.92rem!important;font-weight:700!important;letter-spacing:-.012em!important}
+
+/* Maintain elegant proportions on tablets and phones. */
+@media (max-width:900px){
+  :root{
+    --rvx-type-display:clamp(2.35rem,8vw,3.25rem);
+    --rvx-type-page:clamp(2.05rem,6.5vw,2.7rem);
+    --rvx-type-section:clamp(1.5rem,5vw,1.95rem);
+  }
+  html body :is(.nav-links a,.nav-actions a,.nav-actions button,.admin-menu a,.rvx-subnav a){font-size:.88rem!important}
+}
+@media (max-width:600px){
+  :root{
+    --rvx-type-display:clamp(2.12rem,10vw,2.72rem);
+    --rvx-type-page:clamp(1.92rem,8.5vw,2.4rem);
+    --rvx-type-section:clamp(1.38rem,6.5vw,1.75rem);
+    --rvx-type-body:.95rem;
+  }
+  html body{line-height:1.58!important}
+  html body :is(.btn,.rvx-btn,button){font-size:.9rem!important}
+  html body :is(input,select,textarea){font-size:1rem!important} /* avoids iOS zoom */
+  html body :is(.rvx-page-head h1,.page-hero h1,.owner-hero h1){letter-spacing:-.038em!important}
+}

@@ -1,0 +1,16 @@
+REVEX FINAL STABILITY-COMPATIBLE RELEASE
+
+This release is a stricter browser-compatibility pass for the "This page is not responding" issue.
+
+Changes:
+- Removed document MutationObserver usage from the final UI repair layer.
+- Notification bell and workspace labels are created correctly in main.js directly.
+- Removed all homepage pointermove / requestAnimationFrame 3D tracking.
+- Removed IntersectionObserver and SVG pause/unpause animation API calls from the homepage.
+- Removed SVG SMIL animateMotion from the moving car.
+- Replaced it with one lightweight CSS compositor animation.
+- Replaced large live backdrop blurs with static premium surfaces/shadows.
+- Preserved a static perspective/3D dashboard card and a moving route car.
+- No backend/API/MongoDB/Razorpay/Mapbox/Gemini code was changed.
+
+- Added new cache-busting version strings to modified frontend scripts so localhost cannot reuse an older cached performance script.

@@ -1,0 +1,6 @@
+REVEX Admin mobile final fix
+
+- Admin mobile Menu opens and closes reliably every time.
+- Ride Bookings has been removed completely from the Admin interface and Admin navigation.
+- Rental Bookings remains available.
+- Core ride-sharing backend was not removed, preventing unrelated user/owner ride flows from breaking.

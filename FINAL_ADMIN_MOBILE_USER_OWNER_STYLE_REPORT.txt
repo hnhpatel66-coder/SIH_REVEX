@@ -1,0 +1,14 @@
+REVEX FINAL ADMIN MOBILE USER/OWNER STYLE
+=========================================
+
+Updated Admin mobile navigation to match the User/Owner mobile shell:
+- REVEX logo + light Menu button in one clean header row.
+- Menu opens as a full-width rounded dropdown in normal page flow.
+- No absolute/floating/clipped navigation pills.
+- Same simple text-row style and active teal highlight as User/Owner.
+- Selecting any Admin function switches to that function and closes the menu.
+- Admin tab is stored in URL/session so refresh and Back/Forward keep working.
+- Ride Bookings remains removed from Admin navigation.
+- Existing Admin functions and backend/API logic are preserved.
+
+Desktop Admin navigation is unchanged.

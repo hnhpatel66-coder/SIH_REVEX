@@ -82,7 +82,8 @@
         chat.conversationId = latest.id;
         chat.renderConversation(latest);
       } else {
-        chat.addMessage('assistant', 'Hi! I can help with finding a ride, renting a vehicle, payments, cancellations and refunds. What would you like to know?', new Date());
+        // chat.mount() already rendered the single welcome greeting. Keeping it
+        // avoids the duplicated two-message first-open experience.
       }
     } catch (error) {
       chat.addMessage('error', error.message, new Date());

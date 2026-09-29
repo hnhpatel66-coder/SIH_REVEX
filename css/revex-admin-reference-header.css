@@ -1,0 +1,229 @@
+/* REVEX Admin Header — reference layout requested 2026-09-28
+   Desktop: single slim horizontal row matching the supplied admin reference.
+   Functional behavior is unchanged; this file only overrides admin header presentation. */
+
+.admin-topbar {
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 9000 !important;
+  width: 100% !important;
+  background: color-mix(in srgb, var(--pf-surface) 97%, transparent) !important;
+  backdrop-filter: blur(16px) saturate(120%) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(120%) !important;
+  border-bottom: 1px solid var(--pf-line) !important;
+  box-shadow: 0 3px 18px rgba(8,24,32,.045) !important;
+}
+
+.admin-topbar .admin-topbar-inner {
+  width: min(1480px, calc(100% - 40px)) !important;
+  max-width: none !important;
+  min-height: 62px !important;
+  margin: 0 auto !important;
+  padding: 7px 0 !important;
+  display: flex !important;
+  flex-flow: row nowrap !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 8px !important;
+}
+
+/* Compact brand at the left, as in the reference header. */
+.admin-topbar .brand {
+  flex: 0 0 auto !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  margin-right: 4px !important;
+  min-width: max-content !important;
+}
+.admin-topbar .brand .brand-mark {
+  width: 31px !important;
+  height: 31px !important;
+  flex: 0 0 31px !important;
+  object-fit: contain !important;
+}
+.admin-topbar .brand .brand-word {
+  font-size: 1rem !important;
+  font-weight: 800 !important;
+  letter-spacing: -.035em !important;
+  line-height: 1 !important;
+}
+
+.admin-menu { display: none !important; }
+
+/* Reference layout: plain text tabs in a single line, no large rounded nav container. */
+.admin-tabs {
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  width: auto !important;
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  scrollbar-width: none !important;
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+.admin-tabs::-webkit-scrollbar { display: none !important; }
+
+.admin-tab {
+  position: relative !important;
+  flex: 0 0 auto !important;
+  width: auto !important;
+  min-width: max-content !important;
+  min-height: 36px !important;
+  margin: 0 !important;
+  padding: 0 8px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  color: var(--pf-muted) !important;
+  box-shadow: none !important;
+  font-size: .70rem !important;
+  font-weight: 650 !important;
+  line-height: 1 !important;
+  white-space: nowrap !important;
+  cursor: pointer !important;
+  transition: color .16s ease, background .16s ease !important;
+}
+.admin-tab::after {
+  content: "" !important;
+  position: absolute !important;
+  left: 8px !important;
+  right: 8px !important;
+  bottom: 0 !important;
+  height: 2px !important;
+  border-radius: 999px !important;
+  background: transparent !important;
+  transform: scaleX(.35) !important;
+  transform-origin: center !important;
+  transition: background .16s ease, transform .16s ease !important;
+}
+.admin-tab:hover {
+  color: var(--pf-ink) !important;
+  background: color-mix(in srgb, var(--pf-accent) 5%, transparent) !important;
+}
+.admin-tab.active {
+  color: var(--pf-ink) !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+.admin-tab.active::after {
+  background: var(--pf-accent) !important;
+  transform: scaleX(1) !important;
+}
+
+.admin-view-site,
+.admin-topbar [data-exit-admin] {
+  flex: 0 0 auto !important;
+  min-height: 36px !important;
+  padding: 7px 10px !important;
+  border-radius: 7px !important;
+  font-size: .70rem !important;
+  font-weight: 750 !important;
+  line-height: 1 !important;
+  white-space: nowrap !important;
+}
+.admin-view-site {
+  margin-left: 2px !important;
+  background: transparent !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+}
+.admin-view-site:hover {
+  background: color-mix(in srgb, var(--pf-accent) 7%, var(--pf-surface)) !important;
+  border-color: color-mix(in srgb, var(--pf-accent) 18%, var(--pf-line)) !important;
+}
+.admin-topbar [data-exit-admin] {
+  margin-left: 0 !important;
+  border: 1px solid color-mix(in srgb, var(--pf-accent) 56%, var(--pf-line)) !important;
+  box-shadow: 0 2px 7px rgba(9,87,78,.10) !important;
+}
+
+/* Keep the page content immediately below the slimmer reference bar. */
+.admin-main { padding-top: 36px !important; }
+
+/* Mid-size screens keep the same single-row feeling with horizontally scrollable tabs. */
+@media (max-width: 1280px) and (min-width: 951px) {
+  .admin-topbar .admin-topbar-inner { width: calc(100% - 24px) !important; gap: 6px !important; }
+  .admin-topbar .brand .brand-mark { width: 28px !important; height: 28px !important; flex-basis: 28px !important; }
+  .admin-topbar .brand .brand-word { font-size: .93rem !important; }
+  .admin-tab { padding: 0 6px !important; font-size: .66rem !important; }
+  .admin-tab::after { left: 6px !important; right: 6px !important; }
+  .admin-view-site, .admin-topbar [data-exit-admin] { padding: 7px 8px !important; font-size: .66rem !important; }
+}
+
+/* On tablet/mobile, use the existing functional menu instead of allowing the header to break. */
+@media (max-width: 950px) {
+  .admin-topbar .admin-topbar-inner {
+    width: calc(100% - 24px) !important;
+    min-height: 62px !important;
+    position: relative !important;
+    display: grid !important;
+    grid-template-columns: minmax(0,1fr) auto auto !important;
+    gap: 8px !important;
+  }
+  .admin-topbar .brand { grid-column: 1 !important; }
+  .admin-menu {
+    display: inline-flex !important;
+    grid-column: 2 !important;
+    align-items: center !important;
+    justify-content: center !important;
+    min-height: 36px !important;
+    padding: 0 11px !important;
+    border: 1px solid var(--pf-line) !important;
+    border-radius: 8px !important;
+    background: var(--pf-surface) !important;
+    color: var(--pf-ink) !important;
+    font-size: .72rem !important;
+    font-weight: 750 !important;
+  }
+  .admin-view-site { grid-column: 3 !important; }
+  .admin-topbar [data-exit-admin] { display: none !important; }
+  .admin-tabs {
+    display: none !important;
+    position: absolute !important;
+    left: 0 !important;
+    right: 0 !important;
+    top: calc(100% + 6px) !important;
+    z-index: 9100 !important;
+    max-height: 70vh !important;
+    padding: 7px !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    overflow-y: auto !important;
+    background: var(--pf-surface) !important;
+    border: 1px solid var(--pf-line) !important;
+    border-radius: 12px !important;
+    box-shadow: 0 22px 54px rgba(0,0,0,.18) !important;
+  }
+  .admin-tabs.open { display: flex !important; }
+  .admin-tab {
+    width: 100% !important;
+    min-height: 40px !important;
+    justify-content: flex-start !important;
+    padding: 0 12px !important;
+    border-radius: 8px !important;
+    text-align: left !important;
+    font-size: .76rem !important;
+  }
+  .admin-tab::after { display: none !important; }
+  .admin-tab.active { background: color-mix(in srgb, var(--pf-accent) 10%, var(--pf-surface)) !important; }
+}
+
+@media (max-width: 560px) {
+  .admin-topbar .admin-topbar-inner { grid-template-columns: minmax(0,1fr) auto !important; }
+  .admin-view-site { display: none !important; }
+  .admin-menu { grid-column: 2 !important; }
+}

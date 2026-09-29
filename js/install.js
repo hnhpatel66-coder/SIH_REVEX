@@ -22,7 +22,7 @@
     installButtons().forEach(item => item.classList.remove('is-visible'));
   });
 
-  if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+  if ('serviceWorker' in navigator && location.protocol !== 'file:' && !['localhost','127.0.0.1'].includes(location.hostname)) {
     window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));
   }
 })();
