@@ -5,35 +5,12 @@
   "description": "REVEX backend. Dependencies are intentionally declared in the repository root package.json so the whole application shares ONE node_modules tree.",
   "main": "server.js",
   "scripts": {
-    "start": "node ../scripts/start-local.js",
+    "start": "node server.js",
     "seed": "node seed.js",
     "setup-admin": "node setup-admin.js"
   },
   "type": "commonjs",
   "engines": {
     "node": ">=18.x"
-  },
-  "dependencies": {
-    "bcryptjs": "^2.4.3",
-    "cors": "^2.8.5",
-    "dotenv": "^16.4.5",
-    "express": "^4.21.2",
-    "jsonwebtoken": "^9.0.2",
-    "mongoose": "^8.18.0",
-    "multer": "^2.0.2",
-    "nodemailer": "^6.10.1",
-    "motion": "^12.23.24",
-    "react": "^19.1.1",
-    "react-dom": "^19.1.1"
-  },
-  "devDependencies": {
-    "@types/react": "^19.1.13",
-    "@types/react-dom": "^19.1.9",
-    "@vitejs/plugin-react": "^5.0.4",
-    "autoprefixer": "^10.4.21",
-    "postcss": "^8.5.6",
-    "tailwindcss": "^3.4.17",
-    "typescript": "^5.9.2",
-    "vite": "^7.1.7"
   }
 }
