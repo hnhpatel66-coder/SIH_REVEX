@@ -328,7 +328,7 @@ function buildNav(role, user) {
     window.RevaxTheme.mount(actions);
   }
   if (user) {
-    const profile = document.createElement('a'); profile.href = role === 'admin' ? 'admin.html' : 'profile.html'; profile.className = 'user-nav';
+    const profile = document.createElement('a'); profile.href = role === 'admin' ? 'admin.html' : 'profile.html'; profile.className = 'user-nav'; profile.setAttribute('aria-label', 'Open your profile');
     // The same profile picture the owner uploaded, so the navbar, the profile
     // page and the admin lists never disagree about who this is.
     profile.insertAdjacentHTML('afterbegin', imageOrInitials(user.photo, user.name, { className: 'user-avatar', alt: '' }));
@@ -337,12 +337,12 @@ function buildNav(role, user) {
     // Keep role headers focused on the current workspace. Rider/owner switching
     // is handled inside Profile rather than adding a second workspace button
     // to every owner page.
-    const logout = document.createElement('button'); logout.type = 'button'; logout.className = 'btn btn-primary'; logout.textContent = 'Logout'; logout.onclick = () => { clearSession(); location.href = 'index.html'; }; actions.appendChild(logout);
+    const logout = document.createElement('button'); logout.type = 'button'; logout.className = 'btn btn-primary rvex-async-button'; logout.setAttribute('aria-label', 'Log out of REVEX'); logout.textContent = 'Logout'; logout.onclick = () => { clearSession(); location.href = 'index.html'; }; actions.appendChild(logout);
   } else if (isPublicSite() && getToken()) {
     const back = document.createElement('a'); back.href = 'admin.html'; back.className = 'btn btn-outline'; back.textContent = 'Return to Admin'; actions.appendChild(back);
   } else {
-    const login = document.createElement('a'); login.href = `login.html?next=${encodeURIComponent(location.pathname + location.hash)}`; login.textContent = 'Log in'; actions.appendChild(login);
-    const join = document.createElement('a'); join.href = 'register.html'; join.className = 'btn btn-primary'; join.textContent = `Join ${BRAND}`; actions.appendChild(join);
+    const login = document.createElement('a'); login.href = `login.html?next=${encodeURIComponent(location.pathname + location.hash)}`; login.textContent = 'Sign In'; login.setAttribute('aria-label', 'Sign in to REVEX'); actions.appendChild(login);
+    const join = document.createElement('a'); join.href = 'register.html'; join.className = 'btn btn-primary'; join.textContent = 'Get Started'; join.setAttribute('aria-label', 'Create a REVEX account'); actions.appendChild(join);
   }
 }
 

@@ -1,0 +1,262 @@
+/* REVEX unified navigation/auth/map patch — keeps the original pages vanilla
+   while giving the same component-driven visual language across portals. */
+.rvx-map .rvx-map__leaflet,
+.rvx-map .rvx-map__gl,
+.rvx-map .rvx-map__diagram {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.rvx-map .rvx-map__leaflet { z-index: 2; }
+.rvx-map .rvx-map__leaflet[hidden] { display: none !important; }
+.rvx-map .rvx-map__leaflet .leaflet-container {
+  width: 100%;
+  height: 100%;
+  background: #eef3f5;
+  font-family: inherit;
+}
+.rvx-map .rvx-map__leaflet .leaflet-control-attribution {
+  font-size: 9px;
+}
+.rvx-map--pin .rvx-map__leaflet .leaflet-container,
+.rvx-map__svg--picking {
+  cursor: crosshair;
+}
+.rvx-map__offer-route {
+  stroke: #64748b;
+  stroke-opacity: .82;
+  cursor: pointer;
+  transition: stroke .18s ease, opacity .18s ease;
+}
+.rvx-map__offer-route:hover,
+.rvx-map__offer-route.is-selected {
+  stroke: var(--brand, #0f766e);
+  stroke-opacity: 1;
+}
+.rvx-map__offer-route:focus-visible {
+  outline: none;
+  stroke: #0f766e;
+}
+.rvx-map__surface {
+  min-height: 300px;
+}
+.rvx-map__legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.rvx-map__legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 5px 9px;
+  background: var(--surface);
+  font-size: .72rem;
+  font-weight: 700;
+  color: var(--muted-strong);
+}
+.rvx-map__legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #64748b;
+}
+.rvx-map__legend-dot.is-primary { background: var(--brand); }
+.rvx-map__legend-dot.is-journey { background: #7c3aed; }
+
+/* Header 2-inspired navigation: compact floating desktop header + full-width mobile sheet. */
+body > header.container {
+  top: 0;
+  z-index: 100;
+  max-width: none;
+  background: color-mix(in srgb, var(--surface, #fff) 92%, transparent);
+  backdrop-filter: blur(18px) saturate(1.1);
+  border-bottom: 1px solid color-mix(in srgb, var(--line, #e2e8f0) 86%, transparent);
+}
+body > header.container .nav {
+  width: min(1220px, calc(100% - 32px));
+  min-height: 64px;
+  margin-inline: auto;
+  gap: 12px;
+}
+.brand {
+  font-weight: 800;
+  letter-spacing: -.055em;
+}
+.brand .brand-mark,
+.brand > img.brand-mark {
+  width: 30px;
+  height: 30px;
+  object-fit: contain;
+  margin-right: 9px;
+}
+.brand-word { color: var(--ink, #0f172a); }
+.nav-links {
+  margin-left: auto;
+  margin-right: 6px;
+  gap: 2px;
+  border: 1px solid transparent;
+}
+.nav-links a {
+  padding: 8px 10px;
+  color: var(--muted-strong, #64748b);
+  font-size: .82rem;
+  font-weight: 700;
+}
+.nav-links a:hover {
+  background: var(--surface-soft, #f8fafc);
+  color: var(--ink, #0f172a);
+}
+.nav-links a.active {
+  background: color-mix(in srgb, var(--brand, #0f766e) 10%, transparent);
+  color: var(--brand, #0f766e);
+}
+.nav-actions {
+  gap: 7px;
+  align-items: center;
+}
+.nav-actions > a:not(.user-nav):not(.notification-link) {
+  font-weight: 750;
+  text-decoration: none;
+}
+.nav-actions > .btn,
+.nav-actions > a.btn,
+.nav-actions > a:not(.user-nav):not(.notification-link) {
+  min-height: 38px;
+}
+.nav-actions .theme-toggle {
+  min-height: 36px;
+}
+.user-nav {
+  padding: 4px 8px 4px 5px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  box-shadow: 0 2px 10px rgba(15,23,42,.04);
+}
+.user-avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+}
+.menu-btn {
+  border-radius: 10px;
+  background: var(--surface);
+}
+@media (max-width: 1020px) {
+  .nav-links {
+    width: 100%;
+    margin: 0;
+    padding: 7px;
+    order: 5;
+  }
+  .nav-actions { order: 4; margin-left: auto; }
+}
+@media (max-width: 720px) {
+  body > header.container .nav {
+    width: min(100% - 24px, 1220px);
+    min-height: 60px;
+  }
+  .nav-actions { gap: 5px; }
+  .nav-actions .user-nav { border-radius: 11px; }
+  .nav-links.open {
+    box-shadow: 0 18px 44px rgba(15,23,42,.12);
+  }
+}
+
+/* Login/auth polish. */
+.auth-page {
+  background:
+    radial-gradient(circle at 15% 12%, rgba(15,118,110,.09), transparent 30%),
+    radial-gradient(circle at 88% 22%, rgba(59,130,246,.06), transparent 28%),
+    var(--bg, #f7faf9);
+}
+.auth-shell {
+  min-height: calc(100vh - 145px);
+  padding-top: clamp(30px, 6vw, 80px);
+  padding-bottom: clamp(34px, 6vw, 80px);
+}
+.auth-card {
+  border: 1px solid color-mix(in srgb, var(--line) 80%, #fff 20%);
+  box-shadow: 0 26px 70px rgba(15,23,42,.08);
+  border-radius: 22px;
+}
+.auth-card .btn[type="submit"] {
+  position: relative;
+  overflow: hidden;
+  min-height: 46px;
+  border-radius: 12px;
+  font-weight: 800;
+}
+.auth-card .btn[type="submit"]::after {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 -30%;
+  width: 20%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.42), transparent);
+  transform: skewX(-18deg);
+  opacity: 0;
+}
+.auth-card .btn[type="submit"].is-loading::after {
+  opacity: 1;
+  animation: rvx-button-shimmer 1.2s linear infinite;
+}
+.auth-card .btn[type="submit"].is-loading::before,
+.rvex-async-button.is-loading::before {
+  content: '';
+  width: 14px;
+  height: 14px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 8px;
+  vertical-align: -2px;
+  animation: rvx-button-spin .75s linear infinite;
+}
+.auth-card .btn[type="submit"].is-success,
+.rvex-async-button.is-success { background: #047857; border-color: #047857; color: #fff; }
+.auth-card .btn[type="submit"].is-error,
+.rvex-async-button.is-error { background: #b91c1c; border-color: #b91c1c; color: #fff; }
+@keyframes rvx-button-spin { to { transform: rotate(360deg); } }
+@keyframes rvx-button-shimmer { from { transform: translateX(0) skewX(-18deg); } to { transform: translateX(650%) skewX(-18deg); } }
+
+.rvex-async-button {
+  position: relative;
+  min-height: 42px;
+  transition: transform .18s ease, box-shadow .18s ease, opacity .18s ease;
+}
+.rvex-async-button:active:not(:disabled) { transform: translateY(1px); }
+.rvex-async-button.is-loading { pointer-events: none; opacity: .92; }
+
+@media (prefers-reduced-motion: reduce) {
+  .auth-card .btn[type="submit"].is-loading::after,
+  .auth-card .btn[type="submit"].is-loading::before,
+  .rvex-async-button.is-loading::before { animation: none; }
+}
+
+.rvx-card[data-map-selected="true"],
+.rvx-card.is-map-selected {
+  border-color: color-mix(in srgb, var(--brand, #0f766e) 45%, var(--line) 55%) !important;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--brand, #0f766e) 12%, transparent), 0 16px 34px rgba(15,118,110,.10);
+  transform: translateY(-1px);
+}
+.rvx-card[data-map-selected="true"]::before,
+.rvx-card.is-map-selected::before {
+  content: 'Selected on map';
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 3;
+  font-size: .68rem;
+  font-weight: 800;
+  padding: 4px 7px;
+  border-radius: 999px;
+  background: #ecfdf8;
+  color: #0f766e;
+  border: 1px solid #b7efe5;
+}
+.rvx-card[data-ride] { position: relative; }

@@ -122,17 +122,21 @@ function openEditVehicle(id) {
 }
 async function submitVehicle(event) {
   event.preventDefault(); if (!requireRole('owner', 'admin')) return;
-  const form = event.target; const submit = form.querySelector('button[type="submit"]'); const message = document.getElementById('vehicleFormMessage'); submit.disabled = true; message.textContent = 'Saving vehicle…'; message.className = 'form-message';
+  const form = event.target; const submit = form.querySelector('button[type="submit"]'); const message = document.getElementById('vehicleFormMessage'); window.RevexButtonUI?.start(submit, 'Submitting…'); message.textContent = 'Saving vehicle…'; message.className = 'form-message';
   try {
     assertUploadBudget([form.ownershipPaper.files[0], form.insurance.files[0], form.puc.files[0]]);
     const documents = await documentsFromInputs([{ input: form.ownershipPaper, type: 'ownership', label: 'Ownership papers' }, { input: form.insurance, type: 'insurance', label: 'Insurance' }, { input: form.puc, type: 'puc', label: 'PUC certificate' }]);
     const image = await fileToDataUrl(form.vehiclePicture.files[0], UPLOAD_LIMITS.photoMb);
     const vehicle = await api('/vehicles', { method: 'POST', body: { name: form.name.value.trim(), category: form.category.value, brand: form.brand.value.trim(), model: form.model.value.trim(), location: form.location.value.trim(), fuelType: form.fuelType.value, transmission: form.transmission.value, currentKm: Number(form.currentKm.value), price: Number(form.price.value), priceUnit: form.priceUnit.value, includedKm: Number(form.includedKm.value), extraKmRate: Number(form.extraKmRate.value), additionalCharges: Number(form.additionalCharges.value), discountPercent: Number(form.discountPercent.value), taxPercent: Number(form.taxPercent.value), available: form.available.value, numberPlate: form.numberPlate.value.trim(), description: form.description.value.trim(), vehiclePicture: image, documents } });
+    window.RevexButtonUI?.success(submit, 'Submitted', 1600);
     message.textContent = ''; form.reset(); document.getElementById('vehicleKm').value = 0; await refreshOwnerPortal(); showModal('Vehicle listed successfully', `${vehicle.name} was saved. Status: Pending Approval.`); document.getElementById('fleet')?.scrollIntoView({ behavior: 'smooth' });
-  } catch (error) { message.textContent = error.message; message.className = 'form-message form-message-error'; } finally { submit.disabled = false; }
+  } catch (error) {
+    window.RevexButtonUI?.error(submit, 'Try again');
+    message.textContent = error.message; message.className = 'form-message form-message-error';
+  }
 }
 async function submitEditVehicle(event) {
-  event.preventDefault(); const id = document.getElementById('editVehicleId').value; const message = document.getElementById('editFormMessage'); const submit = event.target.querySelector('button[type="submit"]'); submit.disabled = true; message.textContent = 'Saving changes…'; message.className = 'form-message';
+  event.preventDefault(); const id = document.getElementById('editVehicleId').value; const message = document.getElementById('editFormMessage'); const submit = event.target.querySelector('button[type="submit"]'); window.RevexButtonUI?.start(submit, 'Saving…'); message.textContent = 'Saving changes…'; message.className = 'form-message';
   try {
     const body = { name: document.getElementById('editName').value.trim(), category: document.getElementById('editCategory').value, fuelType: document.getElementById('editFuel').value, currentKm: Number(document.getElementById('editKm').value), location: document.getElementById('editLocation').value.trim(), price: Number(document.getElementById('editPrice').value), discountPercent: Number(document.getElementById('editDiscount').value), priceUnit: document.getElementById('editUnit').value, transmission: document.getElementById('editTransmission').value, description: document.getElementById('editDescription').value.trim(), availableFrom: document.getElementById('editAvailable').value };
     const photo = document.getElementById('editPhoto').files[0];
@@ -140,8 +144,11 @@ async function submitEditVehicle(event) {
     assertUploadBudget([...files, photo].filter(Boolean));
     if (photo) body.vehiclePicture = await fileToDataUrl(photo, UPLOAD_LIMITS.photoMb);
     if (files.length) body.documents = await Promise.all(files.map(async file => ({ type: 'other', label: file.name, fileName: file.name, mimeType: file.type, dataUrl: await fileToDataUrl(file, UPLOAD_LIMITS.documentMb), size: file.size })));
-    const result = await api(`/vehicles/${encodeURIComponent(id)}`, { method: 'PUT', body }); document.getElementById('editVehicleModal').classList.remove('show'); await refreshOwnerPortal(); showModal('Vehicle updated', result.message || 'Your changes were submitted for approval.'); message.textContent = '';
-  } catch (error) { message.textContent = error.message; message.className = 'form-message form-message-error'; } finally { submit.disabled = false; }
+    const result = await api(`/vehicles/${encodeURIComponent(id)}`, { method: 'PUT', body }); window.RevexButtonUI?.success(submit, 'Saved', 1600); document.getElementById('editVehicleModal').classList.remove('show'); await refreshOwnerPortal(); showModal('Vehicle updated', result.message || 'Your changes were submitted for approval.'); message.textContent = '';
+  } catch (error) {
+    window.RevexButtonUI?.error(submit, 'Try again');
+    message.textContent = error.message; message.className = 'form-message form-message-error';
+  }
 }
 async function decideBooking(button) {
   const decision = button.dataset.decision; const id = button.dataset.booking;
