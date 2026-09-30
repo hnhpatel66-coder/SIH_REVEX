@@ -71,7 +71,7 @@
 
         <label class="rvx-field rvx-field--row" for="rideTerms"><input type="checkbox" id="rideTerms" required><span>I accept the REVEX ride sharing terms.</span></label>
 
-        <button class="rvx-btn rvx-btn--primary rvx-btn--lg rvx-btn--block" id="rideBookBtn" type="submit" disabled>Pay &amp; Book Ride</button>
+        <div id="rideBookBtn" data-revex-loading-button data-action="rideBook" data-label="Pay &amp; Book Ride" data-pending="Booking…" data-success="Booked" data-error="Try again"></div>
         <p class="rvx-card__meta">You are charged when you book. The server verifies the payment before your seat request reaches the driver, and you are refunded under the cancellation policy if the driver declines.</p>
       </form>
     </aside>
@@ -104,4 +104,5 @@
   <script src="js/revex-final-integrated.js?v=20260928-stability2"></script>
   <script src="js/revex-final-fix.js?v=20260928-stability2"></script>
   <script src="js/revex-3d.js?v=20260929-3d" defer></script>
+  <script src="assets/react-ui/loading-buttons.js?v=20260930" defer></script>
 </body></html>

@@ -5,8 +5,8 @@
   "description": "REVEX - vehicle rental and shared ride platform (rider, owner and admin portals)",
   "main": "api/index.js",
   "scripts": {
-    "start": "node backend/server.js",
-    "dev": "node backend/server.js",
+    "start": "node scripts/start-local.js",
+    "dev": "node scripts/start-local.js",
     "serverless": "node api/index.js",
     "seed": "node backend/seed.js",
     "setup-admin": "node backend/setup-admin.js",

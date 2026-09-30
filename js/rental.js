@@ -299,46 +299,54 @@ async function openPaymentModal(booking) {
   if (pay) pay.textContent = config.usable ? `Pay ${formatMoney(total)}` : `Record test payment · ${formatMoney(total)}`;
   modal?.classList.add('show');
 
-  const close = () => modal?.classList.remove('show');
-  const onCancel = async () => {
-    close();
-    // Release the booking so the monthly slot is not held by an abandoned
-    // checkout. This is a real server-side state change.
-    try { await api(`/bookings/${encodeURIComponent(booking.id)}/payment-failed`, { method: 'POST', body: {} }); } catch { /* already released */ }
-  };
-  if (pay) pay.onclick = async () => {
-    const result = await window.RevexPay.settle(pay, {
-      bookingId: booking.id,
-      orderPath: `/bookings/${encodeURIComponent(booking.id)}/payment-order`,
-      path: `/bookings/${encodeURIComponent(booking.id)}/verify-payment`,
-      testPath: `/bookings/${encodeURIComponent(booking.id)}/payment-test`,
-      releasePath: `/bookings/${encodeURIComponent(booking.id)}/payment-failed`,
-      name: getStoredUser()?.name,
-      email: getStoredUser()?.email,
-      description: `${currentVehicle?.name || 'REVEX vehicle'} rental`,
-      fallbackAmount: total
-    });
-    if (result?.status === 'paid') {
+  return new Promise((resolve, reject) => {
+    const close = () => modal?.classList.remove('show');
+    const releaseAndReject = async () => {
       close();
-      showModal('Payment received', `${result.testMode ? 'Test payment recorded. ' : ''}Booking ${booking.id} is paid and waiting for owner approval. Agreement: ${booking.agreement?.agreementId || 'prepared'}.`);
-      const download = document.getElementById('downloadAgreementBtn');
-      if (download) { download.style.display = 'inline-flex'; download.onclick = () => downloadAgreement(booking.id); }
-    } else if (result?.status === 'dismissed') {
-      close();
-    } else {
-      close();
-    }
-  };
-  const cancel = document.getElementById('simplePayCancel');
-  if (cancel) cancel.onclick = onCancel;
-  modal?.addEventListener('click', event => { if (event.target === modal) onCancel(); });
+      try { await api(`/bookings/${encodeURIComponent(booking.id)}/payment-failed`, { method: 'POST', body: {} }); } catch { /* already released */ }
+      reject(new Error('Payment was cancelled.'));
+    };
+    const onPay = async () => {
+      try {
+        const result = await window.RevexPay.settle(pay, {
+          bookingId: booking.id,
+          orderPath: `/bookings/${encodeURIComponent(booking.id)}/payment-order`,
+          path: `/bookings/${encodeURIComponent(booking.id)}/verify-payment`,
+          testPath: `/bookings/${encodeURIComponent(booking.id)}/payment-test`,
+          releasePath: `/bookings/${encodeURIComponent(booking.id)}/payment-failed`,
+          name: getStoredUser()?.name,
+          email: getStoredUser()?.email,
+          description: `${currentVehicle?.name || 'REVEX vehicle'} rental`,
+          fallbackAmount: total
+        });
+        if (result?.status === 'paid') {
+          close();
+          showModal('Payment received', `${result.testMode ? 'Test payment recorded. ' : ''}Booking ${booking.id} is paid and waiting for owner approval. Agreement: ${booking.agreement?.agreementId || 'prepared'}.`);
+          const download = document.getElementById('downloadAgreementBtn');
+          if (download) { download.style.display = 'inline-flex'; download.onclick = () => downloadAgreement(booking.id); }
+          resolve(result);
+        } else {
+          close();
+          reject(new Error('Payment could not be completed.'));
+        }
+      } catch (error) {
+        close();
+        reject(error);
+      }
+    };
+    if (pay) pay.onclick = onPay;
+    const cancel = document.getElementById('simplePayCancel');
+    if (cancel) cancel.onclick = releaseAndReject;
+    modal?.addEventListener('click', event => { if (event.target === modal) releaseAndReject(); }, { once: true });
+  });
 }
 
 async function confirmRental(event) {
   event.preventDefault();
-  if (!requireLogin()) return;
+  if (!requireLogin()) throw new Error('Please sign in before booking this vehicle.');
   const form = event.target; const consent = document.getElementById('agreementConsent');
-  if (!consent?.checked) { showToast('Please read and accept the Rental Agreement and Terms & Conditions.', 'warn'); consent?.focus(); return; }
+  if (!form.reportValidity()) throw new Error('Please complete all required rental fields.');
+  if (!consent?.checked) { showToast('Please read and accept the Rental Agreement and Terms & Conditions.', 'warn'); consent?.focus(); throw new Error('Please accept the Rental Agreement and Terms & Conditions.'); }
   /*
    * Re-validate at the moment of submission, not just at paint time. If the
    * dates changed since the last quote landed, get a fresh one and make the
@@ -349,18 +357,23 @@ async function confirmRental(event) {
     await refreshQuote();
     if (!currentQuote || quoteFor !== currentWindowKey()) {
       showToast('Choose valid future booking times so the price can be worked out.', 'warn');
-      return;
+      throw new Error('Choose valid future booking times so the price can be worked out.');
     }
   }
-  const button = form.querySelector('button[type="submit"]');
-  if (button) { button.disabled = true; button.textContent = 'Preparing booking…'; }
   try {
     const booking = await api('/bookings', { method: 'POST', body: { vehicleId: currentVehicle.id, startDate: `${form.startDate.value}T${form.startTime.value}`, endDate: `${form.endDate.value}T${form.endTime.value}`, estimatedKm: Number(form.estimatedKm.value) || 0, panNumber: form.panNumber.value.trim(), drivingLicenseNumber: form.drivingLicenseNumber.value.trim(), agreementAccepted: true, termsVersion: 'revex-v3' } });
     currentQuote = booking.quote || booking.pricing || currentQuote;
     quoteFor = currentWindowKey();
     await openPaymentModal(booking);
-  } catch (error) { showToast(error.message, 'bad', 8000); } finally { if (button) { button.disabled = !currentQuote || !consent.checked; button.textContent = 'Review agreement & continue'; } }
+  } catch (error) { showToast(error.message || 'Booking failed.', 'bad', 8000); throw error; }
 }
+
+window.RevexLoadingActions = window.RevexLoadingActions || {};
+window.RevexLoadingActions.rentalBook = () => {
+  const form = document.getElementById('rentalBooking');
+  if (!form) throw new Error('Rental booking form is not available.');
+  return confirmRental({ preventDefault() {}, target: form });
+};
 
 document.addEventListener('DOMContentLoaded', async () => {
   const search = document.getElementById('rentalSearch');
@@ -440,7 +453,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       // inline handler threw, preventDefault() never ran, and the browser
       // performed a default GET submit that leaked the PAN number and driving
       // licence number into the URL. Always call preventDefault first.
-      form.addEventListener('submit', event => { event.preventDefault(); confirmRental(event); });
+      form.addEventListener('submit', event => { event.preventDefault(); confirmRental(event).catch(() => {}); });
       document.getElementById('agreementConsent')?.addEventListener('change', updateQuoteButton);
       setSafeBookingDefaults();
     }

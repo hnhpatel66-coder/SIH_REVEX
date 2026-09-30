@@ -610,10 +610,7 @@
           : 'All seats on this ride have been booked.';
     }
     const submit = document.getElementById('rideBookBtn');
-    if (submit) {
-      submit.disabled = !currentQuote.bookable;
-      submit.textContent = currentQuote.bookable ? `Pay & Book Ride · ${formatMoney(currentQuote.grandTotal)}` : 'Not bookable';
-    }
+    if (submit) submit.dataset.bookable = currentQuote.bookable ? 'true' : 'false';
     return currentQuote;
   }
 
@@ -743,7 +740,7 @@
       }
       await refreshJoin();
       await refreshQuote();
-      if (location.hash === '#book') document.getElementById('rideBookBtn')?.focus();
+      if (location.hash === '#book') document.querySelector('#rideBookBtn button')?.focus();
     } catch (error) {
       panel.innerHTML = `<div class="rvx-empty"><h3>Ride unavailable</h3><p>${escapeHtml(error.message)}</p><a class="rvx-btn rvx-btn--outline" href="find-ride.html">Back to Find a Ride</a></div>`;
     }
@@ -751,11 +748,10 @@
 
   async function confirmRide(event) {
     event.preventDefault();
-    if (!requireLogin() || !currentRideId) return;
+    if (!requireLogin() || !currentRideId) throw new Error('Please sign in before booking this ride.');
     const terms = document.getElementById('rideTerms');
-    if (terms && !terms.checked) { showToast('Accept the ride sharing terms before booking.', 'warn'); terms.focus(); return; }
-    const submit = event.target.querySelector('button[type="submit"]') || document.getElementById('rideBookBtn');
-    if (submit?.disabled) return;
+    if (terms && !terms.checked) { showToast('Accept the ride sharing terms before booking.', 'warn'); terms.focus(); throw new Error('Accept the ride sharing terms before booking.'); }
+    if (!document.getElementById('seatCount')?.checkValidity?.()) throw new Error('Choose a valid number of seats.');
 
     let booking;
     let config;
@@ -768,7 +764,7 @@
         body: payload
       });
       config = await global.RevexPay.getConfig();
-    } catch (error) { showToast(error.message, 'bad', 8000); return; }
+    } catch (error) { showToast(error.message, 'bad', 8000); throw error; }
 
     const quote = booking.quote || currentQuote;
     const dialog = paymentDialog({
@@ -799,9 +795,11 @@
       setTimeout(() => { location.href = 'bookings.html#rides'; }, 1600);
     } else if (result?.status === 'dismissed') {
       dialog.close();
+      throw new Error('Payment was cancelled.');
     } else {
       dialog.close();
       await loadRideDetail(currentRideId);
+      throw new Error('Payment could not be completed.');
     }
   }
 
@@ -869,15 +867,14 @@
   }
 
   async function handleOfferSubmit(event) {
-    event.preventDefault();
+    event?.preventDefault?.();
     const form = event.target;
-    if (!requireRole('owner', 'admin')) return;
+    if (!requireRole('owner', 'admin')) throw new Error('Owner access is required to submit a ride offer.');
     const terms = form.elements.termsAccepted;
-    if (terms && !terms.checked) { showToast('Accept the ride sharing terms before submitting.', 'warn'); terms.focus(); return; }
+    if (!form.reportValidity()) throw new Error('Please complete all required ride-offer fields.');
+    if (terms && !terms.checked) { showToast('Accept the ride sharing terms before submitting.', 'warn'); terms.focus(); throw new Error('Accept the ride sharing terms before submitting.'); }
 
-    const submit = form.querySelector('button[type="submit"]');
-    const original = submit?.innerHTML;
-    if (submit) { submit.disabled = true; submit.innerHTML = '<span class="rvx-spinner" aria-hidden="true"></span> Submitting…'; }
+    const submit = null;
 
     try {
       const vehicleId = form.elements.vehicleId?.value || '';
@@ -916,7 +913,7 @@
     } catch (error) {
       showToast(error.message, 'bad', 9000);
     } finally {
-      if (submit) { submit.disabled = false; submit.innerHTML = original; }
+
     }
   }
 
@@ -980,6 +977,18 @@
   }
 
   /* ----------------------------------------------------------------- boot */
+  window.RevexLoadingActions = window.RevexLoadingActions || {};
+  window.RevexLoadingActions.offerRide = () => {
+    const form = document.getElementById('offerRide');
+    if (!form) throw new Error('Ride offer form is not available.');
+    return handleOfferSubmit({ preventDefault() {}, target: form });
+  };
+  window.RevexLoadingActions.rideBook = () => {
+    const form = document.getElementById('rideBookForm');
+    if (!form) throw new Error('Ride booking form is not available.');
+    return confirmRide({ preventDefault() {}, target: form });
+  };
+
   document.addEventListener('DOMContentLoaded', () => {
     const results = document.getElementById('rideResults');
     if (results) {
@@ -1043,7 +1052,7 @@
     const offer = document.getElementById('offerRide');
     if (offer) {
       populateVehiclePicker(offer).catch(error => showToast(error.message, 'bad'));
-      offer.addEventListener('submit', handleOfferSubmit);
+      offer.addEventListener('submit', event => { handleOfferSubmit(event).catch(() => {}); });
       // A date picker that defaults to today cannot produce a valid offer.
       const date = offer.elements.date;
       if (date && !date.value) {
@@ -1065,7 +1074,7 @@
 
     const bookForm = document.getElementById('rideBookForm');
     if (bookForm) {
-      bookForm.addEventListener('submit', confirmRide);
+      bookForm.addEventListener('submit', event => { confirmRide(event).catch(() => {}); });
       loadRideDetail(new URLSearchParams(location.search).get('id'));
     }
   });
