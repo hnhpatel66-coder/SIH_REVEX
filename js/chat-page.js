@@ -35,8 +35,8 @@
     if (!statusBox) return;
     statusBox.className = `rvx-notice rvx-notice--${status.configured ? 'ok' : 'warn'}`;
     statusBox.innerHTML = status.configured
-      ? `<div><strong>Connected.</strong>${escapeHtml(status.model || '')} ${escapeHtml(status.provider === 'openai-compatible' ? 'OpenAI-compatible endpoint' : 'Gemini endpoint')}. Conversations are stored against your account.</div>`
-      : `<div><strong>Not configured yet.</strong>${escapeHtml(status.message || 'Add your assistant API key to the backend .env file and restart the server.')}</div>`;
+      ? '<div><strong>Connected.</strong> REVEX AI is ready. Conversations are stored against your account.</div>'
+      : `<div><strong>Not configured yet.</strong>${escapeHtml(status.message || 'Add the assistant API key to the backend .env file and restart the server.')}</div>`;
   }
 
   async function loadHistory() {

@@ -418,3 +418,191 @@
   .rvx-chat-typing span { animation: none; }
   .rvx-chat-log { scroll-behavior: auto; }
 }
+
+
+/* ============================================================================
+ * REVEX AI — premium chat-messages visual layer
+ * Inspired by the supplied animated ChatMessages reference, adapted to the
+ * existing REVEX vanilla HTML/JS architecture so the live backend remains intact.
+ * ========================================================================== */
+.rvx-chat-panel {
+  width: min(420px, calc(100vw - 32px));
+  height: min(640px, calc(100vh - 112px));
+  border-radius: 22px;
+  border: 1px solid #27313d;
+  background: linear-gradient(180deg, #151b22 0%, #0b0f14 100%);
+  color: #f8fafc;
+  box-shadow: 0 24px 64px -16px rgba(0,0,0,.58);
+}
+
+.rvx-chat-head {
+  min-height: 66px;
+  padding: 13px 14px;
+  background: #151b22;
+  border-bottom: 1px solid rgba(255,255,255,.06);
+}
+.rvx-chat-head__brand { gap: 10px; }
+.rvx-chat-head__avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: linear-gradient(135deg,#60a5fa,#7c3aed);
+  border: 0;
+  box-shadow: 0 8px 22px rgba(96,165,250,.24);
+}
+.rvx-chat-head__avatar svg { width: 18px; height: 18px; }
+.rvx-chat-head__title {
+  color: #f8fafc;
+  font-size: 14px;
+  letter-spacing: -.01em;
+}
+.rvx-chat-head__sub { color: #94a3b8; font-size: 11px; }
+.rvx-chat-head__actions { gap: 6px; }
+.rvx-chat-head__btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  background: rgba(255,255,255,.05);
+  color: #cbd5e1;
+}
+.rvx-chat-head__btn:hover { background: rgba(255,255,255,.10); color: #f8fafc; }
+
+.rvx-chat-log {
+  padding: 16px 14px 12px;
+  background: linear-gradient(180deg,#0f141a 0%,#0b0f14 100%);
+}
+.rvx-chat-msg {
+  max-width: 78%;
+  margin-bottom: 11px;
+  padding: 10px 13px;
+  border-radius: 16px;
+  font-size: 13px;
+  line-height: 1.55;
+  animation: rvx-ai-message-in .35s cubic-bezier(.22,1,.36,1) both;
+}
+.rvx-chat-msg--assistant {
+  position: relative;
+  margin-left: 38px;
+  background: #151b22;
+  color: #f8fafc;
+  border: 1px solid rgba(255,255,255,.09);
+  border-top-left-radius: 6px;
+  box-shadow: 0 4px 12px -2px rgba(0,0,0,.30);
+}
+.rvx-chat-msg--assistant::before {
+  content: '✦';
+  position: absolute;
+  left: -36px;
+  bottom: 0;
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: #fff;
+  background: linear-gradient(135deg,#60a5fa,#7c3aed);
+  font-size: 13px;
+  box-shadow: 0 6px 16px rgba(96,165,250,.18);
+}
+.rvx-chat-msg--user {
+  margin-left: auto;
+  background: linear-gradient(90deg,#2563eb,#7c3aed);
+  color: #fff;
+  border-top-right-radius: 6px;
+  box-shadow: 0 8px 24px -4px rgba(99,102,241,.40);
+}
+.rvx-chat-msg__time { color: #94a3b8; }
+.rvx-chat-msg--user .rvx-chat-msg__time { color: rgba(255,255,255,.70); }
+
+.rvx-chat-typing {
+  width: fit-content;
+  margin-left: 38px;
+  padding: 11px 14px;
+  background: #151b22;
+  border-color: rgba(255,255,255,.09);
+}
+.rvx-chat-typing span {
+  width: 6px;
+  height: 6px;
+  background: rgba(255,255,255,.60);
+}
+
+.rvx-chat-suggest {
+  padding: 9px 12px 10px;
+  background: #151b22;
+  border-top: 1px solid rgba(255,255,255,.06);
+}
+.rvx-chat-suggest button {
+  border-color: #27313d;
+  background: #0f141a;
+  color: #cbd5e1;
+}
+.rvx-chat-suggest button:hover { background: #1c2530; color: #f8fafc; }
+
+.rvx-chat-form {
+  padding: 11px 12px 10px;
+  background: #151b22;
+  border-top: 1px solid rgba(255,255,255,.06);
+}
+.rvx-chat-form textarea {
+  min-height: 43px;
+  border-color: #27313d;
+  background: #0f141a;
+  color: #f8fafc;
+  border-radius: 12px;
+}
+.rvx-chat-form textarea::placeholder { color: #64748b; }
+.rvx-chat-form textarea:focus {
+  border-color: #60a5fa;
+  box-shadow: 0 0 0 3px rgba(96,165,250,.10);
+  background: #0f141a;
+}
+.rvx-chat-form button {
+  width: 42px;
+  height: 42px;
+  border-radius: 11px;
+  background: #2563eb;
+}
+.rvx-chat-form button:hover:not(:disabled) { background: #3b82f6; }
+
+.rvx-chat-note {
+  padding: 0 13px 11px;
+  background: #151b22;
+  color: #64748b;
+}
+.rvx-chat-status {
+  margin: 0 13px 9px;
+  background: #151b22;
+  color: #cbd5e1;
+  border-color: #27313d;
+}
+
+.rvx-chat-launcher {
+  min-height: 52px;
+  padding: 0 18px;
+  border-radius: 15px;
+  background: linear-gradient(135deg,#2563eb,#7c3aed);
+  box-shadow: 0 14px 34px rgba(37,99,235,.28),0 5px 12px rgba(0,0,0,.22);
+}
+.rvx-chat-launcher:hover {
+  background: linear-gradient(135deg,#3b82f6,#8b5cf6);
+}
+.rvx-chat-launcher svg { width: 19px; height: 19px; }
+
+@keyframes rvx-ai-message-in {
+  from { opacity: 0; transform: translateY(12px) scale(.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rvx-chat-msg { animation: none; }
+}
+
+@media (max-width: 640px) {
+  .rvx-chat-panel {
+    right: 10px;
+    bottom: 76px;
+    width: calc(100vw - 20px);
+    height: min(70vh, 620px);
+  }
+}

@@ -52,6 +52,7 @@
   const GREETING = 'Hi 👋 I’m REVEX Assistant. I can help with rides, rentals, bookings, owner features and Razorpay payments.';
 
   /* Icons are inlined so the widget needs no extra network request. */
+  const ICON_SPARKLES = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 3 1.2 4.1L17 8.5l-3.8 1.4L12 14l-1.2-4.1L7 8.5l3.8-1.4L12 3Z"/><path d="m19 14 .7 2.3L22 17l-2.3.7L19 20l-.7-2.3L16 17l2.3-.7L19 14Z"/></svg>';
   const ICON_BUBBLE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3 1.7-5.1A7 7 0 0 1 3 12V8a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4v7Z"/><path d="M8 10h.01M12 10h.01M16 10h.01"/></svg>';
   const ICON_SEND = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4Z"/></svg>';
   const ICON_NEW = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>';
@@ -146,7 +147,7 @@
       addMessage('error', error.message, new Date());
       if (error.status === 503 || /not configured/i.test(error.message)) {
         setStatus(error.message);
-        setSubLine('Setup required');
+        setSubLine('Temporarily unavailable');
       }
     } finally {
       setBusy(false);
@@ -167,10 +168,10 @@
     panel.innerHTML = `
       <header class="rvx-chat-head">
         <div class="rvx-chat-head__brand">
-          <div class="rvx-chat-head__avatar" aria-hidden="true">RX</div>
+          <div class="rvx-chat-head__avatar" aria-hidden="true">${ICON_SPARKLES}</div>
           <div class="rvx-chat-head__text">
-            <h2 class="rvx-chat-head__title">REVEX Assistant</h2>
-            <p class="rvx-chat-head__sub" data-role>Online · Platform help</p>
+            <h2 class="rvx-chat-head__title">REVEX AI</h2>
+            <p class="rvx-chat-head__sub" data-role>Always here to help</p>
           </div>
         </div>
         <div class="rvx-chat-head__actions">
@@ -263,10 +264,10 @@
     launcher.type = 'button';
     launcher.className = 'rvx-chat-launcher';
     launcher.id = 'revexChatLauncher';
-    launcher.setAttribute('aria-label', 'Open the REVEX Assistant');
+    launcher.setAttribute('aria-label', 'Open REVEX AI');
     launcher.setAttribute('aria-expanded', 'false');
     launcher.setAttribute('aria-controls', 'revexChatPanel');
-    launcher.innerHTML = `${ICON_BUBBLE}<span>Ask REVEX</span>`;
+    launcher.innerHTML = `${ICON_SPARKLES}<span>Ask REVEX AI</span>`;
     launcher.addEventListener('click', () => (isOpen() ? hide() : show()));
     document.body.appendChild(launcher);
     return launcher;
@@ -298,14 +299,14 @@
     try {
       const status = await api('/chat/status');
       setSubLine(status.configured
-        ? (status.model || 'Online · Platform help')
+        ? 'Always here to help'
         : 'Setup required');
       if (!status.configured) setStatus(status.message);
       return status;
     } catch {
       // /chat/status needs a session. If it fails the first message will say so,
       // so this is deliberately non-fatal.
-      setSubLine('Offline');
+      setSubLine('Temporarily unavailable');
       return { configured: false, message: '' };
     }
   }
