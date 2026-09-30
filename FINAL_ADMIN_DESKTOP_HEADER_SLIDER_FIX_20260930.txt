@@ -1,0 +1,19 @@
+REVEX final Admin desktop header slider fix — 2026-09-30
+
+Scope intentionally limited to the Admin header frontend.
+
+Fixed:
+- Dashboard is no longer clipped when Admin is opened from Home.
+- Added desktop left/right slider controls around the Admin tab rail.
+- REVEX logo and right-side Notification / Theme / Admin / View Site / Logout controls stay fixed.
+- Only the centre Admin tabs scroll horizontally.
+- Slider arrows appear only when more tabs exist in that direction.
+- Active/clicked tab is automatically kept fully visible.
+- Existing mobile Admin menu remains unchanged.
+- Existing notification implementation is unchanged.
+- No backend, API, MongoDB, payment, map, chatbot, or authentication server changes.
+
+Files changed:
+- admin.html
+- css/revex-admin-header-final.css
+- js/admin-mobile-menu.js

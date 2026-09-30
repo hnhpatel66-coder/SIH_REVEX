@@ -1,0 +1,18 @@
+REVEX admin Home -> Admin entry stability fix (2026-09-30)
+
+Scope intentionally limited to the reported flow: public Home page -> Admin.
+No backend, API route, database, payment, map, chatbot, or working admin-panel logic was changed.
+
+Fixes:
+1. Dashboard tab clipping on first Admin load
+   - Normalizes the desktop admin tab strip to scrollLeft=0 only for initial Dashboard entry.
+   - Runs after final layout and on browser bfcache/pageshow restore.
+   - Does not change normal navigation between admin tabs.
+
+2. Notification header stability
+   - Bell remains in the static Admin header regardless of notification API refresh outcome.
+   - Zero-count badge is hidden instead of showing an unnecessary 0 bubble.
+   - Failed refresh keeps the bell available.
+
+3. Browser cache protection
+   - Updated query versions for the two modified Admin scripts so an old cached script does not mask the fix.

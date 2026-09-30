@@ -834,10 +834,37 @@
     global.RevexChat.addMessage('assistant', 'Admin assistant ready. Ask about approvals, refunds, owner summaries or the reporting numbers.', new Date());
   }
 
+  /* ---------------------------------------------------- notifications */
+
+  async function refreshAdminNotifications() {
+    const link = document.getElementById('adminNotificationLink');
+    const count = document.getElementById('adminNotificationCount');
+    if (!link || !count) return;
+    // Keep the bell visible even if the request fails. A transient API error
+    // must not make the header change shape or make the control disappear.
+    try {
+      const items = await api('/notifications');
+      const unread = Array.isArray(items) ? items.filter(item => !item.read).length : 0;
+      count.textContent = unread > 99 ? '99+' : String(unread);
+      count.hidden = unread === 0;
+      const label = `${unread} unread notification${unread === 1 ? '' : 's'}`;
+      link.setAttribute('aria-label', label);
+      link.title = label;
+    } catch (_) {
+      // A failed refresh must not remove the bell or leave a stale zero badge.
+      if (!count.textContent || count.textContent === '0') { count.textContent = '0'; count.hidden = true; }
+      link.setAttribute('aria-label', 'Notifications');
+      link.title = 'Notifications';
+    }
+  }
+
   /* ----------------------------------------------------------------- boot */
 
   document.addEventListener('DOMContentLoaded', async () => {
     if (getStoredUser()?.role !== 'admin') return;
+    refreshAdminNotifications();
+    window.addEventListener('focus', refreshAdminNotifications);
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) refreshAdminNotifications(); });
     document.querySelectorAll('[data-exit-admin]').forEach((button) => button.addEventListener('click', () => { clearSession(); location.href = 'index.html'; }));
     document.querySelector('.admin-tabs')?.addEventListener('click', event => {
       const button = event.target.closest('[data-tab]');

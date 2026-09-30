@@ -1,0 +1,307 @@
+/* REVEX final Admin header — second-reference format
+   Goal: the Admin page uses the same clean, single-row header shown in the
+   approved reference. Only the middle tab rail may scroll; the brand and
+   account controls stay fixed. Notification behavior is preserved. */
+
+.admin-topbar {
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 9000 !important;
+  width: 100% !important;
+  min-height: 0 !important;
+  background: var(--pf-surface) !important;
+  border-bottom: 1px solid var(--pf-line) !important;
+  box-shadow: 0 8px 22px rgba(11, 36, 42, .055) !important;
+  backdrop-filter: blur(14px) saturate(120%) !important;
+  -webkit-backdrop-filter: blur(14px) saturate(120%) !important;
+}
+
+.admin-topbar .admin-topbar-inner {
+  width: min(1540px, calc(100% - 28px)) !important;
+  max-width: none !important;
+  min-height: 82px !important;
+  height: auto !important;
+  margin: 0 auto !important;
+  padding: 10px 0 !important;
+  display: flex !important;
+  flex-flow: row nowrap !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 12px !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+}
+
+.admin-topbar .brand {
+  flex: 0 0 auto !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  min-width: max-content !important;
+  margin: 0 12px 0 0 !important;
+  color: var(--pf-ink) !important;
+  text-decoration: none !important;
+}
+.admin-topbar .brand .brand-mark {
+  width: 48px !important;
+  height: 48px !important;
+  flex: 0 0 48px !important;
+  object-fit: contain !important;
+}
+.admin-topbar .brand .brand-word {
+  font-size: 1.05rem !important;
+  font-weight: 800 !important;
+  letter-spacing: -.035em !important;
+  line-height: 1 !important;
+  color: var(--pf-ink) !important;
+}
+
+.admin-menu { display: none !important; }
+
+/* The tab rail is the only flexible/scrollable region. */
+.admin-tabs {
+  flex: 1 1 0 !important;
+  min-width: 0 !important;
+  width: auto !important;
+  display: flex !important;
+  flex-flow: row nowrap !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 2px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  overscroll-behavior-inline: contain !important;
+  scroll-behavior: smooth !important;
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+.admin-tabs::-webkit-scrollbar { display: none !important; }
+
+.admin-tab {
+  position: relative !important;
+  flex: 0 0 auto !important;
+  width: auto !important;
+  min-width: max-content !important;
+  min-height: 44px !important;
+  margin: 0 !important;
+  padding: 0 10px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: var(--pf-muted) !important;
+  font-size: .77rem !important;
+  font-weight: 700 !important;
+  line-height: 1 !important;
+  white-space: nowrap !important;
+  cursor: pointer !important;
+  transition: color .16s ease, background .16s ease !important;
+}
+.admin-tab::after {
+  content: "" !important;
+  position: absolute !important;
+  left: 10px !important;
+  right: 10px !important;
+  bottom: 2px !important;
+  height: 2px !important;
+  border-radius: 999px !important;
+  background: transparent !important;
+  transform: scaleX(.35) !important;
+  transform-origin: center !important;
+  transition: background .16s ease, transform .16s ease !important;
+}
+.admin-tab:hover {
+  color: var(--pf-ink) !important;
+  background: color-mix(in srgb, var(--pf-accent) 5%, transparent) !important;
+}
+.admin-tab.active {
+  color: var(--pf-ink) !important;
+  background: transparent !important;
+}
+.admin-tab.active::after {
+  background: var(--pf-accent) !important;
+  transform: scaleX(1) !important;
+}
+
+.admin-actions {
+  flex: 0 0 auto !important;
+  min-width: max-content !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  gap: 10px !important;
+  margin: 0 !important;
+  white-space: nowrap !important;
+}
+
+/* Preserve the now-working notification control without letting it change the row height. */
+.admin-notification-link {
+  position: relative !important;
+  width: 42px !important;
+  height: 42px !important;
+  flex: 0 0 42px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: 1px solid var(--pf-line) !important;
+  border-radius: 12px !important;
+  background: var(--pf-surface) !important;
+  color: var(--pf-ink) !important;
+  text-decoration: none !important;
+  box-sizing: border-box !important;
+}
+.admin-notification-link svg { width: 19px !important; height: 19px !important; }
+.admin-notification-link:hover,
+.admin-notification-link:focus-visible {
+  color: var(--pf-accent) !important;
+  border-color: color-mix(in srgb, var(--pf-accent) 45%, var(--pf-line)) !important;
+  outline: none !important;
+}
+.admin-notification-count {
+  position: absolute !important;
+  top: -6px !important;
+  right: -5px !important;
+  min-width: 18px !important;
+  height: 18px !important;
+  padding: 0 4px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border: 2px solid var(--pf-surface) !important;
+  border-radius: 999px !important;
+  background: var(--pf-accent) !important;
+  color: #04211f !important;
+  font-size: .60rem !important;
+  font-weight: 850 !important;
+  line-height: 1 !important;
+  box-sizing: border-box !important;
+}
+.admin-notification-count[hidden] { display: none !important; }
+
+.admin-actions .theme-toggle {
+  flex: 0 0 auto !important;
+  min-height: 50px !important;
+  margin: 0 !important;
+  padding: 0 14px !important;
+  border: 1px solid var(--pf-line) !important;
+  border-radius: 14px !important;
+  background: var(--pf-surface) !important;
+  color: var(--pf-ink) !important;
+  box-shadow: none !important;
+}
+.admin-role-chip {
+  min-height: 50px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 15px !important;
+  margin: 0 !important;
+  border: 1px solid color-mix(in srgb, var(--pf-accent) 38%, var(--pf-line)) !important;
+  border-radius: 14px !important;
+  background: var(--pf-surface) !important;
+  color: var(--pf-ink) !important;
+  font-size: .78rem !important;
+  font-weight: 800 !important;
+}
+.admin-actions .admin-desktop-logout {
+  min-height: 50px !important;
+  margin: 0 !important;
+  padding: 0 18px !important;
+  border-radius: 14px !important;
+  font-size: .80rem !important;
+  font-weight: 800 !important;
+  white-space: nowrap !important;
+}
+
+/* The JS-created navigation Logout remains mobile-only. */
+.admin-tabs > .admin-nav-logout { display: none !important; }
+
+/* Undo the previous arrow-slider experiment completely. */
+.admin-tab-scroll { display: none !important; }
+.admin-view-site { display: none !important; }
+
+.admin-main { padding-top: 36px !important; }
+
+@media (max-width: 1320px) and (min-width: 1001px) {
+  .admin-topbar .admin-topbar-inner {
+    width: calc(100% - 20px) !important;
+    gap: 8px !important;
+  }
+  .admin-topbar .brand { margin-right: 4px !important; }
+  .admin-topbar .brand .brand-mark { width: 42px !important; height: 42px !important; flex-basis: 42px !important; }
+  .admin-tab { padding-inline: 8px !important; font-size: .72rem !important; }
+  .admin-actions { gap: 7px !important; }
+  .admin-actions .theme-toggle { min-height: 46px !important; padding-inline: 10px !important; }
+  .admin-role-chip { min-height: 46px !important; padding-inline: 12px !important; }
+  .admin-actions .admin-desktop-logout { min-height: 46px !important; padding-inline: 14px !important; }
+}
+
+@media (max-width: 1000px) {
+  .admin-topbar .admin-topbar-inner {
+    width: calc(100% - 24px) !important;
+    min-height: 66px !important;
+    padding: 8px 0 !important;
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    gap: 8px !important;
+    overflow: visible !important;
+  }
+  .admin-topbar .brand { grid-column: 1 !important; }
+  .admin-topbar .brand .brand-mark { width: 36px !important; height: 36px !important; flex-basis: 36px !important; }
+  .admin-menu {
+    display: inline-flex !important;
+    grid-column: 2 !important;
+    align-items: center !important;
+    justify-content: center !important;
+    min-height: 40px !important;
+    padding: 0 12px !important;
+    border: 1px solid var(--pf-line) !important;
+    border-radius: 10px !important;
+    background: var(--pf-surface) !important;
+    color: var(--pf-ink) !important;
+    font-size: .74rem !important;
+    font-weight: 800 !important;
+  }
+  .admin-actions { display: none !important; }
+  .admin-tabs {
+    display: none !important;
+    position: absolute !important;
+    left: 12px !important;
+    right: 12px !important;
+    top: calc(100% + 6px) !important;
+    z-index: 9100 !important;
+    max-height: 72vh !important;
+    padding: 8px !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    overflow-y: auto !important;
+    background: var(--pf-surface) !important;
+    border: 1px solid var(--pf-line) !important;
+    border-radius: 14px !important;
+    box-shadow: 0 22px 54px rgba(0,0,0,.18) !important;
+  }
+  .admin-tabs.open,
+  body > .admin-tabs.admin-mobile-detached.open { display: flex !important; }
+  .admin-tab {
+    width: 100% !important;
+    min-height: 42px !important;
+    justify-content: flex-start !important;
+    padding: 0 12px !important;
+    border-radius: 9px !important;
+    font-size: .78rem !important;
+  }
+  .admin-tab::after { display: none !important; }
+  .admin-tab.active { background: color-mix(in srgb, var(--pf-accent) 10%, var(--pf-surface)) !important; }
+  body > .admin-tabs.admin-mobile-detached > .admin-nav-logout { display: flex !important; }
+}

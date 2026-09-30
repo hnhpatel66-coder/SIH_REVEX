@@ -1,0 +1,35 @@
+REVEX ADMIN HEADER FIX — 2026-09-30
+
+Changed only the Admin header/frontend behavior requested in this revision.
+Backend/API/database/payment/map/chat server logic was not modified.
+
+FIXED
+1. Duplicate desktop Logout removed:
+   - Desktop now has only the right-side Logout button.
+   - The menu Logout is created only for mobile and removed again on desktop.
+2. Unified desktop Admin header:
+   - One action group contains Notification, Theme, Admin, View Site, Logout.
+   - Navigation remains horizontally scrollable rather than forcing the header wider.
+3. Header edge/blending mismatch:
+   - One width/max-width/gap model is applied to the full Admin header.
+4. Persistent notification bell:
+   - Bell is static header markup, so changing Admin tabs cannot make it disappear.
+   - Unread count refreshes from /api/notifications.
+   - If the notification request temporarily fails, the bell remains visible instead of changing header layout.
+   - Count refreshes again when the browser window regains focus/visibility.
+5. Active navigation and spacing:
+   - Final header stylesheet stabilizes tab padding and action alignment.
+6. Mobile safety:
+   - Desktop account action group is hidden under 1000px.
+   - Mobile menu keeps its own single Logout row.
+
+FILES CHANGED
+- admin.html
+- css/revex-admin-header-final.css (new)
+- js/admin.js
+- js/admin-mobile-menu.js
+
+VALIDATION
+- node --check js/admin.js: PASS
+- node --check js/admin-mobile-menu.js: PASS
+- Existing project test suite was also run. Multiple pre-existing project checks fail for unrelated reasons (including missing installed dependencies and existing UI sync/contract expectations). These header changes did not modify backend logic.
