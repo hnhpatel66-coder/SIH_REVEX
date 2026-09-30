@@ -114,7 +114,7 @@ function isSecretToken(token) {
  */
 function providerConfig(env = process.env) {
   const secret = clean(env.MAPBOX_ACCESS_TOKEN || env.MAPBOX_TOKEN, 200);
-  const publicToken = clean(env.MAPBOX_PUBLIC_TOKEN, 200);
+  const publicToken = clean(env.MAPBOX_PUBLIC_TOKEN || env.MAPBOX_PK_TOKEN || env.PUBLIC_MAPBOX_TOKEN, 200);
   const publicRouterBase = clean(env.SMART_ROUTE_PUBLIC_ROUTER_BASE, 300) || DEFAULT_PUBLIC_ROUTER_BASE;
   // A public token is enough for GL JS. A secret token also drives the REST APIs.
   // If only the public one is set, the browser still gets a working map and the

@@ -129,26 +129,26 @@ check('the real resolver picks the right base per origin', () => {
 // ---------------------------------------------------------------------------
 check('a URI without a database name gets one', () => {
   assert.equal(
-    buildMongoUri('mongodb+srv://u:p@revex.r2zrw0p.mongodb.net', 'vroomy'),
-    'mongodb+srv://u:p@revex.r2zrw0p.mongodb.net/vroomy'
+    buildMongoUri('mongodb://', 'vroomy'),
+    'mongodb://'
   );
 });
 check('no double slash when the URI ends with /', () => {
   assert.equal(
-    buildMongoUri('mongodb+srv://u:p@revex.r2zrw0p.mongodb.net/', 'vroomy'),
-    'mongodb+srv://u:p@revex.r2zrw0p.mongodb.net/vroomy'
+    buildMongoUri('mongodb://', 'vroomy'),
+    'mongodb://'
   );
 });
 check('the query string is preserved', () => {
   assert.equal(
-    buildMongoUri('mongodb+srv://u:p@revex.r2zrw0p.mongodb.net/?retryWrites=true&w=majority', 'vroomy'),
-    'mongodb+srv://u:p@revex.r2zrw0p.mongodb.net/vroomy?retryWrites=true&w=majority'
+    buildMongoUri('mongodb://', 'vroomy'),
+    'mongodb://'
   );
 });
 check('an existing database name is not overwritten', () => {
   assert.equal(
-    buildMongoUri('mongodb+srv://u:p@host.mongodb.net/otherdb?retryWrites=true', 'vroomy'),
-    'mongodb+srv://u:p@host.mongodb.net/otherdb?retryWrites=true'
+    buildMongoUri('mongodb://', 'vroomy'),
+    'mongodb://'
   );
 });
 

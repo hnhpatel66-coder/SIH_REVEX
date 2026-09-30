@@ -72,7 +72,7 @@ To use a local MongoDB instead of Atlas, set these in `backend/.env`:
 
 ```
 ALLOW_LOCAL_MONGO_FALLBACK=true
-MONGODB_FALLBACK_URI=mongodb://127.0.0.1:27017/vroomy
+MONGODB_FALLBACK_URI=mongodb://
 ```
 
 ---

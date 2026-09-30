@@ -52,3 +52,33 @@ services:
         sync: false
       - key: ADMIN_NAME
         value: REVEX Admin
+
+      # --------------------------------------------------------------- Integrations
+      # These are intentionally NOT stored in Git. Set the real values once in
+      # Render Dashboard -> revex -> Environment. `sync: false` keeps Render
+      # from replacing them with blanks on the next Blueprint deploy.
+      - key: CHAT_API_KEY
+        sync: false
+      - key: CHAT_API_URL
+        sync: false
+      # Legacy Gemini variable is still supported by the backend.
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GEMINI_MODEL
+        value: gemini-2.5-flash
+      - key: CHAT_API_MODEL
+        value: gemini-2.5-flash
+      - key: MAPBOX_PUBLIC_TOKEN
+        sync: false
+      - key: MAPBOX_ACCESS_TOKEN
+        sync: false
+      - key: MAPBOX_STYLE_URL
+        value: mapbox://styles/mapbox/streets-v12
+      - key: MAPBOX_GL_VERSION
+        value: 3.9.4
+      - key: MAPBOX_COUNTRY
+        value: in
+      - key: SMART_ROUTE_PUBLIC_ROUTER_ENABLED
+        value: "true"
+      - key: MAPBOX_FALLBACK_ENABLED
+        value: "true"

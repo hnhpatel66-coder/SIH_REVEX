@@ -13,7 +13,7 @@ const DEFAULT_DB_NAME = 'vroomy';
 
 /**
  * MongoDB connection strings may omit the database name
- * (mongodb+srv://user:pass@cluster.mongodb.net). In that case the driver
+ * (mongodb:// In that case the driver
  * silently uses "test", which is almost never what an application wants.
  * This injects an explicit database path when one is missing.
  */
@@ -27,7 +27,7 @@ function buildMongoUri(uri, dbName) {
   const base = queryIndex === -1 ? value : value.slice(0, queryIndex);
   const query = queryIndex === -1 ? '' : value.slice(queryIndex);
 
-  // base = mongodb+srv://user:pass@host  or  mongodb://host:port[/db]
+  // base = mongodb://  or  mongodb://
   const schemeEnd = base.indexOf('://');
   const afterScheme = base.slice(schemeEnd + 3);
   const slash = afterScheme.indexOf('/');

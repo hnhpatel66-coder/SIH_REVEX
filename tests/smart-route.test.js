@@ -709,7 +709,7 @@ t.describe('the human sentence describes the road without inventing it', () => {
 t.describe('only a publishable token is ever offered to the browser', () => {
   const withBoth = mapbox.publicConfig({
     MAPBOX_ACCESS_TOKEN: 'sk.eyJ1Ijoic2VjcmV0IiwiYSI6ImNrIn0.sample',
-    MAPBOX_PUBLIC_TOKEN: 'pk.eyJ1IjoicHVibGljIn0.sample'
+    MAPBOX_PUBLIC_TOKEN: 'REDACTED_MAPBOX_PUBLIC_TOKEN'
   });
   t.equal(withBoth.enabled, true, 'a public token enables the map');
   t.equal(withBoth.token.slice(0, 3), 'pk.', 'and the token sent out is the pk. one');

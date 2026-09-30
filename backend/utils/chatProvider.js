@@ -156,7 +156,7 @@ function isTransportSafe(url) {
 
 /** The whole provider decision, derived from the environment. Pure and testable. */
 function providerConfig(env = process.env) {
-  const apiKey = cleanText(env.CHAT_API_KEY || env.GEMINI_API_KEY, 300);
+  const apiKey = cleanText(env.CHAT_API_KEY || env.GEMINI_API_KEY || env.GOOGLE_API_KEY, 300);
   const model = cleanText(env.CHAT_API_MODEL || env.GEMINI_MODEL, 120) || DEFAULT_MODEL;
   const rawUrl = cleanText(env.CHAT_API_URL, 500);
 

@@ -19,7 +19,7 @@ const demo=[
 async function connect(){
   const options={serverSelectionTimeoutMS:10000,family:4};
   try{return await mongoose.connect(process.env.MONGODB_URI,options)}
-  catch(error){console.log('Atlas failed, using local fallback.');return mongoose.connect(process.env.MONGODB_FALLBACK_URI||'mongodb://127.0.0.1:27017/vroomy',options)}
+  catch(error){console.log('Atlas failed, using local fallback.');return mongoose.connect(process.env.MONGODB_FALLBACK_URI||'mongodb://',options)}
 }
 (async()=>{
   await connect();

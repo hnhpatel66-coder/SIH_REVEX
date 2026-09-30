@@ -210,7 +210,7 @@ See sections [6](#6-razorpay-payments), [8](#8-pricing-and-the-cancellation-poli
 4. Copy the SRV string and **append the database name**:
 
    ```
-   mongodb+srv://<user>:<password>@<cluster>.mongodb.net/vroomy
+   mongodb://
    ```
 
 5. Put it in `.env` as `MONGODB_URI`.
@@ -218,8 +218,8 @@ See sections [6](#6-razorpay-payments), [8](#8-pricing-and-the-cancellation-poli
 ### Local MongoDB
 
 ```env
-MONGODB_URI=mongodb://127.0.0.1:27017/vroomy
-MONGODB_FALLBACK_URI=mongodb://127.0.0.1:27017/vroomy
+MONGODB_URI=mongodb://
+MONGODB_FALLBACK_URI=mongodb://
 ```
 
 ### Checking the connection
