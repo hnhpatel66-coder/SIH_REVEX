@@ -561,16 +561,7 @@ router.get('/smart-search', optionalAuth, async (req, res) => {
     const payloads = await serializeRides(matched.map(entry => entry.ride), { includePrivate: false });
     const matches = matched.map((entry, index) => ({
       ...payloads[index],
-      // Smart Route map selection needs the same stored road that the server
-      // used to approve the match. It is sent only for the matched offers in
-      // this endpoint, never in the normal ride listing.
-      route: smartRoute.routeSummary(entry.ride),
-      match: {
-        ...smartRoute.summarisePlan(entry.plan),
-        // The highlighted rider leg is the exact segment used for pricing and
-        // booking, so the map and the checkout can never disagree.
-        legs: entry.plan.legs || null
-      },
+      match: smartRoute.summarisePlan(entry.plan),
       quote: smartRoute.planQuote(entry.ride, seats, entry.plan)
     }));
 

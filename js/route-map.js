@@ -194,32 +194,6 @@
   /* ---------------------------------------------------------------- loader */
 
   const scriptCache = {};
-  const leafletCache = { promise: null };
-
-  /** Key-free interactive basemap used when Render/local deployment has no Mapbox pk token. */
-  function loadLeaflet() {
-    if (leafletCache.promise) return leafletCache.promise;
-    leafletCache.promise = new Promise((resolve, reject) => {
-      if (!global.document) { reject(new Error('no document')); return; }
-      const cssId = 'revexLeafletCss';
-      if (!document.getElementById(cssId)) {
-        const link = document.createElement('link');
-        link.id = cssId;
-        link.rel = 'stylesheet';
-        link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
-        document.head.appendChild(link);
-      }
-      if (global.L) { resolve(global.L); return; }
-      const script = document.createElement('script');
-      script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
-      script.async = true;
-      script.crossOrigin = 'anonymous';
-      script.onload = () => global.L ? resolve(global.L) : reject(new Error('Leaflet loaded but did not register'));
-      script.onerror = () => reject(new Error('Leaflet could not be loaded'));
-      document.head.appendChild(script);
-    });
-    return leafletCache.promise;
-  }
 
   /**
    * Loads Mapbox GL JS from the CDN exactly once per version.
@@ -278,23 +252,14 @@
       towns: [],
       townsBetween: null,
       checkpoints: [],
-      // Candidate ride roads shown by Find Ride Smart Route. They are deliberately
-      // separate from `route`/`journey`: the latter are the rider's own road,
-      // while candidates are selectable offers that the server already matched.
-      candidates: [],
-      selectedCandidateId: '',
-      onCandidateSelect: null,
-      candidateClickBound: false,
       provider: '',
       estimated: false,
       pinMode: false,
       onPick: typeof settings.onPick === 'function' ? settings.onPick : null,
       renderer: 'diagram',
       gl: null,
-      leaflet: null,
       map: null,
       mapLoaded: false,
-      leafletLayers: [],
       loadTimer: null,
       markers: [],
       // The key we last framed the camera to. Refitting on every re-render
@@ -391,35 +356,6 @@
       element.className = 'rvx-map__checkpoint';
       element.textContent = `${km} km`;
       return element;
-    }
-
-    function candidateElement(candidate) {
-      const element = document.createElement('button');
-      element.type = 'button';
-      element.className = `rvx-map__candidate-marker${candidate.id === state.selectedCandidateId ? ' rvx-map__candidate-marker--selected' : ''}`;
-      element.title = candidate.label || `Select ride ${candidate.index || ''}`;
-      element.setAttribute('aria-label', candidate.label || `Select ride ${candidate.index || ''}`);
-      element.textContent = String(candidate.index || '');
-      element.addEventListener('click', event => {
-        event.preventDefault();
-        event.stopPropagation();
-        selectCandidate(candidate.id);
-      });
-      return element;
-    }
-
-    function selectCandidate(id) {
-      const key = String(id || '');
-      if (!key) return;
-      state.selectedCandidateId = key;
-      const selected = state.candidates.find(candidate => String(candidate.id) === key) || null;
-      state.legs = selected?.legs || { driverBefore: [], rider: [], driverAfter: [] };
-      state.pickup = selected?.board || null;
-      state.drop = selected?.drop || null;
-      render();
-      if (selected && typeof state.onCandidateSelect === 'function') {
-        state.onCandidateSelect(key, selected);
-      }
     }
 
     /* --------------------------------------------------------- diagram renderer */
@@ -626,13 +562,6 @@
         state.drop || (state.journey.length ? state.journey[state.journey.length - 1] : null));
       for (const town of state.towns) place(townElement(town.name, town.fromBoardKm), town.coordinate);
       for (const mark of state.checkpoints) place(checkpointElement(mark.km), mark.coordinate);
-      for (const candidate of state.candidates) {
-        const point = toPair(candidate.board) || candidate.geometry[Math.max(0, Math.floor(candidate.geometry.length / 2))];
-        if (!point) continue;
-        const marker = candidateElement(candidate);
-        marker.addEventListener('mouseenter', () => { marker.title = candidate.label || marker.title; });
-        place(marker, point);
-      }
     }
 
     function ensureMap(mapboxgl) {
@@ -774,9 +703,6 @@
       line(state.legs.rider, { kind: 'rider' });
       line(state.legs.driverAfter, { kind: 'after' });
       line(state.journey, { kind: 'journey' });
-      for (const candidate of state.candidates) {
-        line(candidate.geometry, { kind: 'candidate', candidateId: String(candidate.id) });
-      }
 
       // One source, created once, then updated. Re-adding it per render is what
       // used to pile up a source and five layers on every keystroke.
@@ -820,70 +746,12 @@
         });
       }
 
-      const candidateLayerId = `${SOURCE_ID}-candidates`;
-      const selectedCandidateLayerId = `${SOURCE_ID}-candidate-selected`;
-      if (!map.getLayer(candidateLayerId)) {
-        map.addLayer({
-          id: candidateLayerId,
-          type: 'line',
-          source: SOURCE_ID,
-          filter: ['==', ['get', 'kind'], 'candidate'],
-          layout: { 'line-cap': 'round', 'line-join': 'round' },
-          paint: {
-            'line-color': '#f59e0b',
-            'line-width': 4,
-            'line-opacity': 0.62
-          }
-        });
-      }
-      if (!map.getLayer(selectedCandidateLayerId)) {
-        map.addLayer({
-          id: selectedCandidateLayerId,
-          type: 'line',
-          source: SOURCE_ID,
-          filter: ['all',
-            ['==', ['get', 'kind'], 'candidate'],
-            ['==', ['get', 'candidateId'], String(state.selectedCandidateId || '__none__')]
-          ],
-          layout: { 'line-cap': 'round', 'line-join': 'round' },
-          paint: {
-            'line-color': '#22d3ee',
-            'line-width': 7,
-            'line-opacity': 0.98
-          }
-        });
-      } else {
-        map.setFilter(selectedCandidateLayerId, ['all',
-          ['==', ['get', 'kind'], 'candidate'],
-          ['==', ['get', 'candidateId'], String(state.selectedCandidateId || '__none__')]
-        ]);
-      }
-
-      if (!state.candidateClickBound) {
-        state.candidateClickBound = true;
-        const handleCandidateClick = event => {
-          const id = event?.features?.[0]?.properties?.candidateId;
-          if (id) selectCandidate(id);
-        };
-        map.on('click', candidateLayerId, handleCandidateClick);
-        map.on('click', selectedCandidateLayerId, handleCandidateClick);
-        map.on('mouseenter', candidateLayerId, () => { map.getCanvas().style.cursor = 'pointer'; });
-        map.on('mouseleave', candidateLayerId, () => {
-          if (!state.pinMode) map.getCanvas().style.cursor = '';
-        });
-        map.on('mouseenter', selectedCandidateLayerId, () => { map.getCanvas().style.cursor = 'pointer'; });
-        map.on('mouseleave', selectedCandidateLayerId, () => {
-          if (!state.pinMode) map.getCanvas().style.cursor = '';
-        });
-      }
-
       buildMarkers(mapboxgl);
 
       // Frame the camera once per journey, not once per render.
       const all = features.map(feature => feature.geometry.coordinates)
         .concat(state.towns.map(town => town.coordinate))
         .concat(state.checkpoints.map(mark => mark.coordinate))
-        .concat(state.candidates.flatMap(candidate => candidate.geometry || []))
         .concat([state.pickup, state.drop, state.start, state.end].filter(Boolean));
       const bounds = boundsOf(all);
       if (bounds) {
@@ -899,52 +767,6 @@
         }
       }
 
-      // Candidate ride roads are drawn on top of the base route so they remain clickable. A click
-      // on any candidate line selects that ride; the selected one is thicker and
-      // brighter so the map becomes a real ride picker rather than a picture.
-      for (const candidate of state.candidates) {
-        const path = pathFor(candidate.geometry, project);
-        if (!path) continue;
-        const selected = String(candidate.id) === String(state.selectedCandidateId);
-        const node = add('path', {
-          d: path,
-          class: `rvx-map__candidate-line${selected ? ' rvx-map__candidate-line--selected' : ''}`,
-          'stroke-width': selected ? 7 : 4,
-          fill: 'none',
-          'stroke-linecap': 'round',
-          'stroke-linejoin': 'round'
-        });
-        node.addEventListener('click', event => {
-          event.stopPropagation();
-          selectCandidate(candidate.id);
-        });
-      }
-
-      // Candidate markers sit on the offer road near the rider's boarding point.
-      for (const candidate of state.candidates) {
-        const point = toPair(candidate.board) || candidate.geometry[Math.max(0, Math.floor(candidate.geometry.length / 2))];
-        if (!point) continue;
-        const [x, y] = project(point);
-        const marker = add('circle', {
-          cx: x.toFixed(1),
-          cy: y.toFixed(1),
-          r: 12,
-          class: `rvx-map__candidate-marker-svg${String(candidate.id) === String(state.selectedCandidateId) ? ' rvx-map__candidate-marker-svg--selected' : ''}`
-        });
-        marker.style.cursor = 'pointer';
-        marker.addEventListener('click', event => {
-          event.stopPropagation();
-          selectCandidate(candidate.id);
-        });
-        const label = add('text', {
-          x: x.toFixed(1),
-          y: (y + 4).toFixed(1),
-          class: 'rvx-map__candidate-marker-text'
-        });
-        label.textContent = String(candidate.index || '');
-        label.style.pointerEvents = 'none';
-      }
-
       /* Distance pills are useful zoomed in and are clutter zoomed out, so they
          are hidden by a class rather than removed from the DOM - the rider can
          still zoom in and they come straight back. */
@@ -957,142 +779,6 @@
         applyDensity();
         if (typeof map.on === 'function') map.on('zoomend', applyDensity);
       }
-      return true;
-    }
-
-    /* ------------------------------------------------------- Leaflet fallback */
-
-    function clearLeafletLayers() {
-      if (!state.map || !state.leaflet) return;
-      for (const layer of state.leafletLayers) {
-        try { state.map.removeLayer(layer); } catch { /* already removed */ }
-      }
-      state.leafletLayers = [];
-    }
-
-    function renderLeaflet() {
-      const L = state.leaflet;
-      if (!L) return false;
-      glHost.hidden = false;
-      diagramHost.hidden = true;
-      if (!state.map) {
-        try {
-          state.map = L.map(glHost, {
-            zoomControl: true,
-            attributionControl: true,
-            dragging: !state.pinMode,
-            scrollWheelZoom: true,
-            doubleClickZoom: true,
-            boxZoom: true,
-            keyboard: true
-          });
-          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            maxZoom: 19,
-            attribution: '&copy; OpenStreetMap contributors'
-          }).addTo(state.map);
-          state.map.on('click', event => {
-            if (state.pinMode && typeof state.onPick === 'function') {
-              state.onPick({ lng: event.latlng.lng, lat: event.latlng.lat });
-            }
-          });
-          state.mapLoaded = true;
-        } catch (error) {
-          state.notice = 'The interactive map could not be loaded, so the route diagram is shown instead.';
-          state.renderer = 'diagram';
-          return false;
-        }
-      }
-
-      clearLeafletLayers();
-      const all = [];
-      const addLine = (coordinates, style, clickableId) => {
-        const line = toLine(coordinates);
-        if (line.length < 2) return;
-        const latlngs = line.map(pair => [pair[1], pair[0]]);
-        const layer = L.polyline(latlngs, style).addTo(state.map);
-        if (clickableId) {
-          layer.on('click', event => {
-            event.originalEvent?.stopPropagation?.();
-            selectCandidate(clickableId);
-          });
-          layer.on('mouseover', () => { layer.setStyle({ weight: 8, opacity: 1 }); });
-          layer.on('mouseout', () => {
-            const selected = String(clickableId) === String(state.selectedCandidateId);
-            layer.setStyle({ weight: selected ? 7 : 4, opacity: selected ? .98 : .68 });
-          });
-        }
-        state.leafletLayers.push(layer);
-        all.push(...line);
-      };
-
-      // Rider journey first, then offer roads, so selectable offers remain visible.
-      addLine(state.journey, { color: '#7c3aed', weight: 4, opacity: .75, dashArray: '8 8' });
-      addLine(state.route, { color: '#2563eb', weight: 5, opacity: .92 });
-      addLine(state.legs.driverBefore, { color: '#94a3b8', weight: 4, opacity: .72 });
-      addLine(state.legs.driverAfter, { color: '#94a3b8', weight: 4, opacity: .72 });
-      addLine(state.legs.rider, { color: '#14b8a6', weight: 7, opacity: 1 });
-      for (const candidate of state.candidates) {
-        const selected = String(candidate.id) === String(state.selectedCandidateId);
-        addLine(candidate.geometry, {
-          color: selected ? '#22d3ee' : '#f59e0b',
-          weight: selected ? 7 : 4,
-          opacity: selected ? .98 : .68
-        }, candidate.id);
-      }
-
-      const addPin = (pair, label, cls) => {
-        if (!pair) return;
-        const marker = L.circleMarker([pair[1], pair[0]], {
-          radius: cls === 'candidate' ? 12 : 8,
-          color: '#ffffff',
-          weight: 2,
-          fillColor: cls === 'pickup' ? '#14b8a6' : (cls === 'drop' ? '#ef4444' : '#0f172a'),
-          fillOpacity: 1
-        }).addTo(state.map);
-        if (label) marker.bindTooltip(label, { permanent: false, direction: 'top' });
-        state.leafletLayers.push(marker);
-        all.push(pair);
-      };
-      addPin(state.start, state.startName || 'Start', 'start');
-      addPin(state.end, state.endName || 'Destination', 'end');
-      addPin(state.pickup, state.pickupName || 'Pickup', 'pickup');
-      addPin(state.drop, state.dropName || 'Drop', 'drop');
-
-      for (const candidate of state.candidates) {
-        const point = toPair(candidate.board) || candidate.geometry[Math.max(0, Math.floor(candidate.geometry.length / 2))];
-        if (!point) continue;
-        const marker = L.marker([point[1], point[0]], {
-          icon: L.divIcon({
-            className: 'rvx-leaflet-candidate-marker',
-            html: `<span>${escapeHtml(String(candidate.index || ''))}</span>`,
-            iconSize: [30, 30],
-            iconAnchor: [15, 15]
-          })
-        }).addTo(state.map);
-        marker.bindTooltip(candidate.label || `Ride ${candidate.index || ''}`);
-        marker.on('click', event => { event.originalEvent?.stopPropagation?.(); selectCandidate(candidate.id); });
-        state.leafletLayers.push(marker);
-        all.push(point);
-      }
-
-      for (const town of state.towns) if (town.coordinate) {
-        addPin(town.coordinate, town.name, 'town');
-      }
-      for (const mark of state.checkpoints) if (mark.coordinate) {
-        addPin(mark.coordinate, `${mark.km} km`, 'checkpoint');
-      }
-
-      if (all.length) {
-        const bounds = L.latLngBounds(all.map(pair => [pair[1], pair[0]]));
-        const key = all.map(pair => pair.map(v => Number(v).toFixed(3)).join(',')).join('|');
-        if (key !== state.fitKey) {
-          state.fitKey = key;
-          state.map.fitBounds(bounds, { padding: [35, 35], maxZoom: 12, animate: false });
-        }
-      } else if (!state.map.getCenter || !state.map.getCenter().lat) {
-        state.map.setView([22.3, 71.8], 7);
-      }
-      try { state.map.invalidateSize(); } catch { /* layout may still be settling */ }
       return true;
     }
 
@@ -1117,17 +803,16 @@
       if (state.legs.rider.length && state.checkpoints.length) {
         extras.push(`marked every ${CHECKPOINT_KM} km`);
       }
-      if (state.candidates.length) {
-        extras.push(`${state.candidates.length} matching ride${state.candidates.length === 1 ? '' : 's'} shown - click a route to select`);
-      }
       if (state.pinMode && state.onPick) extras.push('click the map to drop your pin');
       if (state.notice) extras.push(state.notice);
       status.innerHTML = escapeHtml(`${label}${extras.length ? ` - ${extras.join(', ')}` : ''}`);
     }
 
     function render() {
-      if (state.renderer === 'mapbox' && renderMapbox()) { describe(); return; }
-      if (state.renderer === 'leaflet' && renderLeaflet()) { describe(); return; }
+      if (state.renderer === 'mapbox' && renderMapbox()) {
+        describe();
+        return;
+      }
       renderDiagram();
       describe();
     }
@@ -1147,19 +832,8 @@
         state.roadDataSource = String(incoming.roadDataSource || '');
         const usable = Boolean(incoming.enabled) && state.token && state.token.slice(0, 3) === 'pk.';
         if (!usable) {
-          state.gl = null;
+          state.renderer = 'diagram';
           state.notice = String(incoming.reason || incoming.notice || '');
-          try {
-            state.leaflet = await loadLeaflet();
-            state.renderer = 'leaflet';
-            state.notice = state.roadDataSource === 'osrm'
-              ? 'Interactive OpenStreetMap basemap · road geometry from OSRM.'
-              : 'Interactive OpenStreetMap basemap.';
-          } catch {
-            state.leaflet = null;
-            state.renderer = 'diagram';
-            state.notice = `${state.notice || 'Mapbox is not configured.'} The key-free interactive map could not be loaded, so the route diagram is shown instead.`;
-          }
           render();
           return controller;
         }
@@ -1169,15 +843,8 @@
           state.notice = '';
         } catch {
           state.gl = null;
-          try {
-            state.leaflet = await loadLeaflet();
-            state.renderer = 'leaflet';
-            state.notice = 'Mapbox could not be loaded; using the key-free OpenStreetMap basemap.';
-          } catch {
-            state.leaflet = null;
-            state.renderer = 'diagram';
-            state.notice = 'The interactive map could not be loaded, so the route diagram is shown instead.';
-          }
+          state.renderer = 'diagram';
+          state.notice = 'The interactive map could not be loaded, so the route diagram is shown instead.';
           render();
           return controller;
         }
@@ -1267,44 +934,6 @@
       },
 
       /**
-       * Sets the ride offers that the server has already matched to the rider's
-       * journey. These are visual candidates only: booking still happens through
-       * the normal ride card and the server rebuilds the match before payment.
-       */
-      setCandidates(candidates, onSelect) {
-        state.candidates = Array.isArray(candidates)
-          ? candidates.map((candidate, index) => ({
-              id: String(candidate?.id || ''),
-              label: String(candidate?.label || `Ride ${index + 1}`),
-              geometry: toLine(candidate?.geometry),
-              board: toPair(candidate?.board),
-              drop: toPair(candidate?.drop),
-              legs: {
-                driverBefore: toLine(candidate?.legs?.driverBefore),
-                rider: toLine(candidate?.legs?.rider),
-                driverAfter: toLine(candidate?.legs?.driverAfter)
-              },
-              index: Number(candidate?.index) || index + 1
-            })).filter(candidate => candidate.id && candidate.geometry.length >= 2)
-          : [];
-        if (typeof onSelect === 'function') state.onCandidateSelect = onSelect;
-        if (!state.candidates.some(candidate => String(candidate.id) === String(state.selectedCandidateId))) {
-          state.selectedCandidateId = state.candidates[0]?.id || '';
-        }
-        const selected = state.candidates.find(candidate => String(candidate.id) === String(state.selectedCandidateId));
-        state.legs = selected?.legs || { driverBefore: [], rider: [], driverAfter: [] };
-        state.pickup = selected?.board || null;
-        state.drop = selected?.drop || null;
-        render();
-        return controller;
-      },
-
-      selectCandidate(id) {
-        selectCandidate(id);
-        return controller;
-      },
-
-      /**
        * Turns the map into a pin picker. `onPick` receives {lng, lat}, which the
        * caller sends to the API as the rider's pickup - the server then snaps it
        * to the nearest point on the real road, so a pin dropped in a field still
@@ -1316,10 +945,6 @@
         if (state.map && typeof state.map.dragPan === 'object') {
           if (state.map.dragPan.enable) state.map.dragPan.enable();
           if (state.pinMode) state.map.dragPan.disable();
-        }
-        if (state.map && state.renderer === 'leaflet' && state.map.dragging) {
-          if (state.pinMode) state.map.dragging.disable();
-          else state.map.dragging.enable();
         }
         root.classList.toggle('rvx-map--pin', state.pinMode);
         render();
@@ -1342,9 +967,6 @@
         state.towns = [];
         state.checkpoints = [];
         state.townsBetween = null;
-        state.candidates = [];
-        state.selectedCandidateId = '';
-        state.onCandidateSelect = null;
         state.fitKey = '';
         clearMarkers();
         render();
@@ -1354,7 +976,6 @@
       /** Re-draws at the current size, e.g. after a layout change. */
       refresh() {
         if (state.map && typeof state.map.resize === 'function') state.map.resize();
-        if (state.map && state.renderer === 'leaflet' && typeof state.map.invalidateSize === 'function') state.map.invalidateSize();
         render();
         return controller;
       },
@@ -1362,19 +983,12 @@
       /** Which renderer is live, for the surrounding UI to explain. */
       status() {
         const camera = state.map && state.mapLoaded
-          ? (state.renderer === 'mapbox'
-            ? {
-              zoom: Number(state.map.getZoom().toFixed(2)),
-              centre: state.map.getCenter().toArray().map(value => Number(value.toFixed(3))),
-              routeLayer: Boolean(state.map.getLayer(`${SOURCE_ID}-route`)),
-              styleLoaded: state.map.isStyleLoaded()
-            }
-            : {
-              zoom: Number(state.map.getZoom().toFixed(2)),
-              centre: [Number(state.map.getCenter().lng.toFixed(3)), Number(state.map.getCenter().lat.toFixed(3))],
-              routeLayer: state.leafletLayers.length > 0,
-              styleLoaded: true
-            })
+          ? {
+            zoom: Number(state.map.getZoom().toFixed(2)),
+            centre: state.map.getCenter().toArray().map(value => Number(value.toFixed(3))),
+            routeLayer: Boolean(state.map.getLayer(`${SOURCE_ID}-route`)),
+            styleLoaded: state.map.isStyleLoaded()
+          }
           : null;
         return {
           renderer: state.renderer,
@@ -1404,7 +1018,6 @@
           try { state.map.remove(); } catch { /* already gone */ }
           state.map = null;
         }
-        state.leafletLayers = [];
         state.mapLoaded = false;
         root.remove();
       }

@@ -273,28 +273,13 @@
     return query;
   }
 
-  function selectSmartRide(id, results) {
-    const key = String(id || '');
-    if (!key) return;
-    document.querySelectorAll('#rideResults [data-ride]').forEach(card => {
-      card.classList.toggle('rvx-card--selected', String(card.getAttribute('data-ride')) === key);
-    });
-    const card = Array.from(document.querySelectorAll('#rideResults [data-ride]'))
-      .find(item => String(item.getAttribute('data-ride')) === key);
-    if (card) {
-      card.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      card.setAttribute('tabindex', '-1');
-      try { card.focus({ preventScroll: true }); } catch {}
-    }
-  }
-
   async function runSmartSearch(form, results) {
     const panel = document.getElementById('smartPanel');
     const rejected = document.getElementById('smartRejected');
     if (panel) panel.hidden = false;
     results.innerHTML = '<div class="rvx-grid"><div class="rvx-skeleton" style="height:280px"></div><div class="rvx-skeleton" style="height:280px"></div></div>';
     const query = smartSearchParams(form);
-    const map = await routeMap('smartMap', { ariaLabel: 'Your journey, and the rides that drive the same road', interactive: true, height: 420 });
+    const map = await routeMap('smartMap', { ariaLabel: 'Your journey, and the rides that drive the same road', interactive: true });
 
     let data;
     try {
@@ -316,24 +301,9 @@
       // The rider's OWN road is labelled here, so the map answers "what towns do
       // I pass" before any offer is even picked.
       map.setCheckpoints(data.route?.checkpoints || null);
-
       if (pinningEnd) map.setPinMode(true, applySmartPin);
     }
     await renderRides(data.matches, results);
-    if (map) map.setCandidates((data.matches || []).map((ride, index) => ({
-      id: ride.id,
-      label: `${index + 1}. ${ride.from || ''} → ${ride.to || ''}`,
-      geometry: ride.route?.geometry || [],
-      board: ride.match?.board?.coordinate,
-      drop: ride.match?.drop?.coordinate,
-      legs: ride.match?.legs,
-      index: index + 1,
-      selected: index === 0
-    })), id => {
-      selectSmartRide(id, results);
-    });
-    // The first match is visually selected, but the rider still has to press
-    // Pay & Book Ride on the card; selecting a route never books automatically.
 
     if (rejected) {
       const lines = (data.rejected || []).map(entry => `${entry.from} to ${entry.to}: ${entry.message}`);
