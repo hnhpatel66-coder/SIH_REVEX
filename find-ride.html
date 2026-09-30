@@ -1,4 +1,4 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="en" data-theme="light">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
   <script>(function(){try{var s=localStorage.getItem('revexTheme');document.documentElement.setAttribute('data-theme',s==='dark'?'dark':'light');}catch(e){document.documentElement.setAttribute('data-theme','light');}})();</script><title>Find a Ride | REVEX</title>
@@ -62,7 +62,11 @@
           <button class="rvx-btn rvx-btn--ghost rvx-btn--sm" id="smartPinClear" type="button">Clear pins</button>
         </div>
       </div>
-      <div class="rvx-smart__map" id="smartMap"></div>
+      <div class="rvx-smart__map" id="smartMap" aria-label="Interactive smart route map"></div>
+      <div class="rvx-smart__map-help">
+        <span><strong>How to use:</strong> Your route is shown first. Matching ride routes appear on top.</span>
+        <span>Click a <b>ride route or numbered marker</b> to select it, then use <b>Pay &amp; Book Ride</b> on the selected ride card.</span>
+      </div>
       <p class="rvx-smart__note" id="smartNote">Rides that drive the same road are matched by distance, not by name, so a Junagadh to Ahmedabad offer also shows up for Rajkot to Ahmedabad.</p>
       <p class="rvx-smart__rejected" id="smartRejected" hidden></p>
     </section>

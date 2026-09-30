@@ -129,6 +129,27 @@
 .rvx-card__meta { margin: 0; font-size: .86rem; color: var(--muted, #64748b); }
 .rvx-card__actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: auto; }
 
+.rvx-card--selected {
+  border-color: var(--brand) !important;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--brand) 24%, transparent), var(--rvx-shadow);
+  scroll-margin-top: 110px;
+}
+.rvx-card--selected::before {
+  content: 'Selected on map';
+  display: inline-flex;
+  align-self: start;
+  justify-self: end;
+  margin: 10px 10px -34px 0;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: var(--brand);
+  color: var(--surface);
+  font-size: .68rem;
+  font-weight: 800;
+  letter-spacing: .02em;
+  position: relative;
+  z-index: 5;
+}
 .rvx-card--link { transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease; }
 .rvx-card--link:hover { transform: translateY(-2px); box-shadow: var(--rvx-shadow-lg); border-color: color-mix(in srgb, var(--ink, #0f172a) 26%, transparent); }
 .rvx-card--link:focus-within { box-shadow: var(--rvx-shadow-lg), var(--rvx-ring); }
@@ -742,7 +763,54 @@
 }
 /* At low zoom a 50 km pill every 50 km becomes noise, so they step aside and the
    towns and the A/B/C/D pins keep the map readable. */
-.rvx-map--dense .rvx-map__checkpoint { display: none; }
+/* ---- selectable ride routes on Smart Route -------------------------------- */
+.rvx-map__candidate-line {
+  stroke: #f59e0b;
+  stroke-opacity: .58;
+  cursor: pointer;
+  pointer-events: stroke;
+}
+.rvx-map__candidate-line--selected {
+  stroke: #22d3ee;
+  stroke-opacity: 1;
+  filter: drop-shadow(0 0 3px rgba(34,211,238,.65));
+}
+.rvx-map__candidate-marker-svg {
+  fill: #f59e0b;
+  stroke: var(--surface);
+  stroke-width: 3;
+  cursor: pointer;
+}
+.rvx-map__candidate-marker-svg--selected { fill: #22d3ee; }
+.rvx-map__candidate-marker-text {
+  fill: var(--surface);
+  font-size: 10px;
+  font-weight: 800;
+  text-anchor: middle;
+  pointer-events: none;
+}
+.rvx-map__candidate-marker {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 2px solid var(--surface);
+  border-radius: 50%;
+  background: #f59e0b;
+  color: #fff;
+  box-shadow: var(--rvx-shadow);
+  font: 800 11px/1 var(--rvx-font-body, inherit);
+  cursor: pointer;
+}
+.rvx-map__candidate-marker--selected {
+  background: #22d3ee;
+  transform: scale(1.08);
+}
+.rvx-map__candidate-marker:focus-visible {
+  outline: 3px solid var(--brand);
+  outline-offset: 2px;
+}
 
 .rvx-map__status {
   margin: 0;
@@ -823,7 +891,25 @@
   margin: 0;
   font-size: 1.02rem;
 }
-.rvx-smart__map { min-width: 0; }
+.rvx-smart__map {
+  min-width: 0;
+  min-height: 320px;
+}
+.rvx-smart__map-help {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  padding: 9px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--surface) 82%, transparent);
+  color: var(--muted);
+  font-size: .76rem;
+  line-height: 1.45;
+}
+.rvx-smart__map-help strong,
+.rvx-smart__map-help b { color: var(--ink); }
 .rvx-smart__points {
   display: grid;
   gap: 10px;

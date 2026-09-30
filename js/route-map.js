@@ -252,6 +252,13 @@
       towns: [],
       townsBetween: null,
       checkpoints: [],
+      // Candidate ride roads shown by Find Ride Smart Route. They are deliberately
+      // separate from `route`/`journey`: the latter are the rider's own road,
+      // while candidates are selectable offers that the server already matched.
+      candidates: [],
+      selectedCandidateId: '',
+      onCandidateSelect: null,
+      candidateClickBound: false,
       provider: '',
       estimated: false,
       pinMode: false,
@@ -356,6 +363,35 @@
       element.className = 'rvx-map__checkpoint';
       element.textContent = `${km} km`;
       return element;
+    }
+
+    function candidateElement(candidate) {
+      const element = document.createElement('button');
+      element.type = 'button';
+      element.className = `rvx-map__candidate-marker${candidate.id === state.selectedCandidateId ? ' rvx-map__candidate-marker--selected' : ''}`;
+      element.title = candidate.label || `Select ride ${candidate.index || ''}`;
+      element.setAttribute('aria-label', candidate.label || `Select ride ${candidate.index || ''}`);
+      element.textContent = String(candidate.index || '');
+      element.addEventListener('click', event => {
+        event.preventDefault();
+        event.stopPropagation();
+        selectCandidate(candidate.id);
+      });
+      return element;
+    }
+
+    function selectCandidate(id) {
+      const key = String(id || '');
+      if (!key) return;
+      state.selectedCandidateId = key;
+      const selected = state.candidates.find(candidate => String(candidate.id) === key) || null;
+      state.legs = selected?.legs || { driverBefore: [], rider: [], driverAfter: [] };
+      state.pickup = selected?.board || null;
+      state.drop = selected?.drop || null;
+      render();
+      if (selected && typeof state.onCandidateSelect === 'function') {
+        state.onCandidateSelect(key, selected);
+      }
     }
 
     /* --------------------------------------------------------- diagram renderer */
@@ -562,6 +598,13 @@
         state.drop || (state.journey.length ? state.journey[state.journey.length - 1] : null));
       for (const town of state.towns) place(townElement(town.name, town.fromBoardKm), town.coordinate);
       for (const mark of state.checkpoints) place(checkpointElement(mark.km), mark.coordinate);
+      for (const candidate of state.candidates) {
+        const point = toPair(candidate.board) || candidate.geometry[Math.max(0, Math.floor(candidate.geometry.length / 2))];
+        if (!point) continue;
+        const marker = candidateElement(candidate);
+        marker.addEventListener('mouseenter', () => { marker.title = candidate.label || marker.title; });
+        place(marker, point);
+      }
     }
 
     function ensureMap(mapboxgl) {
@@ -703,6 +746,9 @@
       line(state.legs.rider, { kind: 'rider' });
       line(state.legs.driverAfter, { kind: 'after' });
       line(state.journey, { kind: 'journey' });
+      for (const candidate of state.candidates) {
+        line(candidate.geometry, { kind: 'candidate', candidateId: String(candidate.id) });
+      }
 
       // One source, created once, then updated. Re-adding it per render is what
       // used to pile up a source and five layers on every keystroke.
@@ -746,12 +792,70 @@
         });
       }
 
+      const candidateLayerId = `${SOURCE_ID}-candidates`;
+      const selectedCandidateLayerId = `${SOURCE_ID}-candidate-selected`;
+      if (!map.getLayer(candidateLayerId)) {
+        map.addLayer({
+          id: candidateLayerId,
+          type: 'line',
+          source: SOURCE_ID,
+          filter: ['==', ['get', 'kind'], 'candidate'],
+          layout: { 'line-cap': 'round', 'line-join': 'round' },
+          paint: {
+            'line-color': '#f59e0b',
+            'line-width': 4,
+            'line-opacity': 0.62
+          }
+        });
+      }
+      if (!map.getLayer(selectedCandidateLayerId)) {
+        map.addLayer({
+          id: selectedCandidateLayerId,
+          type: 'line',
+          source: SOURCE_ID,
+          filter: ['all',
+            ['==', ['get', 'kind'], 'candidate'],
+            ['==', ['get', 'candidateId'], String(state.selectedCandidateId || '__none__')]
+          ],
+          layout: { 'line-cap': 'round', 'line-join': 'round' },
+          paint: {
+            'line-color': '#22d3ee',
+            'line-width': 7,
+            'line-opacity': 0.98
+          }
+        });
+      } else {
+        map.setFilter(selectedCandidateLayerId, ['all',
+          ['==', ['get', 'kind'], 'candidate'],
+          ['==', ['get', 'candidateId'], String(state.selectedCandidateId || '__none__')]
+        ]);
+      }
+
+      if (!state.candidateClickBound) {
+        state.candidateClickBound = true;
+        const handleCandidateClick = event => {
+          const id = event?.features?.[0]?.properties?.candidateId;
+          if (id) selectCandidate(id);
+        };
+        map.on('click', candidateLayerId, handleCandidateClick);
+        map.on('click', selectedCandidateLayerId, handleCandidateClick);
+        map.on('mouseenter', candidateLayerId, () => { map.getCanvas().style.cursor = 'pointer'; });
+        map.on('mouseleave', candidateLayerId, () => {
+          if (!state.pinMode) map.getCanvas().style.cursor = '';
+        });
+        map.on('mouseenter', selectedCandidateLayerId, () => { map.getCanvas().style.cursor = 'pointer'; });
+        map.on('mouseleave', selectedCandidateLayerId, () => {
+          if (!state.pinMode) map.getCanvas().style.cursor = '';
+        });
+      }
+
       buildMarkers(mapboxgl);
 
       // Frame the camera once per journey, not once per render.
       const all = features.map(feature => feature.geometry.coordinates)
         .concat(state.towns.map(town => town.coordinate))
         .concat(state.checkpoints.map(mark => mark.coordinate))
+        .concat(state.candidates.flatMap(candidate => candidate.geometry || []))
         .concat([state.pickup, state.drop, state.start, state.end].filter(Boolean));
       const bounds = boundsOf(all);
       if (bounds) {
@@ -765,6 +869,52 @@
             );
           } catch { /* bounds can be momentarily unavailable mid-update */ }
         }
+      }
+
+      // Candidate ride roads are drawn on top of the base route so they remain clickable. A click
+      // on any candidate line selects that ride; the selected one is thicker and
+      // brighter so the map becomes a real ride picker rather than a picture.
+      for (const candidate of state.candidates) {
+        const path = pathFor(candidate.geometry, project);
+        if (!path) continue;
+        const selected = String(candidate.id) === String(state.selectedCandidateId);
+        const node = add('path', {
+          d: path,
+          class: `rvx-map__candidate-line${selected ? ' rvx-map__candidate-line--selected' : ''}`,
+          'stroke-width': selected ? 7 : 4,
+          fill: 'none',
+          'stroke-linecap': 'round',
+          'stroke-linejoin': 'round'
+        });
+        node.addEventListener('click', event => {
+          event.stopPropagation();
+          selectCandidate(candidate.id);
+        });
+      }
+
+      // Candidate markers sit on the offer road near the rider's boarding point.
+      for (const candidate of state.candidates) {
+        const point = toPair(candidate.board) || candidate.geometry[Math.max(0, Math.floor(candidate.geometry.length / 2))];
+        if (!point) continue;
+        const [x, y] = project(point);
+        const marker = add('circle', {
+          cx: x.toFixed(1),
+          cy: y.toFixed(1),
+          r: 12,
+          class: `rvx-map__candidate-marker-svg${String(candidate.id) === String(state.selectedCandidateId) ? ' rvx-map__candidate-marker-svg--selected' : ''}`
+        });
+        marker.style.cursor = 'pointer';
+        marker.addEventListener('click', event => {
+          event.stopPropagation();
+          selectCandidate(candidate.id);
+        });
+        const label = add('text', {
+          x: x.toFixed(1),
+          y: (y + 4).toFixed(1),
+          class: 'rvx-map__candidate-marker-text'
+        });
+        label.textContent = String(candidate.index || '');
+        label.style.pointerEvents = 'none';
       }
 
       /* Distance pills are useful zoomed in and are clutter zoomed out, so they
@@ -802,6 +952,9 @@
       }
       if (state.legs.rider.length && state.checkpoints.length) {
         extras.push(`marked every ${CHECKPOINT_KM} km`);
+      }
+      if (state.candidates.length) {
+        extras.push(`${state.candidates.length} matching ride${state.candidates.length === 1 ? '' : 's'} shown - click a route to select`);
       }
       if (state.pinMode && state.onPick) extras.push('click the map to drop your pin');
       if (state.notice) extras.push(state.notice);
@@ -934,6 +1087,44 @@
       },
 
       /**
+       * Sets the ride offers that the server has already matched to the rider's
+       * journey. These are visual candidates only: booking still happens through
+       * the normal ride card and the server rebuilds the match before payment.
+       */
+      setCandidates(candidates, onSelect) {
+        state.candidates = Array.isArray(candidates)
+          ? candidates.map((candidate, index) => ({
+              id: String(candidate?.id || ''),
+              label: String(candidate?.label || `Ride ${index + 1}`),
+              geometry: toLine(candidate?.geometry),
+              board: toPair(candidate?.board),
+              drop: toPair(candidate?.drop),
+              legs: {
+                driverBefore: toLine(candidate?.legs?.driverBefore),
+                rider: toLine(candidate?.legs?.rider),
+                driverAfter: toLine(candidate?.legs?.driverAfter)
+              },
+              index: Number(candidate?.index) || index + 1
+            })).filter(candidate => candidate.id && candidate.geometry.length >= 2)
+          : [];
+        if (typeof onSelect === 'function') state.onCandidateSelect = onSelect;
+        if (!state.candidates.some(candidate => String(candidate.id) === String(state.selectedCandidateId))) {
+          state.selectedCandidateId = state.candidates[0]?.id || '';
+        }
+        const selected = state.candidates.find(candidate => String(candidate.id) === String(state.selectedCandidateId));
+        state.legs = selected?.legs || { driverBefore: [], rider: [], driverAfter: [] };
+        state.pickup = selected?.board || null;
+        state.drop = selected?.drop || null;
+        render();
+        return controller;
+      },
+
+      selectCandidate(id) {
+        selectCandidate(id);
+        return controller;
+      },
+
+      /**
        * Turns the map into a pin picker. `onPick` receives {lng, lat}, which the
        * caller sends to the API as the rider's pickup - the server then snaps it
        * to the nearest point on the real road, so a pin dropped in a field still
@@ -967,6 +1158,9 @@
         state.towns = [];
         state.checkpoints = [];
         state.townsBetween = null;
+        state.candidates = [];
+        state.selectedCandidateId = '';
+        state.onCandidateSelect = null;
         state.fitKey = '';
         clearMarkers();
         render();
