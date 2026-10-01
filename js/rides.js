@@ -273,41 +273,13 @@
     return query;
   }
 
-  function focusRideFromMap(rideId) {
-    if (!rideId) return;
-    const card = document.querySelector(`[data-ride="${CSS.escape(String(rideId))}"]`);
-    if (!card) return;
-    document.querySelectorAll('#rideResults [data-ride]').forEach(node => node.classList.remove('is-map-selected'));
-    card.classList.add('is-map-selected');
-    card.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    card.setAttribute('data-map-selected', 'true');
-    setTimeout(() => card.removeAttribute('data-map-selected'), 2200);
-  }
-
-  function wireRideCardMapSelection(results) {
-    if (!results || results.dataset.mapCardsBound) return;
-    results.dataset.mapCardsBound = '1';
-    results.addEventListener('click', event => {
-      const card = event.target.closest?.('[data-ride]');
-      if (!card) return;
-      const id = card.getAttribute('data-ride');
-      const map = openMaps.get('smartMap');
-      if (map?.selectOffer) map.selectOffer(id);
-    });
-  }
-
   async function runSmartSearch(form, results) {
     const panel = document.getElementById('smartPanel');
     const rejected = document.getElementById('smartRejected');
     if (panel) panel.hidden = false;
     results.innerHTML = '<div class="rvx-grid"><div class="rvx-skeleton" style="height:280px"></div><div class="rvx-skeleton" style="height:280px"></div></div>';
     const query = smartSearchParams(form);
-    const map = await routeMap('smartMap', {
-      ariaLabel: 'Your journey, and the rides that drive the same road',
-      interactive: true
-    });
-    if (map?.onOfferSelect) map.onOfferSelect(focusRideFromMap);
-    wireRideCardMapSelection(results);
+    const map = await routeMap('smartMap', { ariaLabel: 'Your journey, and the rides that drive the same road', interactive: true });
 
     let data;
     try {
@@ -329,11 +301,6 @@
       // The rider's OWN road is labelled here, so the map answers "what towns do
       // I pass" before any offer is even picked.
       map.setCheckpoints(data.route?.checkpoints || null);
-      map.setOffers?.((data.matches || []).map((ride, index) => ({
-        id: ride.id,
-        geometry: ride.mapRouteGeometry,
-        label: `${index + 1}. ${ride.from || ''} → ${ride.to || ''}`
-      })));
       if (pinningEnd) map.setPinMode(true, applySmartPin);
     }
     await renderRides(data.matches, results);
@@ -792,7 +759,6 @@
 
     let booking;
     let config;
-    if (submit) window.RevexButtonUI?.start(submit, 'Booking…');
     try {
       // The rider's join points are sent so the SERVER can re-derive the plan and
       // the price. Nothing the browser sends is trusted as an amount.
@@ -802,11 +768,7 @@
         body: payload
       });
       config = await global.RevexPay.getConfig();
-    } catch (error) {
-      window.RevexButtonUI?.error(submit, 'Try again');
-      showToast(error.message, 'bad', 8000);
-      return;
-    }
+    } catch (error) { showToast(error.message, 'bad', 8000); return; }
 
     const quote = booking.quote || currentQuote;
     const dialog = paymentDialog({
@@ -833,15 +795,12 @@
 
     if (result?.status === 'paid') {
       dialog.close();
-      window.RevexButtonUI?.success(submit, 'Booked', 1500);
       showModal('Seat request sent', `₹${formatMoney(quote.grandTotal)} received. ${result.testMode ? 'This was a test payment. ' : ''}The driver has been notified and will approve your seat.`);
       setTimeout(() => { location.href = 'bookings.html#rides'; }, 1600);
     } else if (result?.status === 'dismissed') {
       dialog.close();
-      window.RevexButtonUI?.reset(submit);
     } else {
       dialog.close();
-      window.RevexButtonUI?.error(submit, 'Try again');
       await loadRideDetail(currentRideId);
     }
   }
@@ -918,7 +877,7 @@
 
     const submit = form.querySelector('button[type="submit"]');
     const original = submit?.innerHTML;
-    if (submit) window.RevexButtonUI?.start(submit, 'Submitting…');
+    if (submit) { submit.disabled = true; submit.innerHTML = '<span class="rvx-spinner" aria-hidden="true"></span> Submitting…'; }
 
     try {
       const vehicleId = form.elements.vehicleId?.value || '';
@@ -951,13 +910,13 @@
           termsAccepted: true
         }
       });
-      window.RevexButtonUI?.success(submit, 'Submitted', 1600);
       showModal('Ride offer submitted', ride.message || 'An admin will review your offer before it appears on Find a Ride.');
       form.reset();
       if (form.elements.vehicleId) form.elements.vehicleId.dispatchEvent(new Event('change'));
     } catch (error) {
-      window.RevexButtonUI?.error(submit, 'Try again');
       showToast(error.message, 'bad', 9000);
+    } finally {
+      if (submit) { submit.disabled = false; submit.innerHTML = original; }
     }
   }
 
@@ -1051,17 +1010,9 @@
       };
 
       run({});
-      search?.addEventListener('submit', async event => {
+      search?.addEventListener('submit', event => {
         event.preventDefault();
-        const submit = search.querySelector('button[type="submit"]');
-        window.RevexButtonUI?.start(submit, 'Searching…');
-        try {
-          await searchNow();
-          window.RevexButtonUI?.success(submit, 'Rides loaded', 1200);
-        } catch (error) {
-          window.RevexButtonUI?.error(submit, 'Try again');
-          showToast(error.message, 'bad');
-        }
+        searchNow().catch(error => showToast(error.message, 'bad'));
       });
       toggle?.addEventListener('change', () => {
         setSmartPin('');
@@ -1076,7 +1027,7 @@
         });
         setSmartPin('');
         const note = document.getElementById('smartNote');
-        if (note) note.textContent = 'Rides that drive the same road are matched by distance, not by name, so a Junagadh to Ahmedabad offer also shows up for Rajkot to Ahmedabad. Click a numbered route on the map to select that ride.';
+        if (note) note.textContent = 'Rides that drive the same road are matched by distance, not by name, so a Junagadh to Ahmedabad offer also shows up for Rajkot to Ahmedabad.';
         searchNow().catch(() => { /* the results box already says why */ });
       });
       const clear = document.getElementById('rideSearchReset');
@@ -1084,7 +1035,7 @@
         setSmartPin('');
         if (search) search.reset();
         const note = document.getElementById('smartNote');
-        if (note) note.textContent = 'Rides that drive the same road are matched by distance, not by name, so a Junagadh to Ahmedabad offer also shows up for Rajkot to Ahmedabad. Click a numbered route on the map to select that ride.';
+        if (note) note.textContent = 'Rides that drive the same road are matched by distance, not by name, so a Junagadh to Ahmedabad offer also shows up for Rajkot to Ahmedabad.';
         run({});
       });
     }

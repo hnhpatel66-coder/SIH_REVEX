@@ -22,18 +22,14 @@
   <link rel="stylesheet" href="css/revex-premium-professional.css?v=20260928-premium-pro">
   <link rel="stylesheet" href="css/revex-stability.css?v=20260928-stable">
   <link rel="stylesheet" href="css/revex-luxe.css?v=20260929-luxe">
-  <link rel="stylesheet" href="css/revex-unified-ui.css?v=20260930-ui-unified">
 </head>
 <body class="auth-page">
   <header class="container">
-    <nav class="nav" aria-label="Primary navigation">
-      <a class="brand" href="index.html" aria-label="REVEX home">
-        <img class="brand-mark" src="assets/revex-mark.png" alt="" aria-hidden="true">
-        <span class="brand-word">REVEX</span>
-      </a>
-      <button class="menu-btn" aria-label="Open navigation" type="button">Menu</button>
-      <div class="nav-links"></div>
-      <div class="nav-actions"></div>
+    <nav class="nav">
+      <a class="brand" href="index.html"><img class="brand-mark" src="assets/revex-mark.png" alt="" aria-hidden="true"><span class="brand-word">REVEX</span></a>
+      <button class="theme-toggle theme-name" type="button" aria-pressed="false" aria-label="Switch between dark and light mode">
+        <span class="track"><span class="thumb"></span></span><span class="icon"></span><span class="label"></span>
+      </button>
     </nav>
   </header>
 
@@ -49,15 +45,15 @@
       </div>
     </aside>
 
-    <section class="booking-panel auth-card" aria-labelledby="loginTitle">
+    <section class="booking-panel auth-card">
       <span class="eyebrow">WELCOME BACK</span>
-      <h1 class="section-title" id="loginTitle">Log in to REVEX</h1>
+      <h1 class="section-title">Log in to REVEX</h1>
       <p>Use your account details to continue.</p>
       <div id="loginMessage" class="form-message" role="status"></div>
       <form id="loginForm" novalidate>
         <div class="field"><label for="loginEmail">Email</label><input id="loginEmail" name="email" required type="email" autocomplete="username" placeholder="you@example.com"></div>
         <div class="field"><label for="loginPassword">Password</label><input id="loginPassword" name="password" required type="password" autocomplete="current-password" placeholder="Your password"></div>
-        <button class="btn btn-primary rvex-async-button" type="submit" data-idle-label="Log in" style="width:100%;margin-top:20px">Log in</button>
+        <button class="btn btn-primary" type="submit" style="width:100%;margin-top:20px">Log in</button>
       </form>
       <p><a class="accent-link" href="forgot-password.html">Forgot password?</a></p>
       <p>New here? <a class="accent-link" href="register.html">Create your account</a></p>
@@ -99,24 +95,19 @@
       const password = form.password.value;
       box.textContent = ''; box.className = 'form-message';
       if (!email || !password) { box.textContent = 'Enter your email and password.'; box.className = 'form-message form-message-error'; return; }
-      if (window.RevexButtonUI) window.RevexButtonUI.start(submit, 'Signing in…');
-      else { submit.disabled = true; submit.textContent = 'Signing in…'; }
+      submit.disabled = true; submit.textContent = 'Signing in…';
       try {
         const data = await api('/auth/login', { method: 'POST', body: { email, password } });
         setSession(data);
         const next = new URLSearchParams(location.search).get('next');
-        if (window.RevexButtonUI) window.RevexButtonUI.success(submit, 'Signed in');
-        else { submit.textContent = 'Signed in'; }
         showModal('Welcome back!', 'Redirecting to your dashboard…');
         setTimeout(() => { location.href = next || (data.user?.role === 'admin' ? 'admin.html' : data.user?.role === 'owner' ? 'list-vehicle.html' : 'index.html'); }, 700);
       } catch (error) {
         box.textContent = error.message; box.className = 'form-message form-message-error';
-        if (window.RevexButtonUI) window.RevexButtonUI.error(submit, 'Try again');
-        else { submit.disabled = false; submit.textContent = 'Log in'; }
+        submit.disabled = false; submit.textContent = 'Log in';
       }
     });
   </script>
-  <script src="js/revex-unified-ui.js?v=20260930-ui-unified"></script>
   <script src="js/theme.js?v=20260928-stability2"></script>
   <script src="js/confirm-delete.js"></script>
   <script src="js/main.js?v=20260928-stability2"></script>

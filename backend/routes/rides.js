@@ -561,11 +561,6 @@ router.get('/smart-search', optionalAuth, async (req, res) => {
     const payloads = await serializeRides(matched.map(entry => entry.ride), { includePrivate: false });
     const matches = matched.map((entry, index) => ({
       ...payloads[index],
-      // Geometry is returned only by Smart Search (max 12 matches) so the
-      // Find Ride map can draw every candidate road and let the rider select
-      // the matching offer directly from the map. Normal GET /rides remains
-      // lightweight and still omits the polyline.
-      mapRouteGeometry: Array.isArray(entry.plan?.coordinates) ? entry.plan.coordinates : (Array.isArray(entry.ride.routeGeometry) ? entry.ride.routeGeometry : []),
       match: smartRoute.summarisePlan(entry.plan),
       quote: smartRoute.planQuote(entry.ride, seats, entry.plan)
     }));

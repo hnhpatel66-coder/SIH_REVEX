@@ -194,35 +194,6 @@
   /* ---------------------------------------------------------------- loader */
 
   const scriptCache = {};
-  const LEAFLET_VERSION = '1.9.4';
-  const LEAFLET_SCRIPT_URL = `https://unpkg.com/leaflet@${LEAFLET_VERSION}/dist/leaflet.js`;
-  const LEAFLET_STYLE_URL = `https://unpkg.com/leaflet@${LEAFLET_VERSION}/dist/leaflet.css`;
-  const OFFER_SOURCE_ID = 'revex-offers';
-  const OFFER_LAYER_ID = 'revex-offers-line';
-  const OFFER_CASE_LAYER_ID = 'revex-offers-casing';
-
-  function loadLeaflet() {
-    if (global.L) return Promise.resolve(global.L);
-    if (scriptCache[LEAFLET_SCRIPT_URL]) return scriptCache[LEAFLET_SCRIPT_URL];
-    scriptCache[LEAFLET_SCRIPT_URL] = new Promise((resolve, reject) => {
-      if (!global.document) { reject(new Error('no document')); return; }
-      if (!document.getElementById('revexLeafletCss')) {
-        const link = document.createElement('link');
-        link.id = 'revexLeafletCss';
-        link.rel = 'stylesheet';
-        link.href = LEAFLET_STYLE_URL;
-        document.head.appendChild(link);
-      }
-      const script = document.createElement('script');
-      script.src = LEAFLET_SCRIPT_URL;
-      script.async = true;
-      script.crossOrigin = 'anonymous';
-      script.onload = () => global.L ? resolve(global.L) : reject(new Error('Leaflet loaded but did not register'));
-      script.onerror = () => reject(new Error('Leaflet could not be loaded'));
-      document.head.appendChild(script);
-    });
-    return scriptCache[LEAFLET_SCRIPT_URL];
-  }
 
   /**
    * Loads Mapbox GL JS from the CDN exactly once per version.
@@ -298,15 +269,7 @@
       token: '',
       roadDataSource: '',
       notice: '',
-      unproject: null,
-      offers: [],
-      selectedOfferId: '',
-      onOfferSelect: typeof settings.onOfferSelect === 'function' ? settings.onOfferSelect : null,
-      leaflet: null,
-      leafletMap: null,
-      leafletLayers: [],
-      leafletMarkers: [],
-      leafletReady: false
+      unproject: null
     };
 
     const root = document.createElement('div');
@@ -333,13 +296,9 @@
     const glHost = document.createElement('div');
     glHost.className = 'rvx-map__gl';
     glHost.hidden = true;
-    const leafletHost = document.createElement('div');
-    leafletHost.className = 'rvx-map__leaflet';
-    leafletHost.hidden = true;
     const diagramHost = document.createElement('div');
     diagramHost.className = 'rvx-map__diagram';
     surface.appendChild(glHost);
-    surface.appendChild(leafletHost);
     surface.appendChild(diagramHost);
 
     const status = document.createElement('p');
@@ -485,39 +444,6 @@
       // A faint graticule, so an empty diagram still reads as a map and not as a
       // stray line on a white card.
       add('rect', { x: 0, y: 0, width, height, class: 'rvx-map__graticule' });
-
-      state.offers.forEach((offer, index) => {
-        const line = toLine(offer.geometry);
-        const d = pathFor(line, project);
-        if (!d) return;
-        const selected = String(offer.id) === String(state.selectedOfferId);
-        const path = add('path', {
-          d,
-          class: `rvx-map__offer-route${selected ? ' is-selected' : ''}`,
-          'data-ride-id': String(offer.id || ''),
-          'stroke-width': selected ? 6 : 4,
-          fill: 'none',
-          'stroke-linecap': 'round',
-          'stroke-linejoin': 'round'
-        });
-        path.setAttribute('role', 'button');
-        path.setAttribute('tabindex', '0');
-        path.addEventListener('click', event => {
-          event.stopPropagation();
-          const id = path.getAttribute('data-ride-id');
-          if (id && state.onOfferSelect) {
-            state.selectedOfferId = id;
-            state.onOfferSelect(id);
-            render();
-          }
-        });
-        path.addEventListener('keydown', event => {
-          if (event.key === 'Enter' || event.key === ' ') {
-            event.preventDefault();
-            path.click();
-          }
-        });
-      });
 
       // Casings first, all of them, then the coloured lines on top - the same
       // stacking order the basemap renderer uses, so the two agree.
@@ -710,21 +636,12 @@
         if (state.loadTimer) { clearTimeout(state.loadTimer); state.loadTimer = null; }
         render();
       });
-      state.loadTimer = setTimeout(async () => {
+      state.loadTimer = setTimeout(() => {
         state.loadTimer = null;
         if (state.mapLoaded || !state.map) return;
         try { state.map.remove(); } catch { /* already gone */ }
         state.map = null;
         state.mapLoaded = false;
-        if (settings.interactive !== false) {
-          try {
-            state.leaflet = await loadLeaflet();
-            state.renderer = 'leaflet';
-            state.notice = 'Mapbox timed out. Using the key-free OpenStreetMap map instead.';
-            render();
-            return;
-          } catch {}
-        }
         state.renderer = 'diagram';
         state.notice = 'The interactive map did not load in time, so the route diagram is shown instead.';
         render();
@@ -829,39 +746,6 @@
         });
       }
 
-      const offerCollection = { type: 'FeatureCollection', features: offerFeatures };
-      if (map.getSource(OFFER_SOURCE_ID)) {
-        map.getSource(OFFER_SOURCE_ID).setData(offerCollection);
-      } else {
-        map.addSource(OFFER_SOURCE_ID, { type: 'geojson', data: offerCollection });
-      }
-      if (!map.getLayer(OFFER_CASE_LAYER_ID)) {
-        map.addLayer({
-          id: OFFER_CASE_LAYER_ID,
-          type: 'line',
-          source: OFFER_SOURCE_ID,
-          layout: { 'line-cap': 'round', 'line-join': 'round' },
-          paint: {
-            'line-color': '#ffffff',
-            'line-width': ['case', ['boolean', ['get', 'selected'], false], 9, 7],
-            'line-opacity': 0.9
-          }
-        });
-      }
-      if (!map.getLayer(OFFER_LAYER_ID)) {
-        map.addLayer({
-          id: OFFER_LAYER_ID,
-          type: 'line',
-          source: OFFER_SOURCE_ID,
-          layout: { 'line-cap': 'round', 'line-join': 'round' },
-          paint: {
-            'line-color': ['case', ['boolean', ['get', 'selected'], false], COLOURS.rider, '#64748b'],
-            'line-width': ['case', ['boolean', ['get', 'selected'], false], 6, 4],
-            'line-opacity': ['case', ['boolean', ['get', 'selected'], false], 0.98, 0.78]
-          }
-        });
-      }
-
       buildMarkers(mapboxgl);
 
       // Frame the camera once per journey, not once per render.
@@ -898,129 +782,6 @@
       return true;
     }
 
-    /* ------------------------------------------------------------ Leaflet renderer */
-
-    function clearLeafletOverlays() {
-      state.leafletLayers.forEach(layer => { try { layer.remove(); } catch {} });
-      state.leafletLayers = [];
-      state.leafletMarkers.forEach(marker => { try { marker.remove(); } catch {} });
-      state.leafletMarkers = [];
-    }
-
-    function ensureLeaflet(L) {
-      if (state.leafletMap) return true;
-      leafletHost.innerHTML = '';
-      try {
-        state.leaflet = L;
-        state.leafletMap = L.map(leafletHost, {
-          zoomControl: true,
-          preferCanvas: true,
-          attributionControl: true
-        }).setView([22.3, 71.8], 7);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-          maxZoom: 19,
-          attribution: '&copy; OpenStreetMap contributors'
-        }).addTo(state.leafletMap);
-        state.leafletMap.on('click', event => {
-          if (!state.pinMode || !state.onPick) return;
-          state.onPick({
-            lng: Number(event.latlng.lng.toFixed(5)),
-            lat: Number(event.latlng.lat.toFixed(5))
-          });
-        });
-        state.leafletReady = true;
-      } catch {
-        state.leafletMap = null;
-        state.leafletReady = false;
-        return false;
-      }
-      return true;
-    }
-
-    function renderLeaflet() {
-      const L = state.leaflet || global.L;
-      if (!L) return false;
-      if (!ensureLeaflet(L)) return false;
-      leafletHost.hidden = false;
-      glHost.hidden = true;
-      diagramHost.hidden = true;
-
-      const map = state.leafletMap;
-      clearLeafletOverlays();
-      const all = [];
-
-      const addLine = (coords, options, offer = null) => {
-        const line = toLine(coords);
-        if (line.length < 2) return null;
-        const latlngs = line.map(pair => [pair[1], pair[0]]);
-        all.push(...latlngs);
-        const layer = L.polyline(latlngs, options).addTo(map);
-        state.leafletLayers.push(layer);
-        if (offer) {
-          layer.bindTooltip(offer.label || 'Matching ride', { sticky: true });
-          layer.on('click', event => {
-            L.DomEvent.stopPropagation(event);
-            const id = String(offer.id || '');
-            if (id && state.onOfferSelect) {
-              state.selectedOfferId = id;
-              state.onOfferSelect(id);
-              render();
-            }
-          });
-        }
-        return layer;
-      };
-
-      state.offers.forEach((offer, index) => {
-        const selected = String(offer.id) === String(state.selectedOfferId);
-        addLine(offer.geometry, {
-          color: selected ? COLOURS.rider : '#64748b',
-          weight: selected ? 7 : 5,
-          opacity: selected ? 0.98 : 0.82,
-          lineCap: 'round',
-          lineJoin: 'round'
-        }, { ...offer, label: offer.label || `Matching ride ${index + 1}` });
-      });
-
-      if (state.journey.length) addLine(state.journey, { color: '#7c3aed', weight: 4, opacity: 0.7, dashArray: '8 8' });
-      if (state.route.length && !state.journey.length) addLine(state.route, { color: COLOURS.route, weight: 5, opacity: 0.92 });
-      if (state.legs.driverBefore.length) addLine(state.legs.driverBefore, { color: COLOURS.before, weight: 4, opacity: 0.72 });
-      if (state.legs.rider.length) addLine(state.legs.rider, { color: COLOURS.rider, weight: 7, opacity: 1 });
-      if (state.legs.driverAfter.length) addLine(state.legs.driverAfter, { color: COLOURS.after, weight: 4, opacity: 0.72 });
-
-      const addPoint = (pair, kind, label) => {
-        if (!pair) return;
-        const marker = L.circleMarker([pair[1], pair[0]], {
-          radius: kind === 'town' ? 4 : 7,
-          color: '#ffffff',
-          weight: 2,
-          fillColor: kind === 'pickup' ? COLOURS.rider : (kind === 'drop' ? '#7c3aed' : COLOURS.route),
-          fillOpacity: 1
-        }).addTo(map);
-        if (label) marker.bindTooltip(label, { direction: 'top', offset: [0, -5] });
-        state.leafletMarkers.push(marker);
-        all.push([pair[1], pair[0]]);
-      };
-
-      const routeStart = state.route.length ? state.route[0] : state.start;
-      const routeEnd = state.route.length ? state.route[state.route.length - 1] : state.end;
-      addPoint(routeStart, 'start', state.startName || 'Start');
-      addPoint(routeEnd, 'end', state.endName || 'End');
-      addPoint(state.pickup || (state.journey.length ? state.journey[0] : null), 'pickup', state.pickupName || 'Board here');
-      addPoint(state.drop || (state.journey.length ? state.journey[state.journey.length - 1] : null), 'drop', state.dropName || 'Get off here');
-
-      state.towns.forEach(town => addPoint(toPair(town.coordinate), 'town', town.name));
-      root.classList.toggle('rvx-map--pin', state.pinMode);
-
-      try {
-        if (all.length > 1) map.fitBounds(L.latLngBounds(all), { padding: [36, 36], maxZoom: 13, animate: false });
-        else map.setView([22.3, 71.8], 7, { animate: false });
-        map.invalidateSize({ pan: false });
-      } catch {}
-
-      return true;
-    }
-
     /* ------------------------------------------------------------ rendering */
 
     function clearMarkers() {
@@ -1052,10 +813,6 @@
         describe();
         return;
       }
-      if (state.renderer === 'leaflet' && renderLeaflet()) {
-        describe();
-        return;
-      }
       renderDiagram();
       describe();
     }
@@ -1075,18 +832,8 @@
         state.roadDataSource = String(incoming.roadDataSource || '');
         const usable = Boolean(incoming.enabled) && state.token && state.token.slice(0, 3) === 'pk.';
         if (!usable) {
-          state.notice = String(incoming.reason || incoming.notice || 'Mapbox is not configured. Loading the key-free OpenStreetMap map.');
-          if (settings.interactive !== false) {
-            try {
-              state.leaflet = await loadLeaflet();
-              state.renderer = 'leaflet';
-              state.notice = '';
-            } catch {
-              state.renderer = 'diagram';
-            }
-          } else {
-            state.renderer = 'diagram';
-          }
+          state.renderer = 'diagram';
+          state.notice = String(incoming.reason || incoming.notice || '');
           render();
           return controller;
         }
@@ -1096,19 +843,8 @@
           state.notice = '';
         } catch {
           state.gl = null;
-          if (settings.interactive !== false) {
-            try {
-              state.leaflet = await loadLeaflet();
-              state.renderer = 'leaflet';
-              state.notice = 'Mapbox could not load. Using the key-free OpenStreetMap map instead.';
-            } catch {
-              state.renderer = 'diagram';
-              state.notice = 'The interactive map could not be loaded, so the route diagram is shown instead.';
-            }
-          } else {
-            state.renderer = 'diagram';
-            state.notice = 'The interactive map could not be loaded, so the route diagram is shown instead.';
-          }
+          state.renderer = 'diagram';
+          state.notice = 'The interactive map could not be loaded, so the route diagram is shown instead.';
           render();
           return controller;
         }
@@ -1161,29 +897,6 @@
           driverAfter: toLine(value.driverAfter)
         };
         render();
-        return controller;
-      },
-
-      setOffers(offers) {
-        state.offers = Array.isArray(offers)
-          ? offers.map((offer, index) => ({
-              id: String(offer?.id || ''),
-              label: String(offer?.label || `Matching ride ${index + 1}`),
-              geometry: toLine(offer?.geometry || offer?.route?.geometry)
-            })).filter(offer => offer.id && offer.geometry.length > 1)
-          : [];
-        render();
-        return controller;
-      },
-
-      selectOffer(id) {
-        state.selectedOfferId = String(id || '');
-        render();
-        return controller;
-      },
-
-      onOfferSelect(handler) {
-        state.onOfferSelect = typeof handler === 'function' ? handler : null;
         return controller;
       },
 
@@ -1263,7 +976,6 @@
       /** Re-draws at the current size, e.g. after a layout change. */
       refresh() {
         if (state.map && typeof state.map.resize === 'function') state.map.resize();
-        if (state.leafletMap && typeof state.leafletMap.invalidateSize === 'function') state.leafletMap.invalidateSize({ pan: false });
         render();
         return controller;
       },
@@ -1287,16 +999,8 @@
           notice: state.notice || '',
           townsBetween: state.townsBetween,
           checkpoints: state.checkpoints.length,
-          mapLoaded: Boolean(state.mapLoaded || state.leafletReady),
-          camera: camera || (state.leafletMap ? {
-            zoom: Number((state.leafletMap.getZoom?.() || 0).toFixed(2)),
-            centre: state.leafletMap.getCenter ? [
-              Number(state.leafletMap.getCenter().lng.toFixed(3)),
-              Number(state.leafletMap.getCenter().lat.toFixed(3))
-            ] : null,
-            routeLayer: true,
-            styleLoaded: true
-          } : null)
+          mapLoaded: Boolean(state.mapLoaded),
+          camera
         };
       },
 
@@ -1314,13 +1018,7 @@
           try { state.map.remove(); } catch { /* already gone */ }
           state.map = null;
         }
-        if (state.leafletMap) {
-          try { state.leafletMap.remove(); } catch { /* already gone */ }
-          state.leafletMap = null;
-        }
-        clearLeafletOverlays();
         state.mapLoaded = false;
-        state.leafletReady = false;
         root.remove();
       }
     };

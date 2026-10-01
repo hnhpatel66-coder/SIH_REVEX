@@ -353,18 +353,13 @@ async function confirmRental(event) {
     }
   }
   const button = form.querySelector('button[type="submit"]');
-  if (button) window.RevexButtonUI?.start(button, 'Preparing booking…');
+  if (button) { button.disabled = true; button.textContent = 'Preparing booking…'; }
   try {
     const booking = await api('/bookings', { method: 'POST', body: { vehicleId: currentVehicle.id, startDate: `${form.startDate.value}T${form.startTime.value}`, endDate: `${form.endDate.value}T${form.endTime.value}`, estimatedKm: Number(form.estimatedKm.value) || 0, panNumber: form.panNumber.value.trim(), drivingLicenseNumber: form.drivingLicenseNumber.value.trim(), agreementAccepted: true, termsVersion: 'revex-v3' } });
     currentQuote = booking.quote || booking.pricing || currentQuote;
     quoteFor = currentWindowKey();
-    window.RevexButtonUI?.success(button, 'Booking ready', 900);
     await openPaymentModal(booking);
-    if (button) setTimeout(() => window.RevexButtonUI?.reset(button, 'Review agreement & continue'), 950);
-  } catch (error) {
-    window.RevexButtonUI?.error(button, 'Try again');
-    showToast(error.message, 'bad', 8000);
-  }
+  } catch (error) { showToast(error.message, 'bad', 8000); } finally { if (button) { button.disabled = !currentQuote || !consent.checked; button.textContent = 'Review agreement & continue'; } }
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
